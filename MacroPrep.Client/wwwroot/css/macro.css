@@ -476,4 +476,4 @@ i.bi {
 /* Optional: Focus state for accessibility */
 .toggle-switch input:focus + .slider {
     box-shadow: 0 0 1px #10b981;
-}   }
+}
