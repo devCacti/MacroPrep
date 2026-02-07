@@ -1,10 +1,217 @@
 ﻿@page "/settings"
 
-<PageTitle>The Vault</PageTitle>
+<PageTitle>The Vault - Settings</PageTitle>
 
-<i class="bi bi-gear"></i>
-<h1>The Vault</h1>
+<div class="page-wrapper">
+    <div class="content-container">
+
+        @* Header *@
+        <header class="page-header">
+            <div class="header-text">
+                <h1 class="page-title">The Vault</h1>
+                <p class="page-subtitle">Manage your account and app settings</p>
+            </div>
+        </header>
+
+        @* Profile Card *@
+        <section class="profile-card">
+            <div class="profile-left">
+                <div class="avatar-circle">U</div>
+                <div class="profile-details">
+                    <h2 class="user-name">User Account</h2>
+                    <span class="user-email">user@example.com</span>
+                    <span class="badge-premium">Premium Plan</span>
+                </div>
+            </div>
+            <button class="btn-outline-purple">Edit Profile</button>
+        </section>
+
+        @* Settings Sections Stack *@
+        <div class="settings-stack">
+
+            @* 1. Account Section *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-person section-icon"></i>
+                    <h3 class="section-title">Account</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Profile Information</span>
+                            <span class="setting-desc">Update your personal details</span>
+                        </div>
+                        <button class="action-link">Edit</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Email Preferences</span>
+                            <span class="setting-desc">user@example.com</span>
+                        </div>
+                        <button class="action-link">Change</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Password</span>
+                            <span class="setting-desc">Last changed 30 days ago</span>
+                        </div>
+                        <button class="action-link">Update</button>
+                    </div>
+                </div>
+            </div>
+
+            @* 2. Notifications Section *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-bell section-icon"></i>
+                    <h3 class="section-title">Notifications</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Recipe Reminders</span>
+                            <span class="setting-desc">Get notified about meal prep times</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Shared Updates</span>
+                            <span class="setting-desc">When someone shares a recipe with you</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Shopping List Alerts</span>
+                            <span class="setting-desc">Reminders for incomplete lists</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            @* 3. Privacy & Security *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-shield-lock section-icon"></i>
+                    <h3 class="section-title">Privacy & Security</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Two-Factor Authentication</span>
+                            <span class="setting-desc">Add an extra layer of security</span>
+                        </div>
+                        <button class="action-link">Enable</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Data Privacy</span>
+                            <span class="setting-desc">Manage your data and privacy settings</span>
+                        </div>
+                        <button class="action-link">Review</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Connected Devices</span>
+                            <span class="setting-desc">3 devices connected</span>
+                        </div>
+                        <button class="action-link">Manage</button>
+                    </div>
+                </div>
+            </div>
+
+            @* 4. Appearance *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-palette section-icon"></i>
+                    <h3 class="section-title">Appearance</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Theme</span>
+                            <span class="setting-desc">Light mode</span>
+                        </div>
+                        <button class="action-link">Change</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Display Density</span>
+                            <span class="setting-desc">Comfortable</span>
+                        </div>
+                        <button class="action-link">Adjust</button>
+                    </div>
+                </div>
+            </div>
+
+            @* 5. Data & Storage *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-database section-icon"></i>
+                    <h3 class="section-title">Data & Storage</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Sync Settings</span>
+                            <span class="setting-desc">Auto-sync enabled</span>
+                        </div>
+                        <button class="action-link">Configure</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Storage Usage</span>
+                            <span class="setting-desc">245 MB of 10 GB used</span>
+                        </div>
+                        <button class="action-link">View</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Export Data</span>
+                            <span class="setting-desc">Download all your recipes and lists</span>
+                        </div>
+                        <button class="action-link">Export</button>
+                    </div>
+                </div>
+            </div>
+
+            @* 6. Support & About *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-question-circle section-icon"></i>
+                    <h3 class="section-title">Support & About</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Help Center</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Privacy Policy</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Terms of Service</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">About MacroPrep v1.0.0</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 @code {
-
+    // No logic required for the static UI demo
 }

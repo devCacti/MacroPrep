@@ -1,4 +1,30 @@
-﻿@import url(macro.css);
+﻿:root {
+    /* Base font for all text */
+    --font-family-base: 'Montserrat', system-ui, -apple-system, sans-serif;
+    /* Font weights */
+    --weight-light: 300;
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-bold: 700;
+    --weight-bolder: 1000;
+    /* Modern Fluid Typography Scale */
+    --text-xs: 0.75rem; /* Captions */
+    --text-sm: 0.875rem; /* Sidebar links / Secondary info */
+    --text-base: 1rem; /* Body text */
+    --text-xl: 1.25rem; /* Recipe Card Titles */
+    --text-2xl: 1.5rem; /* Page Titles */
+    --text-3xl: 2rem; /* Brand Title */
+    /* Text Color */
+    --text-light: black;
+    --text-dark: white;
+    /* Elevations and shapes */
+    --base-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --radius-lg: 1rem;
+    /* Transitions */
+    --smooth: all 0.25s ease-in-out;
+    --content-max-width: 1200px;
+    --gutter: 2rem;
+}
 
 /* 1. Layout Container */
 .dashboard-wrapper {

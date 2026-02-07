@@ -1,0 +1,187 @@
+﻿/* 1. Layout */
+.page-wrapper {
+    padding-left: var(--nav-width);
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f8fafc;
+}
+
+/* 2. Profile Card (Unique to this page) */
+.profile-card {
+    background-color: #f3e8ff; /* Light purple background */
+    border: 1px solid #e9d5ff;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(147, 51, 234, 0.05);
+}
+
+.profile-left {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.avatar-circle {
+    width: 64px;
+    height: 64px;
+    background-color: #a855f7; /* Vibrant Purple */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: var(--weight-bold);
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-name {
+    font-size: 1.125rem;
+    font-weight: var(--weight-bold);
+    color: #1e293b;
+    margin: 0;
+}
+
+.user-email {
+    font-size: var(--text-sm);
+    color: #64748b;
+}
+
+.badge-premium {
+    display: inline-block;
+    background-color: #9333ea;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: var(--weight-bold);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    width: fit-content;
+    margin-top: 0.25rem;
+}
+
+.btn-outline-purple {
+    background: transparent;
+    border: 1px solid #9333ea;
+    color: #9333ea;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    transition: var(--smooth);
+}
+
+    .btn-outline-purple:hover {
+        background-color: #faf5ff;
+    }
+
+/* 3. Settings Cards */
+.settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.settings-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--base-shadow);
+    border: 1px solid rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section-icon {
+    font-size: 1.1rem;
+    color: #475569;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: var(--weight-bold);
+    margin: 0;
+    color: #1e293b;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 4. Rows & Actions */
+.setting-row {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+    .setting-row:last-child {
+        border-bottom: none;
+    }
+
+.setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.setting-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: #334155;
+}
+
+.setting-desc {
+    font-size: 0.75rem; /* Smaller caption text */
+    color: #94a3b8;
+}
+
+.action-link {
+    background: none;
+    border: none;
+    color: #10b981; /* Emerald Green */
+    font-weight: var(--weight-medium);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    padding: 0;
+}
+
+    .action-link:hover {
+        text-decoration: underline;
+        color: #059669;
+    }
+
+/* 6. Mobile Optimization */
+@media (max-width: 640px) {
+    .page-wrapper {
+        padding-left: 0;
+        padding-bottom: 80px;
+    }
+
+    .profile-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-outline-purple {
+        width: 100%;
+    }
+}
