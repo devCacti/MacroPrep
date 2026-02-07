@@ -1,6 +1,10 @@
 using MacroPrep.Server.Data;
+using MacroPrep.Server.Data.Entities;
 using MacroPrep.Shared.Models;
+using MacroPrep.Shared.Models.Auth;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,6 +81,71 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast")
+.WithOpenApi();
+
+// API GROUP
+var apiGroup = app.MapGroup("/api");
+
+apiGroup.MapPost("/auth/register", async (RegisterRequest request, AppDbContext db) =>
+{
+    var userExists = await db.Users.AnyAsync(u => u.UserName == request.UserName || u.Email == request.Email);
+    if (userExists)
+        return Results.Conflict(new { Message = "Username or email already exists" });
+    
+    // Password Hashing
+    string salt = BCrypt.Net.BCrypt.GenerateSalt(12); // 12 Factor salt
+    string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, salt);
+
+    var newUser = new UserEntity
+    {
+        Id = Guid.NewGuid(),
+        UserName = request.UserName,
+        Email = request.Email,
+        PasswordHash = passwordHash,
+        PasswordSalt = salt,
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow
+    };
+
+    try
+    {
+        db.Users.Add(newUser);
+        await db.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        // Log the exception (not implemented here)
+        //If it's in dev mode, we can return the exception message for easier debugging, but in production, we should return a generic error message to avoid exposing sensitive information.
+        if (app.Environment.IsDevelopment())
+            return Results.Problem($"An error occurred while creating the user: {ex.Message}", title: "Internal Server Error", statusCode: 500);
+
+        return Results.Problem("An error occurred while creating the user. Please try again later.", title: "Internal Server Error", statusCode: 500);
+    }
+
+    // Return the DTO (Data Transfer Object)
+    var userDto = new UserDto
+    {
+        Id = newUser.Id,
+        UserName = newUser.UserName,
+        Email = newUser.Email,
+        FirstName = newUser.FirstName,
+        LastName = newUser.LastName,
+        IsVerified = newUser.IsVerified,
+        CreatedAt = newUser.CreatedAt,
+        UpdatedAt = newUser.UpdatedAt
+    };
+
+    return userDto;
+})
+.WithName("Register")
+.WithOpenApi();
+
+apiGroup.MapPost("/auth/login", async (LoginRequest request, AppDbContext db) =>
+{
+
+    return Results.Ok();
+})
+.WithName("Login")
 .WithOpenApi();
 
 app.Run();
