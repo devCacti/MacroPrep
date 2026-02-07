@@ -178,11 +178,6 @@
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
-.btn-icon-only {
-    width: 40px; /* Square button */
-    padding: 0;
-    flex: none; /* Prevent stretching */
-}
 
 .card-footer-action {
     border-top: 1px solid #f1f5f9;

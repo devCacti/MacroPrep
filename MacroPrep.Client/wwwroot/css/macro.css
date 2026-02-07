@@ -296,7 +296,12 @@ i.bi {
 
 .add-btn {
     gap: 0.5rem;
-    max-width: min-content;
+    max-width: max-content;
+}
+
+.btn-icon-only {
+    width: 40px; /* Square button */
+    flex: none; /* Prevent stretching */
 }
 
 /* Base "MacroPrep" Button Style */
@@ -305,7 +310,7 @@ i.bi {
     padding: .75rem 1rem;
     border: none; /* Removes the default black border */
     border-radius: 15px; /* Matches your card radius */
-    max-width: min-content;
+    max-width: max-content;
     font-family: var(--font-family-base);
     font-weight: var(--weight-bold);
     font-size: var(--text-base);
@@ -477,3 +482,64 @@ i.bi {
 .toggle-switch input:focus + .slider {
     box-shadow: 0 0 1px #10b981;
 }
+
+/* The "Vault" Style Card */
+.mp-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--base-shadow);
+    padding: 2rem;
+    border: 1px solid #f1f5f9; /* Slate-100 */
+    transition: var(--smooth);
+}
+
+/* Standard Form Inputs (Pill/Rounded style) */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    font-family: var(--font-family-base);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: #475569; /* Slate-600 */
+    margin-left: 4px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-family-base);
+    font-size: var(--text-base);
+    border: 2px solid #e2e8f0; /* Slate-200 */
+    border-radius: 12px; /* Soft rounding like buttons */
+    outline: none;
+    transition: var(--smooth);
+    color: var(--text-light);
+}
+
+    .form-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+    }
+
+    .form-input::placeholder {
+        color: #cbd5e1; /* Slate-300 */
+    }
+
+/* Link Styles */
+.mp-link {
+    color: #10b981;
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    transition: var(--smooth);
+    cursor: pointer;
+}
+
+    .mp-link:hover {
+        color: #059669;
+        text-decoration: underline;
+    }

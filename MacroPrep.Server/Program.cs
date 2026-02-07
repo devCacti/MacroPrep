@@ -1,9 +1,9 @@
 using MacroPrep.Server.Data;
 using MacroPrep.Server.Data.Entities;
+using MacroPrep.Server.Services;
 using MacroPrep.Shared.Models;
 using MacroPrep.Shared.Models.Auth;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +28,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 var app = builder.Build();
 
 // Auto-Heal the Database
@@ -46,48 +48,30 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+// Helper method to configure cookie policy for authentication 
+void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTimeOffset expires)
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-//! Please remove this before production
-app.MapGet("/users", async (AppDbContext db) =>
-{
-    // This is just a simple example.
-    var users = await db.Users.Select(user => new UserDto
+    var cookieOptions = new CookieOptions
     {
-        Id = user.Id,
-        UserName = user.UserName,
-        Email = user.Email,
-        FirstName = user.FirstName,
-        LastName = user.LastName,
-        IsVerified = user.IsVerified
-    }).ToListAsync();
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Strict,
+        Expires = expires,
+        Path = "/api/auth"
+    };
 
-    return users;
-}).WithName("GetUsers").WithOpenApi();
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    context.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
+}
 
 // API GROUP
-var apiGroup = app.MapGroup("/api");
+var authGroup = app.MapGroup("/api/auth");
 
-apiGroup.MapPost("/auth/register", async (RegisterRequest request, AppDbContext db) =>
+authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, ITokenService tokenService, HttpContext context) =>
 {
+    // Input Validation
+    if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.ConfirmPassword))
+        return Results.BadRequest(new { Message = "All fields are required" });
+
     var userExists = await db.Users.AnyAsync(u => u.UserName == request.UserName || u.Email == request.Email);
     if (userExists)
         return Results.Conflict(new { Message = "Username or email already exists" });
@@ -107,20 +91,19 @@ apiGroup.MapPost("/auth/register", async (RegisterRequest request, AppDbContext 
         UpdatedAt = DateTimeOffset.UtcNow
     };
 
-    try
-    {
-        db.Users.Add(newUser);
-        await db.SaveChangesAsync();
-    }
-    catch (Exception ex)
-    {
-        // Log the exception (not implemented here)
-        //If it's in dev mode, we can return the exception message for easier debugging, but in production, we should return a generic error message to avoid exposing sensitive information.
-        if (app.Environment.IsDevelopment())
-            return Results.Problem($"An error occurred while creating the user: {ex.Message}", title: "Internal Server Error", statusCode: 500);
+    db.Users.Add(newUser);
 
-        return Results.Problem("An error occurred while creating the user. Please try again later.", title: "Internal Server Error", statusCode: 500);
-    }
+    var session = new UserSession
+    {
+        Id = Guid.NewGuid(),
+        Token = Guid.NewGuid().ToString(), // Rotation Secret
+        ExpiresAt = DateTimeOffset.UtcNow.AddDays(7), // Expires after 7 days
+        UserId = newUser.Id,
+        User = newUser
+    };
+
+    db.UserSessions.Add(session);
+    await db.SaveChangesAsync();
 
     // Return the DTO (Data Transfer Object)
     var userDto = new UserDto
@@ -135,22 +118,87 @@ apiGroup.MapPost("/auth/register", async (RegisterRequest request, AppDbContext 
         UpdatedAt = newUser.UpdatedAt
     };
 
-    return userDto;
+    SetSessionCookie(context, session.Id, session.Token, session.ExpiresAt);
+
+    return Results.Ok(new {
+        Token = tokenService.GenerateToken(newUser, session),
+        User = userDto
+    });
 })
+.Produces<UserDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status409Conflict)
+.Produces(StatusCodes.Status400BadRequest)
 .WithName("Register")
 .WithOpenApi();
 
-apiGroup.MapPost("/auth/login", async (LoginRequest request, AppDbContext db) =>
+authGroup.MapPost("/login", async (LoginRequest request, AppDbContext db, ITokenService tokenService, HttpContext context) =>
 {
+    // Input Validation
+    if (string.IsNullOrWhiteSpace(request.UserNameOrEmail) || string.IsNullOrWhiteSpace(request.Password))
+        return Results.BadRequest(new { Message = "Username/Email and password are required" });
 
-    return Results.Ok();
+    var user = await db.Users.FirstOrDefaultAsync(u => u.UserName == request.UserNameOrEmail || u.Email == request.UserNameOrEmail);
+
+    if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        return Results.Unauthorized();
+
+    var session = new UserSession
+    {
+        Id = Guid.NewGuid(),
+        Token = Guid.NewGuid().ToString(),
+        ExpiresAt = DateTimeOffset.UtcNow.AddDays(7), // Expires after 7 days
+        UserId = user.Id,
+        User = user
+    };
+
+    db.UserSessions.Add(session);
+    await db.SaveChangesAsync();
+
+    SetSessionCookie(context, session.Id, session.Token, session.ExpiresAt);
+
+    return Results.Ok(new {Token = tokenService.GenerateToken(user, session)});
 })
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status401Unauthorized)
 .WithName("Login")
 .WithOpenApi();
 
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+// Refresh Token Endpoint - This will be used to refresh the JWT token using the session cookie
+authGroup.MapPost("/refresh", async (AppDbContext db, ITokenService tokenService, HttpContext context) =>
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+    var cookie = context.Request.Cookies["MacroPrepSession"];
+    if (string.IsNullOrEmpty(cookie) || !cookie.Contains("|"))
+        return Results.Unauthorized();
+
+    var parts = cookie.Split('|');
+    var sessionId = Guid.Parse(parts[0]);
+    var sessionToken = parts[1];
+
+    var session = await db.UserSessions.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == sessionId);
+
+    if (session == null || session.IsRevoked || session.ExpiresAt < DateTimeOffset.UtcNow || session.Token != sessionToken)
+    {
+        if (session != null)
+        {
+            session.IsRevoked = true; // Revoke the session if token is invalid or expired. A compromised account will have its 
+            await db.SaveChangesAsync();
+        }
+        return Results.Unauthorized();
+    }
+
+    session.Token = Guid.NewGuid().ToString(); // Rotate the session token
+    session.ExpiresAt = DateTimeOffset.UtcNow.AddDays(7); // Extend the session expiration
+
+    await db.SaveChangesAsync();
+
+    SetSessionCookie(context, session.Id, session.Token, session.ExpiresAt);
+
+    return Results.Ok( new { Token = tokenService.GenerateToken(session.User!, session)});
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.WithName("RefreshToken")
+.WithOpenApi();
+
+app.Run();
