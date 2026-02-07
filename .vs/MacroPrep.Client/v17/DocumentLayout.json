@@ -1,0 +1,327 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\pantry.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\pantry.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\recipes.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\recipes.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\wwwroot\\css\\macro.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\wwwroot\\css\\macro.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\recipes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\recipes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\pantry.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\pantry.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\wwwroot\\css\\app.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\wwwroot\\css\\app.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\wwwroot\\css\\dashboard.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\wwwroot\\css\\dashboard.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\layout\\mainlayout.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\layout\\mainlayout.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\counter.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\counter.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\settings.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\settings.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|c:\\users\\tiago\\source\\repos\\macroprep.client\\macroprep.client\\pages\\weather.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A4B38A17-0539-4BFF-B005-326E94DD32D8}|MacroPrep.Client\\MacroPrep.Client.csproj|solutionrelative:macroprep.client\\pages\\weather.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 242,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{de1fc918-f32e-4dd7-a915-1792a051f26b}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Recipes.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Recipes.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Recipes.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Recipes.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Recipes.razor",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAADgAAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T22:21:41.788Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "NavMenu.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\NavMenu.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Layout\\NavMenu.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\NavMenu.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Layout\\NavMenu.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T15:51:04.442Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Counter.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Counter.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Counter.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Counter.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Counter.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T19:03:16.669Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Pantry.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Pantry.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Pantry.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Pantry.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Pantry.razor",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAD4AAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T17:35:32.691Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Home.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Home.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Home.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Home.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Home.razor",
+              "ViewState": "AgIAACQAAAAAAAAAAAAAAEMAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T14:30:52.938Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Settings.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Settings.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Settings.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Settings.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Settings.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T15:57:29.983Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "App.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\App.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\App.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\App.razor",
+              "RelativeToolTip": "MacroPrep.Client\\App.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T15:59:48.167Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Weather.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Weather.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Weather.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Weather.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Weather.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T15:57:09.441Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "MainLayout.razor",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\MainLayout.razor",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Layout\\MainLayout.razor",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\MainLayout.razor",
+              "RelativeToolTip": "MacroPrep.Client\\Layout\\MainLayout.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-06T15:51:05.11Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Program.cs",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Program.cs",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Program.cs",
+              "RelativeToolTip": "MacroPrep.Client\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-06T14:29:30.495Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 158,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Pantry.razor.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Pantry.razor.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Pantry.razor.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Pantry.razor.css",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Pantry.razor.css",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAKoAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T23:01:17.872Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Recipes.razor.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Recipes.razor.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Pages\\Recipes.razor.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Pages\\Recipes.razor.css",
+              "RelativeToolTip": "MacroPrep.Client\\Pages\\Recipes.razor.css",
+              "ViewState": "AgIAAJwAAAAAAAAAAAAAAKMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T22:24:47.224Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "dashboard.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\wwwroot\\css\\dashboard.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\wwwroot\\css\\dashboard.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\wwwroot\\css\\dashboard.css",
+              "RelativeToolTip": "MacroPrep.Client\\wwwroot\\css\\dashboard.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T19:33:09.559Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "MainLayout.razor.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\MainLayout.razor.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Layout\\MainLayout.razor.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\MainLayout.razor.css",
+              "RelativeToolTip": "MacroPrep.Client\\Layout\\MainLayout.razor.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T21:39:26.723Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "NavMenu.razor.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\NavMenu.razor.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\Layout\\NavMenu.razor.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\Layout\\NavMenu.razor.css",
+              "RelativeToolTip": "MacroPrep.Client\\Layout\\NavMenu.razor.css",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAACwAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T21:39:08.661Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "macro.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\wwwroot\\css\\macro.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\wwwroot\\css\\macro.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\wwwroot\\css\\macro.css",
+              "RelativeToolTip": "MacroPrep.Client\\wwwroot\\css\\macro.css",
+              "ViewState": "AgIAABEBAAAAAAAAAAAUwDkBAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T16:13:35.035Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "app.css",
+              "DocumentMoniker": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\wwwroot\\css\\app.css",
+              "RelativeDocumentMoniker": "MacroPrep.Client\\wwwroot\\css\\app.css",
+              "ToolTip": "C:\\Users\\tiago\\source\\repos\\MacroPrep.Client\\MacroPrep.Client\\wwwroot\\css\\app.css",
+              "RelativeToolTip": "MacroPrep.Client\\wwwroot\\css\\app.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-02-06T15:50:08.58Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

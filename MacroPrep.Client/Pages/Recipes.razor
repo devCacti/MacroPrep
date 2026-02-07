@@ -1,0 +1,91 @@
+﻿@page "/recipes"
+
+<PageTitle>The Kitchen Counter</PageTitle>
+
+<div class="page-wrapper">
+    <div class="content-container">
+
+        @* Header Section *@
+        <header class="page-header">
+            <div class="header-text">
+                <h1 class="page-title">The Kitchen Counter</h1>
+                <p class="page-subtitle">Browse and manage your recipes</p>
+            </div>
+            <button class="mp-btn mp-btn-primary add-btn">
+                <i class="bi bi-plus-lg"></i> Add Recipe
+            </button>
+        </header>
+
+        @* Toolbar: Search & Filters *@
+        <div class="toolbar-section">
+            <div class="search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search recipes..." />
+            </div>
+
+            <div class="filter-group">
+                <button class="filter-chip active">All</button>
+                <button class="filter-chip">Breakfast</button>
+                <button class="filter-chip">Lunch</button>
+                <button class="filter-chip">Dinner</button>
+                <button class="filter-chip">Dessert</button>
+            </div>
+        </div>
+
+        @* Recipe Grid *@
+        <div class="recipe-grid">
+            @foreach (var recipe in RecipesList)
+            {
+                <article class="recipe-card">
+                    <div class="card-image-wrapper">
+                        @* Placeholder image service used for demo purposes *@
+                        <img src="@recipe.ImageUrl" alt="@recipe.Title" class="card-image" />
+                        <span class="category-badge">@recipe.Category</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h3 class="recipe-title">@recipe.Title</h3>
+
+                        <div class="meta-row">
+                            <span class="meta-item"><i class="bi bi-clock"></i> @recipe.Time</span>
+                            <span class="meta-item"><i class="bi bi-people"></i> @recipe.Servings servings</span>
+                        </div>
+
+                        <div class="recipe-footer">
+                            <div class="actions">
+                                <button class="icon-btn red"><i class="bi bi-heart"></i></button>
+                                <button class="icon-btn green"><i class="bi bi-share"></i></button>
+                            </div>
+                            <span class="calories">@recipe.Calories cal</span>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private List<RecipeModel> RecipesList = new()
+    {
+        new() { Title = "Creamy Garlic Pasta", Category = "Dinner", Time = "25 min", Servings = 4, Calories = 420, ImageUrl = "https://placehold.co/600x400/e2e8f0/475569?text=Pasta" },
+        new() { Title = "Grilled Chicken Bowl", Category = "Lunch", Time = "30 min", Servings = 2, Calories = 385, ImageUrl = "https://placehold.co/600x400/fee2e2/991b1b?text=Chicken" },
+        new() { Title = "Decadent Chocolate Cake", Category = "Dessert", Time = "60 min", Servings = 8, Calories = 520, ImageUrl = "https://placehold.co/600x400/3f2c2c/e2e8f0?text=Cake" },
+        new() { Title = "Fresh Garden Salad", Category = "Lunch", Time = "15 min", Servings = 2, Calories = 180, ImageUrl = "https://placehold.co/600x400/dcfce7/166534?text=Salad" },
+        new() { Title = "Berry Smoothie Bowl", Category = "Breakfast", Time = "10 min", Servings = 1, Calories = 320, ImageUrl = "https://placehold.co/600x400/f3e8ff/6b21a8?text=Smoothie" },
+        new() { Title = "Margherita Pizza", Category = "Dinner", Time = "45 min", Servings = 4, Calories = 285, ImageUrl = "https://placehold.co/600x400/ffedd5/c2410c?text=Pizza" }
+    };
+
+
+    // Temporary model (Show only)
+    public class RecipeModel
+    {
+        public string Title { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Time { get; set; } = "";
+        public int Servings { get; set; }
+        public int Calories { get; set; }
+        public string ImageUrl { get; set; } = "";
+    }
+}

@@ -1,0 +1,110 @@
+﻿@page "/"
+
+<PageTitle>MacroPrep Dashboard</PageTitle>
+
+<div class="dashboard-wrapper">
+    <div class="dashboard-container">
+
+        @* Header *@
+        <header class="dashboard-header">
+            <h1 class="macroprep-title" style="color: black;">Welcome to MacroPrep</h1>
+            <p class="subtitle">Your personal recipe and meal planning hub</p>
+        </header>
+
+        @* Stats Row *@
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Total Recipes</span>
+                    <span class="stat-value">42</span>
+                </div>
+                <div class="stat-icon icon-green">
+                    <a class="bi bi-egg-fried" href="kitchen_counter"></a>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Shopping Lists</span>
+                    <span class="stat-value">3</span>
+                </div>
+                <div class="stat-icon icon-blue">
+                    <i class="bi bi-cart-fill"></i>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Shared Items</span>
+                    <span class="stat-value">12</span>
+                </div>
+                <div class="stat-icon icon-purple">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Cooked This Week</span>
+                    <span class="stat-value">8</span>
+                </div>
+                <div class="stat-icon icon-orange">
+                    <i class="bi bi-fire"></i>
+                </div>
+            </div>
+        </div>
+
+        @* Main Content Split *@
+        <div class="main-split">
+
+            @* Left Column: Quick Actions (Matched to Image) *@
+            <section class="content-card action-section">
+                <h2 class="section-title">Quick Actions</h2>
+                <div class="action-stack">
+                    <a class="mp-btn mp-btn-primary full-width" href="recipes">
+                        Browse Recipes
+                    </a>
+                    <a class="mp-btn mp-btn-secondary full-width" href="pantry">
+                        View Shopping Lists
+                    </a>
+                </div>
+            </section>
+
+            @* Right Column: Recent Activity (Matched to Image) *@
+            <section class="content-card activity-section">
+                <h2 class="section-title">Recent Activity</h2>
+                <ul class="activity-list">
+                    <li class="activity-item">
+                        <div class="dot dot-green"></div>
+                        <div class="activity-text">
+                            <span class="act-main">Added recipe: <strong>Creamy Garlic Pasta</strong></span>
+                            <span class="act-time">2 hours ago</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="dot dot-green"></div>
+                        <div class="activity-text">
+                            <span class="act-main">Updated list: <strong>Weekly Groceries</strong></span>
+                            <span class="act-time">5 hours ago</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="dot dot-green"></div>
+                        <div class="activity-text">
+                            <span class="act-main">Shared recipe: <strong>Grilled Chicken Bowl</strong></span>
+                            <span class="act-time">1 day ago</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="dot dot-green"></div>
+                        <div class="activity-text">
+                            <span class="act-main">Completed list: <strong>Party Supplies</strong></span>
+                            <span class="act-time">2 days ago</span>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+        </div>
+
+    </div>
+</div>

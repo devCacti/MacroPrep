@@ -1,0 +1,208 @@
+﻿@import url(macro.css);
+
+/* 1. Layout Container */
+.dashboard-wrapper {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* 2. Header */
+.dashboard-header {
+    margin-bottom: 1rem;
+}
+
+.subtitle {
+    font-family: var(--font-family-base);
+    font-size: var(--text-base);
+    color: #64748b; /* Slate-500 */
+    margin-top: 0.5rem;
+    font-weight: var(--weight-normal);
+}
+
+/* 3. Cards Base Styling */
+.stat-card, .content-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--base-shadow);
+    padding: 1.5rem;
+    border: 1px solid rgba(0,0,0,0.05); /* Subtle border definition */
+    transition: var(--smooth);
+}
+
+    .stat-card:hover, .content-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+
+/* 4. Statistics Grid (Top Row) */
+.stats-grid {
+    display: grid;
+    /* Auto-fit creates responsive columns that wrap automatically */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    font-family: var(--font-family-base);
+    font-size: var(--text-sm);
+    color: #64748b;
+    font-weight: var(--weight-medium);
+}
+
+.stat-value {
+    font-family: var(--font-family-base);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-bold);
+    color: var(--text-light);
+}
+
+/* Icon Boxes */
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.icon-green {
+    background-color: #dcfce7;
+    color: #16a34a;
+}
+
+.icon-blue {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.icon-purple {
+    background-color: #f3e8ff;
+    color: #9333ea;
+}
+
+.icon-orange {
+    background-color: #ffedd5;
+    color: #ea580c;
+}
+
+
+/* 5. Main Split (Bottom Row) */
+.main-split {
+    display: grid;
+    /* 40% left, 60% right roughly */
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1.5rem;
+}
+
+.section-title {
+    font-family: var(--font-family-base);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    color: var(--text-light);
+    margin: 0 0 1.5rem 0;
+}
+
+/* Left Column: Actions */
+.action-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.full-width {
+    width: 100%;
+    max-width: 100%; /* Override the 250px from global if needed */
+    justify-content: center;
+    padding: 1rem;
+    font-size: 1rem;
+}
+
+/* Right Column: Activity Feed */
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 6px; /* Align with first line of text */
+    flex-shrink: 0;
+}
+
+.dot-green {
+    background-color: #10b981;
+}
+
+.activity-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-family: var(--font-family-base);
+}
+
+.act-main {
+    font-size: var(--text-base);
+    color: #334155;
+}
+
+.act-time {
+    font-size: var(--text-xs);
+    color: #94a3b8;
+}
+
+/* 6. Responsive Adjustments */
+@media (max-width: 1024px) {
+    .main-split {
+        grid-template-columns: 1fr; /* Stack vertically on tablets */
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-wrapper {
+        padding-left: 0; /* Remove side padding */
+        padding-bottom: 80px; /* Add bottom padding for mobile nav */
+    }
+
+    .dashboard-container {
+        padding: 1.5rem; /* Smaller padding on phone */
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr; /* 1 column cards on phone */
+    }
+}

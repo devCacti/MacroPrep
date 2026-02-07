@@ -1,0 +1,420 @@
+﻿:root {
+    /* Base font for all text */
+    --font-family-base: 'Montserrat', system-ui, -apple-system, sans-serif;
+
+    /* Font weights */
+    --weight-light: 300;
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-bold: 700;
+    --weight-bolder: 1000;
+
+    /* Modern Fluid Typography Scale */
+    --text-xs: 0.75rem; /* Captions */
+    --text-sm: 0.875rem; /* Sidebar links / Secondary info */
+    --text-base: 1rem; /* Body text */
+    --text-xl: 1.25rem; /* Recipe Card Titles */
+    --text-2xl: 1.5rem; /* Page Titles */
+    --text-3xl: 2rem; /* Brand Title */
+
+    /* Text Color */
+    --text-light: black;
+    --text-dark: white;
+
+    /* Elevations and shapes */
+    --base-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --radius-lg: 1rem;
+
+    /* Transitions */
+    --smooth: all 0.25s ease-in-out;
+
+    --content-max-width: 1200px;
+    --gutter: 2rem;
+}
+
+body {
+    margin: 0 !important;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+.content-container {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.page-title {
+    font-family: var(--font-family-base);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    color: var(--text-light);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-family: var(--font-family-base);
+    font-size: var(--text-sm);
+    color: #64748b;
+    margin: 0.25rem 0 0 0;
+}
+
+.page-wrapper {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+    .icon-btn.red:hover {
+        color: red;
+    }
+
+    .icon-btn.green:hover {
+        color: lawngreen;
+    }
+
+    .icon-btn.blue:hover {
+        color: dodgerblue;
+    }
+
+/* Custom Checkbox Styling */
+.custom-checkbox {
+    appearance: none;
+    background-color: white;
+    margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    display: grid;
+    place-content: center;
+    flex-shrink: 0;
+    transition: var(--smooth);
+    margin-top: 2px; /* Align with text */
+}
+
+    .custom-checkbox::before {
+        content: "";
+        width: 0.65em;
+        height: 0.65em;
+        transform: scale(0);
+        transition: 120ms transform ease-in-out;
+        box-shadow: inset 1em 1em white;
+        transform-origin: center;
+        clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    .custom-checkbox:checked {
+        background-color: #2563eb;
+        border-color: #2563eb;
+    }
+
+        .custom-checkbox:checked::before {
+            transform: scale(1);
+        }
+
+/* Filter Chips */
+.filter-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-chip {
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    padding: 0.5rem 1rem;
+    border-radius: 15px;
+    font-family: var(--font-family-base);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    transition: var(--smooth);
+}
+
+    .filter-chip:hover {
+        background-color: #f1f5f9;
+    }
+
+    .filter-chip.active {
+        background-color: #10b981; /* Brand Green */
+        color: white;
+        border-color: #10b981;
+    }
+
+.dark-text {
+    color: var(--text-light) !important;
+}
+.light-text {
+    color: var(--text-dark) !important;
+}
+
+.macroprep-title {
+    font-family: var(--font-family-base);
+    font-weight: var(--weight-bolder);
+    font-size: var(--text-3xl);
+    color: var(--text-light);
+    transition: var(--smooth);
+    text-decoration: none;
+}
+
+.macroprep-brand {
+    font-family: var(--font-family-base);
+    font-weight: var(--weight-bolder);
+    font-size: var(--text-2xl);
+    color: var(--text-dark);
+
+    transition: var(--smooth);
+
+    text-decoration: none;
+}
+
+    .macroprep-brand:hover {
+        opacity: .75;
+        color: var(--text-dark);
+    }
+
+i.bi {
+    height: auto !important;
+    margin: 0 !important;
+}
+
+
+/* 2. Base Nav (Desktop Sidebar) */
+.macroprep-nav {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200px;
+    height: 100vh;
+    background-color: rgb(25, 25, 25);
+    padding: 1.5rem 0; /* Padding for the top and bottom */
+    gap: 20px;
+    z-index: 9999;
+}
+
+.brand-container {
+    padding: 0 1.5rem 0 1.5rem; /* Space for the logo */
+    transition: var(--smooth);
+}
+
+.nav-links-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.nav-item {
+    position: relative; /* Required for pseudo-element positioning */
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1.5rem;
+    color: var(--text-dark);
+    opacity: 50%;
+    text-decoration: none;
+    font-weight: var(--weight-medium);
+    font-size: var(--text-base);
+    white-space: nowrap;
+    width: 100%; /* Keep hit area constant */
+    overflow: hidden; /* Clip the sliding background */
+    z-index: 1; /* Stack above the pseudo-element */
+    transition: var(--smooth);
+}
+
+    .nav-item.active {
+        opacity: 75%;
+        font-weight: var(--weight-bold);
+    }
+
+    /* The animated background tab */
+    .nav-item::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 5%; /* Initial width */
+        background-color: rgb(45, 45, 45);
+        border-radius: 0 25px 25px 0;
+        opacity: 0; /* Start invisible */
+        transition: var(--smooth);
+        z-index: -1; /* Place behind the icon/text */
+    }
+
+    /* HOVER LOGIC: Animate the pseudo-element, not the container */
+    .nav-item:hover::before {
+        width: 100%; /* Animate width without shifting layout */
+        opacity: 1; /* Fade in */
+    }
+
+    .nav-item:hover {
+        color: var(--text-dark); /* Text stays perfectly still */
+        opacity: 100%;
+    }
+
+.phone-only {
+    display: none;
+}
+
+/* Layout wrapper for the buttons */
+.action-grid {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.add-btn {
+    gap: 0.5rem;
+    max-width: min-content;
+}
+
+/* Base "MacroPrep" Button Style */
+.mp-btn {
+    flex: 1; /* Ensures both buttons stay equal width */
+    padding: .75rem 1rem;
+    border: none; /* Removes the default black border */
+    border-radius: 15px; /* Matches your card radius */
+    max-width: min-content;
+    font-family: var(--font-family-base);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: var(--smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: white;
+}
+
+    .mp-btn:hover {
+        transform: translateY(-2px);
+        color: white;
+    }
+
+/* Primary Action: Emerald Green */
+.mp-btn-primary {
+    background-color: #10b981;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+    .mp-btn-primary:hover {
+        background-color: #059669;
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    }
+
+/* Secondary Action: Deep Blue or Slate */
+.mp-btn-secondary {
+    background-color: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+
+    .mp-btn-secondary:hover {
+        background-color: #2563eb;
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+    }
+
+.btn-dark {
+    background-color: rgb(25 25 25);
+    box-shadow: 0 4px 6px -1px rgba(50 50 50) !important;
+}
+
+    .btn-dark:hover {
+        background-color: rgb(20 20 20) !important;
+        box-shadow: 0 10px 15px -3px rgba(50 50 50) !important;
+    }
+
+    .btn-dark.mp-btn-primary {
+        color: #10b981;
+    }
+
+    .btn-dark.mp-btn-secondary {
+        color: #3b82f6;
+    }
+
+/* --- MOBILE OVERRIDE (< 640px) --- */
+@media (max-width: 768px) {
+    .phone-only {
+        display: block;
+    }
+
+    .macroprep-nav {
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        height: 75px; /* Slightly taller for thumb-friendly touch */
+        flex-direction: row;
+        padding: 0;
+        transition: var(--smooth);
+        z-index: 9999;
+    }
+
+    .brand-container {
+        display: none; /* Removes logo space on mobile bottom bar */
+        transition: var(--smooth);
+    }
+
+    .nav-links-wrapper {
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        border-radius: 20px;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        justify-content: center;
+        padding: 0.5rem;
+        width: 20%;
+        gap: 2px;
+        font-size: 0.7rem;
+        transition: var(--smooth);
+        border-radius: 10px;
+    }
+
+        .nav-item i {
+            font-size: 1.4rem; /* Icons should be bigger on mobile bar */
+        }
+
+        .nav-item span {
+            font-weight: var(--weight-medium);
+        }
+
+        .nav-item:hover {
+            width: 20% !important;
+            border-radius: 50px;
+            background-color: rgb(45, 45, 45) !important;
+        }
+}

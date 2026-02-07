@@ -1,0 +1,229 @@
+﻿:root {
+    /* Base font for all text */
+    --font-family-base: 'Montserrat', system-ui, -apple-system, sans-serif;
+    /* Font weights */
+    --weight-light: 300;
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-bold: 700;
+    --weight-bolder: 1000;
+    /* Modern Fluid Typography Scale */
+    --text-xs: 0.75rem; /* Captions */
+    --text-sm: 0.875rem; /* Sidebar links / Secondary info */
+    --text-base: 1rem; /* Body text */
+    --text-xl: 1.25rem; /* Recipe Card Titles */
+    --text-2xl: 1.5rem; /* Page Titles */
+    --text-3xl: 2rem; /* Brand Title */
+    /* Text Color */
+    --text-light: black;
+    --text-dark: white;
+    /* Elevations and shapes */
+    --base-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --radius-lg: 1rem;
+    /* Transitions */
+    --smooth: all 0.25s ease-in-out;
+    --content-max-width: 1200px;
+    --gutter: 2rem;
+}
+
+/* 3. Grid Layout */
+.pantry-grid {
+    display: grid;
+    /* Two columns on desktop, auto-stacking */
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    align-items: start; /* Prevents cards from stretching to match height */
+}
+
+/* 4. Shopping Card Container */
+.shopping-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--base-shadow);
+    overflow: hidden; /* Ensures header background doesn't bleed */
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 5. Card Header Section */
+.card-header-section {
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    background-color: white;
+    border-bottom: 1px solid transparent;
+}
+
+    /* The Blue Tint variant for shared lists */
+    .card-header-section.shared-bg {
+        background-color: #eff6ff; /* Very light blue (Tailwind blue-50) */
+    }
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.list-title {
+    font-family: var(--font-family-base);
+    font-size: 1.125rem;
+    font-weight: var(--weight-bold);
+    margin: 0;
+    color: var(--text-light);
+}
+
+.badge-shared {
+    font-size: 0.75rem;
+    color: #3b82f6;
+    background: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid #dbeafe;
+    font-weight: var(--weight-medium);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Progress Bar */
+.progress-info {
+    font-size: var(--text-xs);
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-track {
+    width: 100%;
+    height: 6px;
+    background-color: #e2e8f0; /* Grey track */
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: #2563eb; /* Blue fill */
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.shared-with {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* 6. Card Body & Items */
+.card-body {
+    padding: 1.5rem;
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    cursor: pointer;
+}
+
+/* Text Styling */
+.item-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-name {
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+    color: var(--text-light);
+}
+
+    .item-name.strikethrough {
+        text-decoration: line-through;
+        color: #94a3b8;
+    }
+
+.item-qty {
+    font-size: var(--text-xs);
+    color: #94a3b8;
+}
+
+/* 7. Inputs & Footers */
+.add-item-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.add-input {
+    flex-grow: 1;
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    font-size: var(--text-sm);
+    outline: none;
+    transition: var(--smooth);
+}
+
+    .add-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+.btn-icon-only {
+    width: 40px; /* Square button */
+    padding: 0;
+    flex: none; /* Prevent stretching */
+}
+
+.card-footer-action {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1rem;
+}
+
+.share-btn {
+    width: 100%;
+    padding: 0.6rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    color: #475569;
+    font-weight: var(--weight-medium);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: var(--smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+    .share-btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+
+/* 8. Mobile Optimization */
+@media (max-width: 640px) {
+    .page-wrapper {
+        padding-left: 0;
+        padding-bottom: 80px;
+    }
+
+    .content-container {
+        padding: 1.5rem;
+    }
+
+    .pantry-grid {
+        grid-template-columns: 1fr; /* Stack cards on mobile */
+    }
+}

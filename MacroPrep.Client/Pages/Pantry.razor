@@ -1,0 +1,169 @@
+﻿@page "/pantry"
+
+<PageTitle>The Pantry</PageTitle>
+
+<div class="page-wrapper">
+    <div class="content-container">
+
+        @* Header Section *@
+        <header class="page-header">
+            <div class="header-text">
+                <h1 class="page-title">The Pantry</h1>
+                <p class="page-subtitle">Manage your shopping lists</p>
+            </div>
+            <button class="mp-btn mp-btn-primary add-btn">
+                <i class="bi bi-plus-lg"></i> New List
+            </button>
+        </header>
+
+        @* Lists Grid *@
+        <div class="pantry-grid">
+            @foreach (var list in ShoppingLists)
+            {
+                <div class="shopping-card">
+                    @* Card Header: Apply 'shared-bg' class if the list is shared *@
+                    <div class="card-header-section @(list.IsShared ? "shared-bg" : "")">
+                        <div class="header-top">
+                            <h3 class="list-title">@list.Title</h3>
+                            @if (list.IsShared)
+                            {
+                                <span class="badge-shared"><i class="bi bi-people"></i> Shared</span>
+                            }
+                        </div>
+
+                        <div class="progress-info">
+                            <span class="progress-text">@list.CompletedCount of @list.Items.Count items completed</span>
+                        </div>
+
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" style="width: @(list.ProgressPercentage)%"></div>
+                        </div>
+
+                        @if (list.IsShared)
+                        {
+                            <p class="shared-with">Shared with: @list.SharedWith</p>
+                        }
+                    </div>
+
+                    @* List Items *@
+                    <div class="card-body">
+                        <div class="items-list">
+                            @foreach (var item in list.Items)
+                            {
+                                <label class="item-row">
+                                    <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"/>
+                                    <div class="item-details">
+                                        <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
+                                        <span class="item-qty">@item.Quantity</span>
+                                    </div>
+                                </label>
+                            }
+                        </div>
+
+                        @* Add Item Input *@
+                        <div class="add-item-row">
+                            <input type="text" class="add-input" placeholder="Add item..." />
+                            <button class="mp-btn mp-btn-primary btn-icon-only">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+
+                        @* Card Footer *@
+                        <div class="card-footer-action">
+                            <button class="share-btn">
+                                <i class="bi bi-share"></i> Share List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private List<ShoppingListModel> ShoppingLists = new();
+
+    protected override void OnInitialized()
+    {
+        // Mock Data based on your screenshot
+        ShoppingLists.Add(new ShoppingListModel
+            {
+                Title = "Weekly Groceries",
+                IsShared = false,
+                Items = new()
+            {
+                new() { Name = "Milk", Quantity = "2 gallons", IsChecked = false },
+                new() { Name = "Eggs", Quantity = "1 dozen", IsChecked = true },
+                new() { Name = "Bread", Quantity = "2 loaves", IsChecked = false },
+                new() { Name = "Chicken Breast", Quantity = "2 lbs", IsChecked = false },
+                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true }
+            }
+            });
+
+        ShoppingLists.Add(new ShoppingListModel
+            {
+                Title = "Weekly Groceries",
+                IsShared = false,
+                Items = new()
+            {
+                new() { Name = "Milk", Quantity = "2 gallons", IsChecked = false },
+                new() { Name = "Eggs", Quantity = "1 dozen", IsChecked = true },
+                new() { Name = "Bread", Quantity = "2 loaves", IsChecked = false },
+                new() { Name = "Chicken Breast", Quantity = "2 lbs", IsChecked = false },
+                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true },
+                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true },
+                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true }
+            }
+            });
+
+
+        ShoppingLists.Add(new ShoppingListModel
+            {
+                Title = "Party Supplies",
+                IsShared = true,
+                SharedWith = "Sarah, Mike",
+                Items = new()
+            {
+                new() { Name = "Chips", Quantity = "3 bags", IsChecked = false },
+                new() { Name = "Soda", Quantity = "2 liters", IsChecked = false },
+                new() { Name = "Paper Plates", Quantity = "1 pack", IsChecked = true },
+                new() { Name = "Ice Cream", Quantity = "1 gallon", IsChecked = false }
+            }
+            });
+
+        ShoppingLists.Add(new ShoppingListModel
+            {
+                Title = "Meal Prep Essentials",
+                IsShared = true,
+                SharedWith = "John",
+                Items = new()
+            {
+                new() { Name = "Brown Rice", Quantity = "2 lbs", IsChecked = false },
+                new() { Name = "Sweet Potatoes", Quantity = "5 lbs", IsChecked = false },
+                new() { Name = "Olive Oil", Quantity = "1 bottle", IsChecked = true },
+                new() { Name = "Greek Yogurt", Quantity = "2 tubs", IsChecked = false }
+            }
+            });
+    }
+
+    public class ShoppingListModel
+    {
+        public string Title { get; set; } = "";
+        public bool IsShared { get; set; }
+        public string SharedWith { get; set; } = "";
+        public List<ShoppingItemModel> Items { get; set; } = new();
+
+        // Helper to calculate progress
+        public int CompletedCount => Items.Count(i => i.IsChecked);
+        public int ProgressPercentage => Items.Count == 0 ? 0 : (int)((double)CompletedCount / Items.Count * 100);
+    }
+
+    public class ShoppingItemModel
+    {
+        public string Name { get; set; } = "";
+        public string Quantity { get; set; } = "";
+        public bool IsChecked { get; set; }
+    }
+}
