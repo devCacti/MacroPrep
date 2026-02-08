@@ -2,9 +2,13 @@
 
 @using MacroPrep.Shared.Models.Auth
 @using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
 @inject HttpClient Http
-@inject ILocalStorageService LocalStorage
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+@attribute [AllowAnonymous]
 
 <div class="auth-layout">
     <div class="auth-container">
@@ -46,7 +50,7 @@
                         }
                         else
                         {
-                            <span>Enter Vault</span>
+                            <span>Enter MacroPrep</span>
                         }
                     </button>
                 </div>
