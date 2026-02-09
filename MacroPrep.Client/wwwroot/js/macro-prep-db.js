@@ -1,7 +1,7 @@
 ﻿window.MacroPrepDB = {
     db: null,
     dbName: "MacroPrepOffline",
-    version: 3,
+    version: 4,
 
     init: function () {
         return new Promise((resolve, reject) => {

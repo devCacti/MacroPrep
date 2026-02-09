@@ -612,3 +612,18 @@ i.bi {
         text-decoration: underline;
     }
 
+.owner-tag {
+    font-size: var(--text-xs);
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+}
+
+/* Visually indicate disabled inputs */
+input:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}

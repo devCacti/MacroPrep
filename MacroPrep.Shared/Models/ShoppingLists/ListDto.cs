@@ -12,6 +12,8 @@ namespace MacroPrep.Shared.Models.ShoppingLists
         [Required, StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        public string OwnerName { get; set; } = "Unknown User";
+
         public string? Description { get; set; }
 
         public ListStatus Status { get; set; } = ListStatus.Active;

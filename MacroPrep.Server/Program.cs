@@ -316,6 +316,21 @@ userGroup.MapGet("/profile", async (ClaimsPrincipal user, AppDbContext db) =>
 .RequireAuthorization("Authenticated")
 .RequireAuthorization("CompletedSetup"); // Only allow users who have completed setup to access this endpoint
 
+// API SHOPPING LISTS GROUP
+var listsGroup = app.MapGroup("/s-lists");
+
+if (app.Environment.IsDevelopment())
+{
+    listsGroup = app.MapGroup("/api/s-lists");
+}
+
+listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =>
+{
+    return Results.Ok();
+});
+
+
+
 // TEST ENDPOINT: Checks if Token Generation is the killer
 app.MapGet("/test-token", (ITokenService tokenService) =>
 {

@@ -4,6 +4,7 @@
 @using MacroPrep.Client.Services
 @using MacroPrep.Client.Services.Offline
 @using MacroPrep.Shared.Models.ShoppingLists
+@using MacroPrep.Shared.Enums.ShoppingLists
 @using Blazored.LocalStorage
 @inject ILocalStorageService LocalStorage
 @inject ShoppingListsService OfflineService
@@ -15,7 +16,6 @@
 <div class="page-wrapper">
     <div class="content-container">
 
-        @* Header Section *@
         <header class="page-header">
             <div class="header-text">
                 <h1 class="page-title">The Pantry</h1>
@@ -26,131 +26,184 @@
             </button>
         </header>
 
-        @* Lists Grid *@
         <div class="pantry-grid">
             @foreach (var vm in _viewModels)
             {
-                // Capture variable for closures
                 var currentVm = vm;
+                var isSettingsOpen = _settingsOpen.ContainsKey(currentVm.List.Id) && _settingsOpen[currentVm.List.Id];
 
                 <div class="shopping-card">
 
-                    @* Card Header *@
+                    @* --- HEADER --- *@
                     <div class="card-header-section @(currentVm.List.IsShared ? "shared-bg" : "")">
                         <div class="header-top">
+                            @* Title Input *@
+                                <input type="text" class="list-title-input"
+                                       value="@currentVm.List.Name"
+                                       disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Editor)"
+                                       @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))" />
 
-                            <input type="text"
-                                   class="list-title-input"
-                                   value="@currentVm.List.Name"
-                                   @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))"
-                                   placeholder="List Name" />
-
+                                @* Display Owner Name in the corner *@
+                            @* Shared Badge *@
                             @if (currentVm.List.IsShared)
                             {
-                                <span class="badge-shared"><i class="bi bi-people"></i></span>
+                                <span class="badge-shared" title="Shared List">
+                                    <i class="bi bi-people-fill"></i>By:
+                                    <span class="owner-tag"> @(currentVm.IsOwner(_currentUserId) ? "You" : currentVm.List.OwnerName)</span>
+                                </span>
                             }
 
-                            @* 3. Delete Button (Now Here) *@
-                            <button class="delete-list-btn"
-                                    @onclick="@(() => DeleteListAsync(currentVm))"
-                                    title="Delete List">
-                                <i class="bi bi-trash"></i>
+                            @* Settings Toggle Button *@
+                            <button class="icon-action-btn @(isSettingsOpen ? "active" : "")"
+                                    @onclick="@(() => ToggleSettings(currentVm.List.Id))"
+                                    title="List Settings">
+                                <i class="bi bi-gear-fill"></i>
                             </button>
                         </div>
 
-                        @* Progress Bar Logic *@
+                        @* Progress Bar *@
                         @{
                             var total = currentVm.Items.Count;
                             var completed = currentVm.Items.Count(i => i.IsChecked);
                             var percent = total == 0 ? 0 : (int)((double)completed / total * 100);
                         }
-
                         <div class="progress-info">
                             <span class="progress-text">@completed of @total items completed</span>
                         </div>
-
                         <div class="progress-bar-track">
                             <div class="progress-bar-fill" style="width: @(percent)%"></div>
                         </div>
-
-                        @if (currentVm.List.Members.Count > 0 && currentVm.List.IsShared)
-                        {
-                            <p class="shared-with">
-                                Shared with: @string.Join(", ", currentVm.List.Members.Select(m => m.UserName))
-                            </p>
-                        }
                     </div>
 
-                    @* Card Body *@
+                    @* --- BODY (Items) --- *@
                     <div class="card-body">
-                        <div class="items-list">
-                            @foreach (var item in currentVm.Items)
-                            {
-                                <label class="item-row">
-                                    <input type="checkbox"
-                                           checked="@item.IsChecked"
-                                           class="custom-checkbox"
-                                           @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
-
-                                    <div class="item-details">
-                                        <span class="item-name @(item.IsChecked ? "strikethrough" : "")">
-                                            @item.Name
-                                        </span>
-                                        @if (item.Quantity > 1)
+                        @if (!isSettingsOpen)
+                        {
+                            @* Show Items only when settings are CLOSED (Optional preference, or show both) *@
+                            <div class="items-list">
+                                @foreach (var item in currentVm.Items)
+                                {
+                                    <label class="item-row">
+                                        <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox" disabled="@(currentVm.GetUserRole(_currentUserId) == MemberType.Viewer)"
+                                               @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
+                                        <div class="item-details">
+                                            <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
+                                            @if (item.Quantity > 1)
+                                            {
+                                                <span class="item-qty">x@(item.Quantity)</span>
+                                            }
+                                        </div>
+                                        @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Editor)
                                         {
-                                            <span class="item-qty">x@(item.Quantity)</span>
+                                            <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
+                                                <i class="bi bi-x"></i>
+                                            </button>
                                         }
+                                    </label>
+                                }
+                            </div>
+
+                            <div class="add-item-row">
+                                <input type="text" class="add-input" placeholder="Add item..."
+                                       @bind="_newInputs[currentVm.List.Id]"
+                                       @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
+                                <button class="mp-btn mp-btn-primary btn-icon-only" @onclick="@(() => AddItem(currentVm))">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            @* --- SETTINGS PANEL (Expanded) --- *@
+                            <div class="settings-panel">
+                                <h4 class="settings-title">List Settings</h4>
+
+                                @* 1. Share Toggle *@
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <span class="setting-label">Share List</span>
+                                        <span class="setting-desc">Allow others to view and edit</span>
                                     </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked="@currentVm.List.IsShared"
+                                               @onchange="@(e => ToggleSharedStatus(currentVm, (bool)e.Value!))">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
 
-                                    @* Delete Button *@
-                                    <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
-                                        <i class="bi bi-x"></i>
+                                @* 2. Member Management (Only if Shared) *@
+                                @if (currentVm.List.IsShared && currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
+                                {
+                                    <div class="members-section">
+                                        <span class="setting-label">Members</span>
+
+                                        @* Member Chips *@
+                                        <div class="member-chips">
+                                            @foreach (var member in (currentVm.List.Members ?? Array.Empty<ListMemberDto>()))
+                                            {
+                                                <div class="member-chip">
+                                                    <span class="member-initial">@member.UserName.Substring(0, 1).ToUpper()</span>
+                                                    <span>@member.UserName</span>
+                                                    <button class="remove-member-btn" @onclick="() => RemoveMember(currentVm, member)">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        @* Add Member Input *@
+                                        <div class="add-member-row">
+                                            <input type="text" class="add-input" placeholder="Enter username..."
+                                                   @bind="_newMemberInputs[currentVm.List.Id]" />
+                                            <button class="mp-btn mp-btn-secondary" @onclick="() => AddMember(currentVm)">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="settings-divider"></div>
+
+                                @* 3. Danger Zone *@
+                                @if (currentVm.IsOwner(_currentUserId))
+                                {
+                                    <button class="delete-list-btn-full" @onclick="@(() => DeleteListAsync(currentVm))">
+                                        <i class="bi bi-trash"></i> Delete this List
                                     </button>
-                                </label>
-                            }
-                        </div>
-
-                        @* Add Item Input *@
-                        <div class="add-item-row">
-                            <input type="text"
-                                   class="add-input"
-                                   placeholder="Add item..."
-                                   @bind="_newInputs[currentVm.List.Id]"
-                                   @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
-
-                            <button class="mp-btn mp-btn-primary btn-icon-only"
-                                    @onclick="@(() => AddItem(currentVm))">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-
-                        @* Footer *@
-                        <div class="card-footer-action">
-                            <button class="share-btn disabled">
-                                <i class="bi bi-share"></i> Share List
-                            </button>
-                        </div>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             }
         </div>
-
     </div>
 </div>
 
 @code {
-    //View Models
     public class ListViewModel
     {
         public ListDto List { get; set; } = new();
         public List<ListItemDto> Items { get; set; } = new();
+
+        // Helper to check if current user is the owner
+        public bool IsOwner(Guid currentUserId) => List.OwnerId == currentUserId;
+
+        // Helper to get current user's role
+        public MemberType GetUserRole(Guid currentUserId)
+        {
+            if (IsOwner(currentUserId)) return MemberType.Creator;
+            var member = List.Members?.FirstOrDefault(m => m.Id == currentUserId);
+            return member?.Type ?? MemberType.Viewer;
+        }
     }
 
-    private List<ListViewModel> _viewModels = new();
     private Dictionary<Guid, string> _newInputs = new();
-
+    private Dictionary<Guid, bool> _settingsOpen = new();
+    private Dictionary<Guid, string> _newMemberInputs = new();
     private Guid _currentUserId = Guid.Empty;
 
+    private List<ListViewModel> _viewModels = new();
     private List<ListDto> ShoppingLists { get; set; } = new List<ListDto>();
 
     protected override async Task OnInitializedAsync()
@@ -188,6 +241,7 @@
                 Items = items
             });
             _newInputs[list.Id] = "";
+            _newMemberInputs[list.Id] = "";
         }
     }
 
@@ -199,12 +253,62 @@
         Nav.NavigateTo("/login");
     }
 
+    private void ToggleSettings(Guid listId)
+    {
+        if (_settingsOpen.ContainsKey(listId))
+        {
+            _settingsOpen[listId] = !_settingsOpen[listId];
+        }
+        else
+        {
+            _settingsOpen[listId] = true;
+        }
+    }
+
+    private async Task ToggleSharedStatus(ListViewModel vm, bool isShared)
+    {
+        vm.List.IsShared = isShared;
+        // If turning off, you might want to clear members logic here
+        await OfflineService.SaveListAsync(vm.List);
+    }
+
+    private async Task AddMember(ListViewModel vm)
+    {
+        var username = _newMemberInputs[vm.List.Id];
+        if (string.IsNullOrWhiteSpace(username)) return;
+
+        // In a real app, you'd call API to find User ID by Username here
+        var newMember = new ListMemberDto
+            {
+                Id = Guid.NewGuid(), // Placeholder ID
+                UserName = username
+            };
+
+        // Resize array (simplest way for fixed array in DTO)
+        var membersList = vm.List.Members.ToList();
+        membersList.Add(newMember);
+        vm.List.Members = membersList.ToArray();
+
+        _newMemberInputs[vm.List.Id] = ""; // Clear input
+        await OfflineService.SaveListAsync(vm.List);
+    }
+
+    private async Task RemoveMember(ListViewModel vm, ListMemberDto member)
+    {
+        var membersList = vm.List.Members.ToList();
+        membersList.Remove(member);
+        vm.List.Members = membersList.ToArray();
+
+        await OfflineService.SaveListAsync(vm.List);
+    }
+
     private async Task CreateNewList()
     {
         var newList = new ListDto
         {
             Id = Guid.NewGuid(),
             OwnerId = _currentUserId,
+            Members = Array.Empty<ListMemberDto>(),
             Name = "New List" + (_viewModels.Count + 1),
         };
 
@@ -212,6 +316,7 @@
 
         _viewModels.Insert(0, new ListViewModel { List = newList });
         _newInputs[newList.Id] = "";
+        _newMemberInputs[newList.Id] = "";
     }
 
     private async Task UpdateListTitle(ListDto list, string newName)
