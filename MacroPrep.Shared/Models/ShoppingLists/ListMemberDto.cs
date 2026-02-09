@@ -12,6 +12,8 @@ namespace MacroPrep.Shared.Models.ShoppingLists
         public string UserName { get; set; } = string.Empty;
         public MemberType Type { get; set; } = MemberType.Viewer;
 
+        public bool HasAccepted { get; set; } = false;
+
         public DateTimeOffset JoinedAt { get; set; } = DateTimeOffset.UtcNow;
     }
 }

@@ -26,6 +26,23 @@
             </button>
         </header>
 
+        @if (_pendingInvites.Any())
+        {
+            <div class="invites-container mp-card">
+                <h3>New List Invitations</h3>
+                @foreach (var invite in _pendingInvites)
+                {
+                    <div class="invite-row">
+                        <span><strong>@invite.OwnerName</strong> invited you to <strong>@invite.ListName</strong></span>
+                        <div class="actions">
+                            <button class="mp-btn mp-btn-primary" @onclick="() => AcceptInvite(invite)">Accept</button>
+                            <button class="mp-btn-outline-danger" @onclick="() => DeclineInvite(invite)">Decline</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
         <div class="pantry-grid">
             @foreach (var vm in _viewModels)
             {
@@ -141,12 +158,20 @@
                                         <div class="member-chips">
                                             @foreach (var member in (currentVm.List.Members ?? Array.Empty<ListMemberDto>()))
                                             {
-                                                <div class="member-chip">
-                                                    <span class="member-initial">@member.UserName.Substring(0, 1).ToUpper()</span>
+                                                <div class="member-chip @(member.HasAccepted ? "accepted" : "pending")">
+                                                    <span class="member-initial">@member.UserName[0]</span>
                                                     <span>@member.UserName</span>
-                                                    <button class="remove-member-btn" @onclick="() => RemoveMember(currentVm, member)">
-                                                        <i class="bi bi-x"></i>
-                                                    </button>
+                                                    @if (!member.HasAccepted)
+                                                    {
+                                                        <small>(Pending)</small>
+                                                    }
+                                                    @* Only Owners/Masters see the remove button *@
+                                                    @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
+                                                    {
+                                                        <button class="remove-member-btn @(_currentUserId == member.UserId ? "disabled" : "")" @onclick="() => RemoveMember(currentVm, member)">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    }
                                                 </div>
                                             }
                                         </div>
@@ -198,10 +223,19 @@
         }
     }
 
+    public class InviteViewModel
+    {
+        public Guid ListId { get; set; }
+        public string ListName { get; set; } = "";
+        public Guid OwnerId { get; set; }
+        public string OwnerName { get; set; } = "";
+    }
+
     private Dictionary<Guid, string> _newInputs = new();
     private Dictionary<Guid, bool> _settingsOpen = new();
     private Dictionary<Guid, string> _newMemberInputs = new();
     private Guid _currentUserId = Guid.Empty;
+    private List<InviteViewModel> _pendingInvites = new();
 
     private List<ListViewModel> _viewModels = new();
     private List<ListDto> ShoppingLists { get; set; } = new List<ListDto>();

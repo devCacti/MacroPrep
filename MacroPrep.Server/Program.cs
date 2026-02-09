@@ -1,14 +1,16 @@
+using MacroPrep.Server.Hubs;
 using MacroPrep.Server.Data;
 using MacroPrep.Server.Data.Entities;
 using MacroPrep.Server.Services;
 using MacroPrep.Shared.Models.Auth;
+using MacroPrep.Shared.Models.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
-using MacroPrep.Shared.Models.User;
+using Microsoft.AspNetCore.SignalR;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,6 +74,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CompletedSetup", policy => policy.RequireClaim("setup_completed", "true"));
     options.AddPolicy("UncompletedSetup", policy => policy.RequireClaim("setup_completed", "false"));
 });
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -324,10 +328,145 @@ if (app.Environment.IsDevelopment())
     listsGroup = app.MapGroup("/api/s-lists");
 }
 
+listsGroup.MapPost("/{listId}/invite", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims) =>
+{
+    try
+    {
+        var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+            return Results.Unauthorized();
+
+        var isListOwner = await db.ShoppingLists.AnyAsync(l => l.Id == listId && l.OwnerId == Guid.Parse(userIdClaim));
+        if (!isListOwner)
+            return Results.Forbid();
+
+        var userToInvite = await db.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+        if (userToInvite == null)
+            return Results.Ok("Invite sent!"); // Don't reveal whether the user exists or not to prevent username enumeration attacks
+
+        var member = new ListMembers
+        {
+            Id = Guid.NewGuid(),
+            ListId = listId,
+            UserId = userToInvite.Id,
+            UserName = userToInvite.UserName,
+            Type = MacroPrep.Shared.Enums.ShoppingLists.MemberType.Editor, // Default to Editor, can be changed later by the owner
+            HasAccepted = false
+        };
+
+        db.ListMembers.Add(member);
+        await db.SaveChangesAsync();
+
+        return Results.Ok("Invite sent!");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"An error occurred while inviting the user: {ex.Message}");
+    }
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.Produces(StatusCodes.Status403Forbidden)
+.WithName("InviteToList")
+.WithOpenApi()
+.RequireAuthorization("Authenticated");
+
+listsGroup.MapPost("/{listId}/accept-invite", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+{
+    var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim))
+        return Results.Unauthorized();
+
+    var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim));
+    if (member == null)
+        return Results.NotFound(new { Message = "Invite not found" });
+
+    if (member.HasAccepted)
+        return Results.Conflict(new { Message = "Invite already accepted" });
+
+    member.HasAccepted = true;
+    await db.SaveChangesAsync();
+
+    var list = await db.ShoppingLists.Include(l => l.Members).FirstOrDefaultAsync(l => l.Id == listId);
+    if (list != null)
+    {
+        // Notify the owner and other members that a new member has accepted the invite
+        var memberUserIds = list.Members.Where(m => m.HasAccepted).Select(m => m.UserId.ToString()).ToList();
+        await hubContext.Clients.Users(memberUserIds).SendAsync("InviteAccepted", $"User {member.UserName} has accepted the invite to the list '{list.Name}'");
+    }
+
+    return Results.Ok(new { Message = "Invite accepted" });
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.Produces(StatusCodes.Status404NotFound)
+.Produces(StatusCodes.Status409Conflict)
+.WithName("AcceptListInvite")
+.WithOpenApi()
+.RequireAuthorization("Authenticated");
+
+listsGroup.MapPost("/{listId}/decline-invite", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+{
+    var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim))
+        return Results.Unauthorized();
+
+    var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim));
+    if (member == null)
+        return Results.NotFound(new { Message = "Invite not found" });
+
+    if (member.HasAccepted)
+        return Results.Conflict(new { Message = "Invite already accepted, cannot decline" });
+
+    db.ListMembers.Remove(member);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { Message = "Invite declined" });
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.Produces(StatusCodes.Status404NotFound)
+.Produces(StatusCodes.Status409Conflict)
+.WithName("DeclineListInvite")
+.WithOpenApi()
+.RequireAuthorization("Authenticated");
+
 listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =>
 {
-    return Results.Ok();
-});
+    var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim))
+        return Results.Unauthorized();
+
+    var lists = await db.ShoppingLists
+        .Where(l => l.OwnerId == Guid.Parse(userIdClaim) || l.Members.Any(m => m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted))
+        .Select(l => new
+        {
+            l.Id,
+            l.Name,
+            l.IsShared,
+            l.CreatedAt,
+            l.UpdatedAt,
+            Owner = new
+            {
+                l.OwnerId,
+                OwnerName = db.Users.Where(u => u.Id == l.OwnerId).Select(u => u.UserName).FirstOrDefault()
+            },
+            Members = l.Members.Where(m => m.HasAccepted).Select(m => new
+            {
+                m.UserId,
+                m.UserName,
+                m.Type
+            }).ToList()
+        })
+        .ToListAsync();
+
+    return Results.Ok(lists);
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.WithName("GetMyShoppingLists")
+.WithOpenApi()
+.RequireAuthorization("Authenticated");
 
 
 
@@ -365,6 +504,8 @@ app.MapGet("/test-token", (ITokenService tokenService) =>
     }
 })
 .Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status500InternalServerError);
+.Produces(StatusCodes.Status500InternalServerError)
+.WithName("TestToken")
+.WithOpenApi();
 
 app.Run();
