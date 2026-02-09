@@ -1,4 +1,4 @@
-﻿namespace MacroPrep.Shared.Enums
+﻿namespace MacroPrep.Shared.Enums.Account
 {
     public enum AccountPlan
     {

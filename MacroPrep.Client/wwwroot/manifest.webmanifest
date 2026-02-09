@@ -1,6 +1,6 @@
 {
-  "name": "MacroPrep.Client",
-  "short_name": "MacroPrep.Client",
+  "name": "MacroPrep",
+  "short_name": "MacroPrep",
   "id": "./",
   "start_url": "./",
   "display": "standalone",

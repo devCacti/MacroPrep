@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using MacroPrep.Shared.Enums;
+using MacroPrep.Shared.Enums.Account;
 
 namespace MacroPrep.Server.Data.Entities
 {

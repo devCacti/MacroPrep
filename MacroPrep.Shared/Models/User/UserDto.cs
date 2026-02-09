@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using MacroPrep.Shared.Enums;
+using MacroPrep.Shared.Enums.Account;
 
-namespace MacroPrep.Shared.Models
+namespace MacroPrep.Shared.Models.User
 {
     // User Data Transfer Object (DTO) for API responses and requests
     public class UserDto

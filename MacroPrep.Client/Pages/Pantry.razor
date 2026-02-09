@@ -1,4 +1,14 @@
 ﻿@page "/pantry"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using MacroPrep.Client.Services
+@using MacroPrep.Client.Services.Offline
+@using MacroPrep.Shared.Models.ShoppingLists
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
+@inject ShoppingListsService OfflineService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
 
 <PageTitle>The Pantry</PageTitle>
 
@@ -11,66 +21,112 @@
                 <h1 class="page-title">The Pantry</h1>
                 <p class="page-subtitle">Manage your shopping lists</p>
             </div>
-            <button class="mp-btn mp-btn-primary add-btn">
+            <button class="mp-btn mp-btn-primary add-btn" @onclick="CreateNewList">
                 <i class="bi bi-plus-lg"></i> New List
             </button>
         </header>
 
         @* Lists Grid *@
         <div class="pantry-grid">
-            @foreach (var list in ShoppingLists)
+            @foreach (var vm in _viewModels)
             {
+                // Capture variable for closures
+                var currentVm = vm;
+
                 <div class="shopping-card">
-                    @* Card Header: Apply 'shared-bg' class if the list is shared *@
-                    <div class="card-header-section @(list.IsShared ? "shared-bg" : "")">
+
+                    @* Card Header *@
+                    <div class="card-header-section @(currentVm.List.IsShared ? "shared-bg" : "")">
                         <div class="header-top">
-                            <h3 class="list-title">@list.Title</h3>
-                            @if (list.IsShared)
+
+                            <input type="text"
+                                   class="list-title-input"
+                                   value="@currentVm.List.Name"
+                                   @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))"
+                                   placeholder="List Name" />
+
+                            @if (currentVm.List.IsShared)
                             {
-                                <span class="badge-shared"><i class="bi bi-people"></i> Shared</span>
+                                <span class="badge-shared"><i class="bi bi-people"></i></span>
                             }
+
+                            @* 3. Delete Button (Now Here) *@
+                            <button class="delete-list-btn"
+                                    @onclick="@(() => DeleteListAsync(currentVm))"
+                                    title="Delete List">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
 
+                        @* Progress Bar Logic *@
+                        @{
+                            var total = currentVm.Items.Count;
+                            var completed = currentVm.Items.Count(i => i.IsChecked);
+                            var percent = total == 0 ? 0 : (int)((double)completed / total * 100);
+                        }
+
                         <div class="progress-info">
-                            <span class="progress-text">@list.CompletedCount of @list.Items.Count items completed</span>
+                            <span class="progress-text">@completed of @total items completed</span>
                         </div>
 
                         <div class="progress-bar-track">
-                            <div class="progress-bar-fill" style="width: @(list.ProgressPercentage)%"></div>
+                            <div class="progress-bar-fill" style="width: @(percent)%"></div>
                         </div>
 
-                        @if (list.IsShared)
+                        @if (currentVm.List.Members.Count > 0 && currentVm.List.IsShared)
                         {
-                            <p class="shared-with">Shared with: @list.SharedWith</p>
+                            <p class="shared-with">
+                                Shared with: @string.Join(", ", currentVm.List.Members.Select(m => m.UserName))
+                            </p>
                         }
                     </div>
 
-                    @* List Items *@
+                    @* Card Body *@
                     <div class="card-body">
                         <div class="items-list">
-                            @foreach (var item in list.Items)
+                            @foreach (var item in currentVm.Items)
                             {
                                 <label class="item-row">
-                                    <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"/>
+                                    <input type="checkbox"
+                                           checked="@item.IsChecked"
+                                           class="custom-checkbox"
+                                           @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
+
                                     <div class="item-details">
-                                        <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
-                                        <span class="item-qty">@item.Quantity</span>
+                                        <span class="item-name @(item.IsChecked ? "strikethrough" : "")">
+                                            @item.Name
+                                        </span>
+                                        @if (item.Quantity > 1)
+                                        {
+                                            <span class="item-qty">x@(item.Quantity)</span>
+                                        }
                                     </div>
+
+                                    @* Delete Button *@
+                                    <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
+                                        <i class="bi bi-x"></i>
+                                    </button>
                                 </label>
                             }
                         </div>
 
                         @* Add Item Input *@
                         <div class="add-item-row">
-                            <input type="text" class="add-input" placeholder="Add item..." />
-                            <button class="mp-btn mp-btn-primary btn-icon-only">
+                            <input type="text"
+                                   class="add-input"
+                                   placeholder="Add item..."
+                                   @bind="_newInputs[currentVm.List.Id]"
+                                   @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
+
+                            <button class="mp-btn mp-btn-primary btn-icon-only"
+                                    @onclick="@(() => AddItem(currentVm))">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
                         </div>
 
-                        @* Card Footer *@
+                        @* Footer *@
                         <div class="card-footer-action">
-                            <button class="share-btn">
+                            <button class="share-btn disabled">
                                 <i class="bi bi-share"></i> Share List
                             </button>
                         </div>
@@ -83,87 +139,133 @@
 </div>
 
 @code {
-    private List<ShoppingListModel> ShoppingLists = new();
-
-    protected override void OnInitialized()
+    //View Models
+    public class ListViewModel
     {
-        // Mock Data based on your screenshot
-        ShoppingLists.Add(new ShoppingListModel
-            {
-                Title = "Weekly Groceries",
-                IsShared = false,
-                Items = new()
-            {
-                new() { Name = "Milk", Quantity = "2 gallons", IsChecked = false },
-                new() { Name = "Eggs", Quantity = "1 dozen", IsChecked = true },
-                new() { Name = "Bread", Quantity = "2 loaves", IsChecked = false },
-                new() { Name = "Chicken Breast", Quantity = "2 lbs", IsChecked = false },
-                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true }
-            }
-            });
-
-        ShoppingLists.Add(new ShoppingListModel
-            {
-                Title = "Weekly Groceries",
-                IsShared = false,
-                Items = new()
-            {
-                new() { Name = "Milk", Quantity = "2 gallons", IsChecked = false },
-                new() { Name = "Eggs", Quantity = "1 dozen", IsChecked = true },
-                new() { Name = "Bread", Quantity = "2 loaves", IsChecked = false },
-                new() { Name = "Chicken Breast", Quantity = "2 lbs", IsChecked = false },
-                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true },
-                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true },
-                new() { Name = "Broccoli", Quantity = "1 bunch", IsChecked = true }
-            }
-            });
-
-
-        ShoppingLists.Add(new ShoppingListModel
-            {
-                Title = "Party Supplies",
-                IsShared = true,
-                SharedWith = "Sarah, Mike",
-                Items = new()
-            {
-                new() { Name = "Chips", Quantity = "3 bags", IsChecked = false },
-                new() { Name = "Soda", Quantity = "2 liters", IsChecked = false },
-                new() { Name = "Paper Plates", Quantity = "1 pack", IsChecked = true },
-                new() { Name = "Ice Cream", Quantity = "1 gallon", IsChecked = false }
-            }
-            });
-
-        ShoppingLists.Add(new ShoppingListModel
-            {
-                Title = "Meal Prep Essentials",
-                IsShared = true,
-                SharedWith = "John",
-                Items = new()
-            {
-                new() { Name = "Brown Rice", Quantity = "2 lbs", IsChecked = false },
-                new() { Name = "Sweet Potatoes", Quantity = "5 lbs", IsChecked = false },
-                new() { Name = "Olive Oil", Quantity = "1 bottle", IsChecked = true },
-                new() { Name = "Greek Yogurt", Quantity = "2 tubs", IsChecked = false }
-            }
-            });
+        public ListDto List { get; set; } = new();
+        public List<ListItemDto> Items { get; set; } = new();
     }
 
-    public class ShoppingListModel
-    {
-        public string Title { get; set; } = "";
-        public bool IsShared { get; set; }
-        public string SharedWith { get; set; } = "";
-        public List<ShoppingItemModel> Items { get; set; } = new();
+    private List<ListViewModel> _viewModels = new();
+    private Dictionary<Guid, string> _newInputs = new();
 
-        // Helper to calculate progress
-        public int CompletedCount => Items.Count(i => i.IsChecked);
-        public int ProgressPercentage => Items.Count == 0 ? 0 : (int)((double)CompletedCount / Items.Count * 100);
+    private Guid _currentUserId = Guid.Empty;
+
+    private List<ListDto> ShoppingLists { get; set; } = new List<ListDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var idClaim = user.FindFirst("sub")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (Guid.TryParse(idClaim, out var parsedId))
+                _currentUserId = parsedId;
+        }
+
+        if (_currentUserId == Guid.Empty)
+        {
+            // Force logout because there is something very wrong with the authentication state if we can't get a valid user ID
+            await ForceLogout();
+            return;
+        }
+
+        await OfflineService.InitializeAsync();
+
+        var storedLists = await OfflineService.GetAllListsAsync(_currentUserId);
+
+        foreach (var list in storedLists)
+        {
+            var items = await OfflineService.GetItemsAsync(list.Id);
+
+            _viewModels.Add(new ListViewModel
+            {
+                List = list,
+                Items = items
+            });
+            _newInputs[list.Id] = "";
+        }
     }
 
-    public class ShoppingItemModel
+    private async Task ForceLogout()
     {
-        public string Name { get; set; } = "";
-        public string Quantity { get; set; } = "";
-        public bool IsChecked { get; set; }
+        await LocalStorage.RemoveItemAsync("authToken");
+        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+
+        Nav.NavigateTo("/login");
+    }
+
+    private async Task CreateNewList()
+    {
+        var newList = new ListDto
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = _currentUserId,
+            Name = "New List" + (_viewModels.Count + 1),
+        };
+
+        await OfflineService.SaveListAsync(newList);
+
+        _viewModels.Insert(0, new ListViewModel { List = newList });
+        _newInputs[newList.Id] = "";
+    }
+
+    private async Task UpdateListTitle(ListDto list, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName)) return;
+
+        list.Name = newName;
+        await OfflineService.SaveListAsync(list);
+    }
+
+    private async Task DeleteListAsync(ListViewModel viewModel)
+    {
+        _viewModels.Remove(viewModel);
+        await OfflineService.DeleteListAsync(viewModel.List.Id);
+    }
+
+    private async Task AddItem(ListViewModel viewModel)
+    {
+        if (!_newInputs.ContainsKey(viewModel.List.Id)) return;
+
+        var newItemName = _newInputs[viewModel.List.Id].Trim();
+
+        if (string.IsNullOrEmpty(newItemName)) return;
+
+        var newItem = new ListItemDto
+        {
+            Id = Guid.NewGuid(),
+            ListId = viewModel.List.Id,
+            Name = newItemName,
+            Quantity = 1,
+            IsChecked = false,
+        };
+
+        await OfflineService.AddItemAsync(newItem);
+
+        viewModel.Items.Add(newItem);
+        _newInputs[viewModel.List.Id] = "";
+    }
+
+    private async Task DeleteItem(ListViewModel viewModel, ListItemDto item)
+    {
+        await OfflineService.DeleteItemAsync(item.Id);
+        viewModel.Items.Remove(item);
+    }
+
+    private async Task ToggleItem(ListViewModel viewModel, ListItemDto item, bool isChecked)
+    {
+        item.IsChecked = isChecked;
+        await OfflineService.AddItemAsync(item); // Using AddItemAsync to update the item since it checks for existing ID
+    }
+
+    // Method to accept Enter Key for adding items
+    private async Task HandleKeyUp(KeyboardEventArgs e, ListViewModel viewModel)
+    {
+        if (e.Key == "Enter") await AddItem(viewModel);
     }
 }

@@ -37,16 +37,21 @@
 
                 <div class="form-group">
                     <label class="form-label">Date of Birth</label>
-                    @* Blazor's InputDate supports DateOnly automatically in .NET 7/8+ *@
                     <InputDate @bind-Value="_setupModel.DateOfBirth" class="form-input" />
                     <ValidationMessage For="@(() => _setupModel.DateOfBirth)" />
                 </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="mp-btn mp-btn-primary full-width" disabled="@_isLoading">
-                        @(_isLoading ? "Saving Profile..." : "Finish Setup")
+                <div class="form-actions" style="display: flex; gap: 1rem;">
+
+                    <button type="submit" class="mp-btn mp-btn-primary" style="flex: 2;" disabled="@_isLoading">
+                        @(_isLoading ? "Saving..." : "Finish Setup")
+                    </button>
+
+                    <button type="button" class="btn-outline-danger" style="flex: 1;" @onclick="ForceLogout">
+                        <i class="bi bi-box-arrow-right"></i> Log Out
                     </button>
                 </div>
+
             </EditForm>
         </div>
     </div>
@@ -65,7 +70,6 @@
 
             if (response.IsSuccessStatusCode)
             {
-                // Crucial: Refresh token to flip the 'setup_completed' claim to true
                 var refreshResponse = await Http.PostAsync("/api/auth/refresh", null);
                 if (refreshResponse.IsSuccessStatusCode)
                 {
@@ -78,7 +82,8 @@
                     // Notify the app state and let the AccessControl coordinator redirect to "/"
                     Nav.NavigateTo("/");
                 }
-                else {
+                else
+                {
                     //_errorMessage = "Setup saved, but couldn't refresh session. Please login again.";
                 }
             }
@@ -91,5 +96,17 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task ForceLogout()
+    {
+        // 1. Clear the bad/stuck token
+        await LocalStorage.RemoveItemAsync("authToken");
+
+        // 2. Notify Authentication State
+        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+
+        // 3. Force Redirect to Login (forceLoad: true clears any stale memory)
+        Nav.NavigateTo("/auth/login", forceLoad: true);
     }
 }

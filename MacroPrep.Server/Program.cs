@@ -1,7 +1,6 @@
 using MacroPrep.Server.Data;
 using MacroPrep.Server.Data.Entities;
 using MacroPrep.Server.Services;
-using MacroPrep.Shared.Models;
 using MacroPrep.Shared.Models.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using MacroPrep.Shared.Models.User;
 
 
 var builder = WebApplication.CreateBuilder(args);

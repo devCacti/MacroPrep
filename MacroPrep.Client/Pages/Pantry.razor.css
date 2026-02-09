@@ -60,8 +60,8 @@
 
 .header-top {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    gap: 1rem;
+    align-items: center;
     margin-bottom: 0.5rem;
 }
 
@@ -118,18 +118,19 @@
 /* 6. Card Body & Items */
 .card-body {
     padding: 1.5rem;
+    padding-top: 0;
 }
 
 .items-list {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
     margin-bottom: 1.5rem;
 }
 
 .item-row {
+    flex-grow: 1;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
     cursor: pointer;
 }
@@ -201,6 +202,14 @@
     gap: 0.5rem;
 }
 
+.share-btn.disabled {
+    background-color: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
     .share-btn:hover {
         background-color: #f8fafc;
         border-color: #cbd5e1;
@@ -222,3 +231,68 @@
         grid-template-columns: 1fr; /* Stack cards on mobile */
     }
 }
+
+
+.btn-delete-item {
+    display: flex;
+    background: none;
+    border: none;
+    color: red;
+    opacity: 0.3;
+    cursor: pointer;
+    margin-left: auto; /* Push to right */
+    font-size: 1.75rem;
+    transition: opacity 0.2s;
+}
+
+.item-row:hover .btn-delete-item {
+    opacity: 1;
+}
+
+/* Editable Title Input */
+.list-title-input {
+    flex-grow: 1;
+    font-size: 1.5rem; /* Matches h3 size */
+    font-weight: 600;
+    height: 40px;
+    color: #1f2937;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 2px 2px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+    .list-title-input:hover {
+        border-color: #e5e7eb; /* Light gray border on hover to show it's editable */
+    }
+
+    .list-title-input:focus {
+        outline: none;
+        background-color: #fff;
+        border-color: #3b82f6; /* Blue border on focus */
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
+/* Delete List Button (Footer) */
+.delete-list-btn {
+    display: flex;
+    align-items: center;
+    background: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-size: 1.5rem;
+    margin-left: auto; /* Push to the right */
+    transition: var(--smooth);
+    border-radius: 12px;
+}
+
+    .delete-list-btn:hover {
+        color: #ef4444; /* Red on hover */
+        border: 1px solid red;
+    }

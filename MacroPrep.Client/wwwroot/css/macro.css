@@ -394,11 +394,14 @@ i.bi {
 
 /* The Logout Button Style */
 .btn-outline-danger {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    max-width: max-content;
     background: rgb(255 225 225);
     border: 1px solid #ef4444 !important;
     color: #ef4444;
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: 15px;
     font-weight: var(--weight-medium);
     cursor: pointer;
     transition: var(--smooth);
@@ -417,7 +420,7 @@ i.bi {
     border: 1px solid #9333ea;
     color: #9333ea;
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: 15px;
     font-weight: var(--weight-medium);
     cursor: pointer;
     transition: var(--smooth);

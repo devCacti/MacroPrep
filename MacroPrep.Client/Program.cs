@@ -4,6 +4,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MacroPrep.Client.Services.Offline;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -44,6 +45,8 @@ if (builder.HostEnvironment.IsDevelopment())
         client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
         .AddHttpMessageHandler<CustomHttpHandler>();
 }
+
+builder.Services.AddScoped<ShoppingListsService>();
 
 // Register a default HttpClient that uses the "API" configuration, so it can be injected directly into components and services
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
