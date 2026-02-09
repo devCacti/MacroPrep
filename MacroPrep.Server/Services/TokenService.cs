@@ -23,17 +23,19 @@ namespace MacroPrep.Server.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
 
             var claims = new[] {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), // Subject Claim (User ID)
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName), // Unique Name Claim (Username)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Subject Claim (User ID)
+                new Claim(ClaimTypes.Name, user.UserName), // Unique Name Claim (Username)
                 new Claim("sid", session.Id.ToString()), // Session ID Claim
                 new Claim("setup_completed", user.HasCompletedSetup.ToString().ToLower())
             };
+
+            var tokenExpiration = DateTime.UtcNow.AddMinutes(15);
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: session.ExpiresAt.DateTime,
+                expires: tokenExpiration,
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
 

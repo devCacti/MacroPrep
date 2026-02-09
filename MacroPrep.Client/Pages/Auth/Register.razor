@@ -84,11 +84,10 @@
 
             if (response.IsSuccessStatusCode)
             {
-                // Logic Choice: Auto-login after registration or redirect to login.
-                // Professional standard: Auto-login and push to Account Setup.
+                // Response is the same in login and regiser, so we can reuse the same model
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-                // Assume you have a helper or state provider to handle this storage
-                // await LocalStorage.SetItemAsync("authToken", result.Token);
+
+                await LocalStorage.SetItemAsync("authToken", result.Token);
 
                 Nav.NavigateTo("/auth/account-setup");
             }

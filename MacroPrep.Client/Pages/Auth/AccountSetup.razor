@@ -3,6 +3,7 @@
 @using MacroPrep.Shared.Models.Auth
 @using Blazored.LocalStorage
 @using MacroPrep.Client.Services
+@using Microsoft.AspNetCore.Components.Forms
 @inject ILocalStorageService LocalStorage
 @inject HttpClient Http
 @inject NavigationManager Nav
@@ -75,6 +76,9 @@
 
                     // Notify the app state and let the AccessControl coordinator redirect to "/"
                     Nav.NavigateTo("/");
+                }
+                else {
+                    //_errorMessage = "Setup saved, but couldn't refresh session. Please login again.";
                 }
             }
         }

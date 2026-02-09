@@ -7,7 +7,7 @@
 <div class="page">
     <AuthorizeView>
         <Authorized>
-            @if (context.User.FindFirst("setup_completed")?.Value != "true")
+            @if (context.User.FindFirst("setup_completed")?.Value == "true")
             {
                 <div class="sidebar">
                     <NavMenu /> 

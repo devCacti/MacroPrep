@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    // Tells Swagger: "Whenever you see DateOnly, treat it as a string formatted as a date"
+    c.MapType<DateOnly>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date",
+        Example = new Microsoft.OpenApi.Any.OpenApiString("2000-01-01")
+    });
+});
 
 //if (builder.Environment.IsDevelopment())
 //{
@@ -77,6 +89,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Helper method to configure cookie policy for authentication 
 void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTimeOffset expires)
@@ -87,7 +101,7 @@ void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTim
         Secure = true,
         SameSite = SameSiteMode.Strict,
         Expires = expires,
-        Path = "/api/auth"
+        Path = builder.Environment.IsProduction() ? "/api/auth" : "/auth" // Different in Development vs Production due to how the client and server are hosted (same origin in production, different origins in development)
     };
 
     context.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
@@ -207,7 +221,11 @@ authGroup.MapPost("/complete-setup", async (AccountSetupRequest request, AppDbCo
     var userGuid = Guid.Parse(userIdClaim);
     var userEntity = await db.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
 
-    if (userEntity == null) return Results.NotFound();
+    if (userEntity == null)
+        return Results.NotFound();
+
+    if (userEntity.HasCompletedSetup)
+        return Results.Conflict(new { Message = "Account setup is already done for this user."});
 
     // Map the new data
     userEntity.FirstName = request.FirstName;
@@ -223,6 +241,8 @@ authGroup.MapPost("/complete-setup", async (AccountSetupRequest request, AppDbCo
 .Produces(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.Status401Unauthorized)
+.Produces(StatusCodes.Status403Forbidden)
+.Produces(StatusCodes.Status409Conflict)
 .WithName("CompleteAccountSetup")
 .WithOpenApi()
 .RequireAuthorization("UncompletedSetup"); // Only allow users who have NOT completed setup to access this endpoint
