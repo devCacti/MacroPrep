@@ -1,0 +1,112 @@
+﻿@page "/auth/account-setup"
+
+@using MacroPrep.Shared.Models.Auth
+@using Blazored.LocalStorage
+@using MacroPrep.Client.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject ILocalStorageService LocalStorage
+@inject IHttpClientFactory HttpFactory
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="auth-layout">
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1 class="macroprep-title">MacroPrep</h1>
+            <p class="page-subtitle">Let's get to know you better.</p>
+        </div>
+
+        <div class="mp-card auth-card">
+            <EditForm Model="_setupModel" OnValidSubmit="HandleSetup">
+                <DataAnnotationsValidator />
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <InputText @bind-Value="_setupModel.FirstName" class="form-input" placeholder="e.g. John" />
+                        <ValidationMessage For="@(() => _setupModel.FirstName)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Last Name (Optional)</label>
+                        <InputText @bind-Value="_setupModel.LastName" class="form-input" placeholder="e.g. Doe" />
+                        <ValidationMessage For="@(() => _setupModel.LastName)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+                    <InputDate @bind-Value="_setupModel.DateOfBirth" class="form-input" />
+                    <ValidationMessage For="@(() => _setupModel.DateOfBirth)" />
+                </div>
+
+                <div class="form-actions" style="display: flex; gap: 1rem;">
+
+                    <button type="submit" class="mp-btn mp-btn-primary" style="flex: 2;" disabled="@_isLoading">
+                        @(_isLoading ? "Saving..." : "Finish Setup")
+                    </button>
+
+                    <button type="button" class="btn-outline-danger" style="flex: 1;" @onclick="ForceLogout">
+                        <i class="bi bi-box-arrow-right"></i> Log Out
+                    </button>
+                </div>
+
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private AccountSetupRequest _setupModel = new();
+    private bool _isLoading = false;
+
+    private async Task HandleSetup()
+    {
+        _isLoading = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("/api/auth/complete-setup", _setupModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var refreshResponse = await Http.PostAsync("/api/auth/refresh", null);
+                if (refreshResponse.IsSuccessStatusCode)
+                {
+                    var result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>();
+                    await LocalStorage.SetItemAsync("authToken", result!.Token);
+
+                    // Update the auth state so the app knows setup is done and can redirect accordingly
+                    ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
+
+                    // Notify the app state and let the AccessControl coordinator redirect to "/"
+                    Nav.NavigateTo("/");
+                }
+                else
+                {
+                    //_errorMessage = "Setup saved, but couldn't refresh session. Please login again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Setup error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ForceLogout()
+    {
+        // 1. Clear the bad/stuck token
+        await LocalStorage.RemoveItemAsync("authToken");
+
+        // 2. Notify Authentication State
+        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+
+        // 3. Force Redirect to Login (forceLoad: true clears any stale memory)
+        Nav.NavigateTo("/auth/login", forceLoad: true);
+    }
+}

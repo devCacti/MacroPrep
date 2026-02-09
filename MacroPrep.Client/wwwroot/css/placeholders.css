@@ -1,0 +1,44 @@
+﻿/* Breathing Animation Keyframes */
+@keyframes breathe {
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
+/* Base Placeholder Class */
+.breathing-placeholder {
+    background-color: #e2e8f0; /* Slate-200 */
+    color: transparent !important; /* Hide any text inside */
+    border-color: transparent !important;
+    cursor: default;
+    user-select: none;
+    animation: breathe 1.5s infinite ease-in-out;
+    border-radius: 6px; /* Default radius */
+}
+
+/* Specific shapes/sizes matching your UI */
+.ph-text-lg {
+    height: 1.5rem; /* Matches h2 */
+    width: 180px;
+    margin-bottom: 0.25rem;
+}
+
+.ph-text-sm {
+    height: 0.875rem; /* Matches small text */
+    width: 120px;
+    margin-top: 0.25rem;
+}
+
+.ph-avatar {
+    background-color: #d8b4fe; /* Lighter purple placeholder */
+    animation: breathe 1.5s infinite ease-in-out;
+    /* Retain original shape properties from your CSS */
+}

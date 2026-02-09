@@ -1,0 +1,34 @@
+﻿@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+@code {
+    protected override async Task OnParametersSetAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // Check the claim we added to the JWT in the previous step
+            var setupClaim = user.FindFirst("setup_completed")?.Value;
+            bool hasCompletedSetup = setupClaim?.ToLower() == "true";
+
+            var currentUri = Nav.ToBaseRelativePath(Nav.Uri).ToLower();
+
+            // Logic: If setup is NOT done, and they aren't on an "Auth" page, force them to Setup.
+            if (!hasCompletedSetup)
+            {
+                // We allow /auth/account-setup but block everything else (Dashboard, Settings, etc.)
+                if (!currentUri.Contains("auth/account-setup"))
+                {
+                    Nav.NavigateTo("/auth/account-setup");
+                }
+            }
+            // Logic: If setup IS done, but they try to go back to the setup page manually.
+            else if (hasCompletedSetup && currentUri.Contains("auth/account-setup"))
+            {
+                Nav.NavigateTo("/"); // Send them home
+            }
+        }
+    }
+}
