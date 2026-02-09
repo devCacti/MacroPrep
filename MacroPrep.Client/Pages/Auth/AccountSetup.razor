@@ -5,6 +5,7 @@
 @using MacroPrep.Client.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject ILocalStorageService LocalStorage
+@inject IHttpClientFactory HttpFactory
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthStateProvider
@@ -60,12 +61,12 @@
         _isLoading = true;
         try
         {
-            var response = await Http.PostAsJsonAsync("api/auth/complete-setup", _setupModel);
+            var response = await Http.PostAsJsonAsync("/api/auth/complete-setup", _setupModel);
 
             if (response.IsSuccessStatusCode)
             {
                 // Crucial: Refresh token to flip the 'setup_completed' claim to true
-                var refreshResponse = await Http.PostAsync("api/auth/refresh", null);
+                var refreshResponse = await Http.PostAsync("/api/auth/refresh", null);
                 if (refreshResponse.IsSuccessStatusCode)
                 {
                     var result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>();

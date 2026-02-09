@@ -23,7 +23,8 @@ namespace MacroPrep.Client.Services
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.RequestUri!.AbsolutePath.Contains("/auth/"))
+            var path = request.RequestUri!.AbsolutePath.ToLower();
+            if (path.Contains("/login") || path.Contains("/register"))
                 return await base.SendAsync(request, cancellationToken);
 
             var token = await _localStorage.GetItemAsync<string>("authToken");
@@ -38,35 +39,60 @@ namespace MacroPrep.Client.Services
 
                 try
                 {
-                    var authClient = _httpClientFactory.CreateClient("AuthClient");
+                    var refreshSuccessful = await RefreshTokenAsync();
 
-                    var refreshResponse = await authClient.PostAsync("api/auth/refresh", null, cancellationToken);
-
-                    if (refreshResponse.IsSuccessStatusCode)
+                    if (refreshSuccessful)
                     {
-                        var result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>();
+                        var newToken = await _localStorage.GetItemAsync<string>("authToken");
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
 
-                        await _localStorage.SetItemAsync("authToken", result!.Token);
-
-                        var newRequest = await CloneRequest(request);
-                        newRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", result.Token);
-
-                        _isRefreshingToken = false; // Reset the flag before retrying the request
-                        return await base.SendAsync(newRequest, cancellationToken);
+                        _isRefreshingToken = false;
+                        return await base.SendAsync(request, cancellationToken);
                     }
                 }
                 catch (Exception)
                 {
                     // Handle exceptions (e.g., network errors) if needed
+                    throw;
                 }
 
                 // Redirect to login if the response is not 200 OK or if an exception occurs
                 _isRefreshingToken = false;
                 await _localStorage.RemoveItemAsync("authToken");
-                _navigationManager.NavigateTo("/login");
+                _navigationManager.NavigateTo("/auth/login", true);
             }
 
             return response;
+        }
+
+        private async Task<bool> RefreshTokenAsync()
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("AuthClient");
+
+                var response = await client.PostAsync("api/auth/refresh", null);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+                    await _localStorage.SetItemAsync("authToken", result!.Token);
+
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task ForceLogout()
+        {
+            await _localStorage.RemoveItemAsync("authToken");
+            _navigationManager.NavigateTo("/auth/login", true);
         }
 
         private async Task<HttpRequestMessage> CloneRequest(HttpRequestMessage request)
@@ -90,5 +116,4 @@ namespace MacroPrep.Client.Services
             return clone;
         }
     }
-
 }

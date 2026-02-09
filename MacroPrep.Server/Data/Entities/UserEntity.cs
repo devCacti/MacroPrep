@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MacroPrep.Shared.Enums;
 
 namespace MacroPrep.Server.Data.Entities
 {
@@ -30,9 +31,10 @@ namespace MacroPrep.Server.Data.Entities
         public byte[] RowVersion { get; set; } = [];
 
         public bool IsVerified { get; set; } = false;
+        public bool HasCompletedSetup { get; set; } = false; // This can be used to track if the user has completed any initial setup steps (e.g., onboarding, profile completion)
 
-        // Will determine access even if the user has already created the account
-        public bool HasCompletedSetup { get; set; } = false;
+        public AccountType Type { get; set; } = AccountType.User;
+        public AccountPlan Plan { get; set; } = AccountPlan.Free;
 
         public string? TimeZoneId { get; set; }
 

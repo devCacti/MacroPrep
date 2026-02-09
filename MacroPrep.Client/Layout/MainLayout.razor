@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
 
 @* Component that will handle redirection logic*@
 <AccessControl />
@@ -7,18 +8,39 @@
 <div class="page">
     <AuthorizeView>
         <Authorized>
-            @if (context.User.FindFirst("setup_completed")?.Value == "true")
+            @{
+                var isSetup = context.User.FindFirst("setup_completed")?.Value == "true";
+                var isAuthPage = Nav.Uri.Contains("account-setup") || Nav.Uri.Contains("login") || Nav.Uri.Contains("register");
+            }
+            @if (isSetup)
             {
+                @* Shows both *@
                 <div class="sidebar">
                     <NavMenu /> 
                 </div>
+                <main>
+                    <article class="content px-4">
+                        @Body
+                    </article>
+                </main>
+            } 
+            else if (isAuthPage)
+            {
+                @* Shows the Body without the navbar*@
+                <main>
+                    <article class="content px-4">
+                        @Body
+                    </article>
+                </main>
             }
         </Authorized>
+        <NotAuthorized>
+            @* Shows the Body without the navbar*@
+            <main>
+                <article class="content px-4">
+                    @Body
+                </article>
+            </main>
+        </NotAuthorized>
     </AuthorizeView>
-
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
 </div>

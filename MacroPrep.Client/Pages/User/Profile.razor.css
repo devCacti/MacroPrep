@@ -56,32 +56,103 @@
     color: #64748b;
 }
 
-.badge-premium {
-    display: inline-block;
-    background-color: #9333ea;
-    color: white;
+/* 1. Base Badge Structure (Shared) */
+.badge {
     font-size: 0.7rem;
     font-weight: var(--weight-bold);
-    padding: 0.2rem 0.6rem;
     border-radius: 12px;
     width: fit-content;
+    padding: 0.3rem 0.6rem;
+    margin-top: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
+}
+
+/* 2. The "Status Quo" Free Badge */
+.badge-free {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-size: 0.7rem;
+    font-weight: var(--weight-bold);
+    width: fit-content;
+}
+
+/* 3. The "Luxury" Premium Badge */
+.badge-premium {
+    background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(147, 51, 234, 0.35);
+    font-size: 0.7rem;
+    font-weight: var(--weight-bold);
+    padding: 0.3rem 0.8rem;
+    width: fit-content;
+    animation: gentle-pulse-premium 3s infinite ease-in-out;
+}
+
+/* 4. The "Radioactive" Admin Badge */
+.badge-admin {
+    /* High contrast Neon Green */
+    background-color: #dcfce7; /* Very light green bg */
+    color: #15803d; /* Dark green text */
+    border: 1px solid #86efac; /* Green border */
+    /* The Glow: Sharp and technical */
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 4px rgba(74, 222, 128, 0.2);
+    margin-left: 0.5rem;
+    /* Inherit base */
+    font-size: 0.7rem;
+    font-weight: var(--weight-bolder);
+    width: fit-content;
+    margin-top: 0.25rem;
+    padding: 0.3rem 1rem;
+    animation: gentle-pulse-admin 3s infinite ease-in-out;
+}
+
+/* 5. Animation Keyframes */
+@keyframes gentle-pulse-premium {
+    0% {
+        box-shadow: 0 0px 15px rgba(147, 51, 234, 0.35);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0px 25px rgba(147, 51, 234, 0.5); /* Glow expands */
+        transform: scale(1.02); /* Tiny size bump */
+    }
+
+    100% {
+        box-shadow: 0 0px 15px rgba(147, 51, 234, 0.35);
+        transform: scale(1);
+    }
+}
+
+@keyframes gentle-pulse-admin {
+    0% {
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 4px rgba(74, 222, 128, 0.2);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0 12px rgba(74, 222, 128, 0.6), inset 0 0 6px rgba(74, 222, 128, 0.3); /* Glow intensifies */
+        transform: scale(1.02);
+    }
+
+    100% {
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 4px rgba(74, 222, 128, 0.2);
+        transform: scale(1);
+    }
+}
+
+
+
+.badges {
+    display: flex;
+    gap: 0.5rem;
     margin-top: 0.25rem;
 }
-
-.btn-outline-purple {
-    background: transparent;
-    border: 1px solid #9333ea;
-    color: #9333ea;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: var(--weight-medium);
-    cursor: pointer;
-    transition: var(--smooth);
-}
-
-    .btn-outline-purple:hover {
-        background-color: #faf5ff;
-    }
 
 /* 3. Settings Cards */
 .settings-stack {
@@ -153,21 +224,6 @@
     color: #94a3b8;
 }
 
-.action-link {
-    background: none;
-    border: none;
-    color: #10b981; /* Emerald Green */
-    font-weight: var(--weight-medium);
-    font-size: var(--text-sm);
-    cursor: pointer;
-    padding: 0;
-}
-
-    .action-link:hover {
-        text-decoration: underline;
-        color: #059669;
-    }
-
 /* 6. Mobile Optimization */
 @media (max-width: 640px) {
     .page-wrapper {
@@ -184,4 +240,13 @@
     .btn-outline-purple {
         width: 100%;
     }
+}
+
+.logout-card {
+    border-color: rgb(255, 100, 100, 0.5);
+    box-shadow: 0 0px 10px rgba(255, 100, 100, 0.5);
+}
+
+.logout-card .mp-btn {
+    gap: 1rem;
 }

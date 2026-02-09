@@ -1,0 +1,175 @@
+﻿@page "/user/profile"
+
+@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components.Authorization
+@using MacroPrep.Client.Services
+@using MacroPrep.Shared.Models
+@using MacroPrep.Shared.Enums
+
+@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject IHttpClientFactory ClientFactory
+
+<PageTitle>The Vault - User Profile</PageTitle>
+
+@* Ensure placeholders.css is linked in your index.html *@
+
+<div class="page-wrapper">
+    <div class="content-container">
+
+        @* Header *@
+        <header class="page-header">
+            <div class="header-text">
+                <h1 class="page-title">The Vault</h1>
+                <p class="page-subtitle">Manage your account and app settings</p>
+            </div>
+        </header>
+
+        @* --- PROFILE CARD SECTION --- *@
+        <section class="profile-card">
+
+            <div class="profile-left">
+                @if (_profile == null)
+                {
+                    @* LOADING STATE *@
+                    <div class="avatar-circle ph-avatar"></div>
+                    <div class="profile-details">
+                        <div class="breathing-placeholder ph-text-lg"></div>
+                        <div class="breathing-placeholder ph-text-sm"></div>
+                    </div>
+                }
+                else
+                {
+                    @* LOADED STATE *@
+                    <div class="avatar-circle">@GetInitials()</div>
+                    <div class="profile-details">
+                        <h2 class="user-name">@_profile.FullName</h2>
+                        <span class="user-email">@@@_profile.UserName</span>
+                        <div class="badges">
+                            @* DYNAMIC BADGE LOGIC *@
+                            @if (_profile.Plan == AccountPlan.Premium)
+                            {
+                                <span class="badge badge-premium">Premium Plan</span>
+                            }
+                            else if (_profile.Plan == AccountPlan.Family)
+                            {
+                                <span class="badge badge-premium" style="background-color: #ec4899;">Family Plan</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-free">Free Account</span>
+                            }
+
+                            @* OPTIONAL: Show Admin Badge *@
+                            @if (_profile.Type == AccountType.Admin)
+                            {
+                                <span class="badge badge-admin">Admin</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <button class="btn-outline-purple disabled">Edit Profile</button>
+        </section>
+
+        <div class="settings-stack">
+
+            @* 1. Account Section *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-person section-icon"></i>
+                    <h3 class="section-title">Account</h3>
+                </div>
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Profile Information</span>
+                            <span class="setting-desc">Update your personal details</span>
+                        </div>
+                        <button class="action-link disabled">Edit</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Email Preferences</span>
+                            @* Show loaded email or a generic placeholder text *@
+                            <span class="setting-desc">@(_profile?.Email ?? "Loading...")</span>
+                        </div>
+                        <button class="action-link disabled">Change</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Password</span>
+                            <span class="setting-desc">Last changed 30 days ago</span>
+                        </div>
+                        <button class="action-link disabled">Update</button>
+                    </div>
+                </div>
+            </div>
+
+            @* ... (Your Notifications, Privacy, Appearance, Data Cards remain here) ... *@
+            @* I omitted them for brevity, but keep them in your file! *@
+
+            @* 7. Logout Button *@
+            <div class="settings-card logout-card">
+                <div class="card-content">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label text-danger">Log Out</span>
+                            <span class="setting-desc">End your current session</span>
+                        </div>
+                        <button class="btn-outline-danger" @onclick="Logout">
+                            <i class="bi bi-box-arrow-right"></i> Log Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    @* --- SETTINGS STACK --- *@
+</div>
+
+@code {
+    private UserDto? _profile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Optional: Artificial delay to test the animation
+            // await Task.Delay(2000);
+
+            // 1. Create the API client (Automatically attaches Token)
+            var client = ClientFactory.CreateClient("API");
+
+            // 2. Fetch the data
+            _profile = await client.GetFromJsonAsync<UserDto>("api/user/profile");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load profile: {ex.Message}");
+            // In a real app, you might set an error state here
+        }
+    }
+
+    private string GetInitials()
+    {
+        if (_profile == null) return "U";
+
+        // Take first letter of First Name
+        var first = _profile.FirstName?.FirstOrDefault().ToString() ?? "";
+
+        // Take first letter of Last Name (if it exists)
+        var last = _profile.LastName?.FirstOrDefault().ToString() ?? "";
+
+        return (first + last).ToUpper();
+    }
+
+    private async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+        Nav.NavigateTo("/auth/login", true);
+    }
+}

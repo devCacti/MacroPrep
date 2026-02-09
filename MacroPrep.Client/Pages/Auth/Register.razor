@@ -2,6 +2,7 @@
 
 @using MacroPrep.Shared.Models.Auth
 @using Blazored.LocalStorage
+@using MacroPrep.Client.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
 @inject HttpClient Http
@@ -87,7 +88,10 @@
                 // Response is the same in login and regiser, so we can reuse the same model
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-                await LocalStorage.SetItemAsync("authToken", result.Token);
+                await LocalStorage.SetItemAsync("authToken", result!.Token);
+
+                ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
+
 
                 Nav.NavigateTo("/auth/account-setup");
             }

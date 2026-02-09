@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MacroPrep.Shared.Enums;
 
 namespace MacroPrep.Shared.Models
 {
@@ -15,6 +16,9 @@ namespace MacroPrep.Shared.Models
 
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
+        public string FullName => $"{FirstName} {LastName}".Trim();
+
+        public DateOnly? DateOfBirth { get; set; }
 
         //MeasurementSystem...  (To be implemented)
         //DietPreferences...    (To be implemented)
@@ -24,6 +28,8 @@ namespace MacroPrep.Shared.Models
 
         public string? TimeZoneId { get; set; }
 
+        public AccountType Type { get; set; } = AccountType.User;
+        public AccountPlan Plan { get; set; } = AccountPlan.Free;
 
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }

@@ -1,4 +1,6 @@
-﻿<nav class="macroprep-nav">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<nav class="macroprep-nav">
     <div class="brand-container">
         <a class="macroprep-brand" href="">MacroPrep</a>
     </div>
@@ -16,9 +18,9 @@
             <i class="bi bi-basket2-fill"></i>
             <span>The Pantry</span>
         </NavLink>
-        <NavLink class="nav-item" href="settings">
-            <i class="bi bi-gear"></i>
-            <span>The Vault</span>
+        <NavLink class="nav-item" href="user/profile">
+            <i class="bi bi-person"></i>
+            <span>Profile</span>
         </NavLink>
     </div>
 </nav>

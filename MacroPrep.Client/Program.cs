@@ -6,8 +6,11 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+
+var serverAddress = "https://localhost:7273/";
 
 // Add Authorization Core
 builder.Services.AddAuthorizationCore();
@@ -19,13 +22,28 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddTransient<CustomHttpHandler>();
 
 // Configure named HttpClients for authentication and API calls
-builder.Services.AddHttpClient("AuthClient", client =>
-    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+if (builder.HostEnvironment.IsDevelopment())
+{
+    builder.Services.AddHttpClient("AuthClient", client => 
+        client.BaseAddress = new Uri(serverAddress))
+        .AddHttpMessageHandler<CustomHttpHandler>();
+} else {
+    builder.Services.AddHttpClient("AuthClient", client => 
+        client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+        .AddHttpMessageHandler<CustomHttpHandler>();
+}
 
 // The "ApiClient" will automatically include the JWT token in the Authorization header and handle token refresh
-builder.Services.AddHttpClient("API", client =>
-    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
-    .AddHttpMessageHandler<CustomHttpHandler>();
+if (builder.HostEnvironment.IsDevelopment())
+{
+    builder.Services.AddHttpClient("API", client =>
+        client.BaseAddress = new Uri(serverAddress))
+        .AddHttpMessageHandler<CustomHttpHandler>();
+} else {
+    builder.Services.AddHttpClient("API", client =>
+        client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+        .AddHttpMessageHandler<CustomHttpHandler>();
+}
 
 // Register a default HttpClient that uses the "API" configuration, so it can be injected directly into components and services
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));

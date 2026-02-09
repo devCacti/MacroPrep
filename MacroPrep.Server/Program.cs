@@ -30,16 +30,17 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-//if (builder.Environment.IsDevelopment())
-//{
-// Will use SQLite in development, but SQL Server is better for production and more realistic testing
-//    builder.Services.AddDbContext<AppDbContext>(options =>
-//        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-//} else {
-// Will use SQL Server in production, but SQLite is easier for development and testing
-//    builder.Services.AddDbContext<AppDbContext>(options =>
-//        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-//}
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Development Testing", policy =>
+    {
+        policy.WithOrigins("https://localhost:7050", "https://localhost:7273")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -82,13 +83,17 @@ var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 await db.Database.MigrateAsync();
 
 // Configure the HTTP request pipeline.
+
+app.UseHttpsRedirection();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    app.UseCors("Development Testing");
 }
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -101,7 +106,7 @@ void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTim
         Secure = true,
         SameSite = SameSiteMode.Strict,
         Expires = expires,
-        Path = builder.Environment.IsProduction() ? "/api/auth" : "/auth" // Different in Development vs Production due to how the client and server are hosted (same origin in production, different origins in development)
+        Path = "/api/auth"
     };
 
     context.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
@@ -109,6 +114,11 @@ void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTim
 
 // API AUTH GROUP
 var authGroup = app.MapGroup("/auth");
+
+if (app.Environment.IsDevelopment())
+{
+    authGroup = app.MapGroup("/api/auth");
+}
 
 // Register Endpoint
 authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, ITokenService tokenService, HttpContext context) =>
@@ -150,24 +160,10 @@ authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, 
     db.UserSessions.Add(session);
     await db.SaveChangesAsync();
 
-    // Return the DTO (Data Transfer Object)
-    var userDto = new UserDto
-    {
-        Id = newUser.Id,
-        UserName = newUser.UserName,
-        Email = newUser.Email,
-        FirstName = newUser.FirstName,
-        LastName = newUser.LastName,
-        IsVerified = newUser.IsVerified,
-        CreatedAt = newUser.CreatedAt,
-        UpdatedAt = newUser.UpdatedAt
-    };
-
     SetSessionCookie(context, session.Id, session.Token, session.ExpiresAt);
 
     return Results.Ok(new {
-        Token = tokenService.GenerateToken(newUser, session),
-        User = userDto
+        Token = tokenService.GenerateToken(newUser, session)
     });
 })
 .Produces<UserDto>(StatusCodes.Status200OK)
@@ -285,6 +281,40 @@ authGroup.MapPost("/refresh", async (AppDbContext db, ITokenService tokenService
 .WithOpenApi()
 .RequireAuthorization("Authenticated");
 
+// API USER GROUP
+var userGroup = app.MapGroup("/user");
+
+if (app.Environment.IsDevelopment())
+{
+    userGroup = app.MapGroup("/api/user");
+}
+
+userGroup.MapGet("/profile", async (ClaimsPrincipal user, AppDbContext db) =>
+{
+    var id = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "");
+
+    var userDto = await db.Users
+        .Where(u => u.Id == id)
+        .Select(u => new UserDto
+        {
+            FirstName = u.FirstName,
+            LastName = u.LastName,
+            UserName = u.UserName,
+            Email = u.Email,
+            Plan = u.Plan,
+            Type = u.Type,
+        })
+        .FirstOrDefaultAsync();
+
+    if (userDto == null) return Results.NotFound();
+    return Results.Ok(userDto);
+})
+.Produces<UserDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.WithName("GetUserProfile")
+.WithOpenApi()
+.RequireAuthorization("Authenticated")
+.RequireAuthorization("CompletedSetup"); // Only allow users who have completed setup to access this endpoint
 
 // TEST ENDPOINT: Checks if Token Generation is the killer
 app.MapGet("/test-token", (ITokenService tokenService) =>
@@ -304,7 +334,7 @@ app.MapGet("/test-token", (ITokenService tokenService) =>
         {
             Id = Guid.NewGuid(),
             Token = "fake-token",
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
+            ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(15) // Not valid for long, but enough for testing
         };
 
         // 2. Try to Generate Token

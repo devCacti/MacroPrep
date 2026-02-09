@@ -90,7 +90,7 @@
                 ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
 
                 // 3. Redirect to Dashboard - Can't happen without the previous step (No. 2)
-                Nav.NavigateTo("/");
+                Nav.NavigateTo("/", true);
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
             {
