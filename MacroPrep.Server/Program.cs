@@ -4,6 +4,10 @@ using MacroPrep.Server.Services;
 using MacroPrep.Shared.Models;
 using MacroPrep.Shared.Models.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +33,32 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy("CompletedSetup", policy => policy.RequireClaim("setup_completed", "true"));
+    options.AddPolicy("UncompletedSetup", policy => policy.RequireClaim("setup_completed", "false"));
+});
 
 var app = builder.Build();
 
@@ -63,9 +93,10 @@ void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTim
     context.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
 }
 
-// API GROUP
-var authGroup = app.MapGroup("/api/auth");
+// API AUTH GROUP
+var authGroup = app.MapGroup("/auth");
 
+// Register Endpoint
 authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, ITokenService tokenService, HttpContext context) =>
 {
     // Input Validation
@@ -126,11 +157,12 @@ authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, 
     });
 })
 .Produces<UserDto>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status409Conflict)
 .Produces(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status409Conflict)
 .WithName("Register")
 .WithOpenApi();
 
+// Login Endpoint
 authGroup.MapPost("/login", async (LoginRequest request, AppDbContext db, ITokenService tokenService, HttpContext context) =>
 {
     // Input Validation
@@ -164,6 +196,37 @@ authGroup.MapPost("/login", async (LoginRequest request, AppDbContext db, IToken
 .WithName("Login")
 .WithOpenApi();
 
+// Complete Account Setup Endpoint
+authGroup.MapPost("/complete-setup", async (AccountSetupRequest request, AppDbContext db, ClaimsPrincipal user) =>
+{
+    // Extract UserID from the JWT Claim
+    var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim))
+        return Results.Unauthorized();
+
+    var userGuid = Guid.Parse(userIdClaim);
+    var userEntity = await db.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
+
+    if (userEntity == null) return Results.NotFound();
+
+    // Map the new data
+    userEntity.FirstName = request.FirstName;
+    userEntity.LastName = request.LastName;
+    userEntity.DateOfBirth = request.DateOfBirth;
+    userEntity.HasCompletedSetup = true; // The flag that unlocks the rest of the app
+    userEntity.UpdatedAt = DateTimeOffset.UtcNow;
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { Message = "Profile updated successfully" });
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status401Unauthorized)
+.WithName("CompleteAccountSetup")
+.WithOpenApi()
+.RequireAuthorization("UncompletedSetup"); // Only allow users who have NOT completed setup to access this endpoint
+
 // Refresh Token Endpoint - This will be used to refresh the JWT token using the session cookie
 authGroup.MapPost("/refresh", async (AppDbContext db, ITokenService tokenService, HttpContext context) =>
 {
@@ -194,11 +257,49 @@ authGroup.MapPost("/refresh", async (AppDbContext db, ITokenService tokenService
 
     SetSessionCookie(context, session.Id, session.Token, session.ExpiresAt);
 
-    return Results.Ok( new { Token = tokenService.GenerateToken(session.User!, session)});
+    return Results.Ok(new { Token = tokenService.GenerateToken(session.User!, session) });
 })
 .Produces(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status401Unauthorized)
 .WithName("RefreshToken")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization("Authenticated");
+
+
+// TEST ENDPOINT: Checks if Token Generation is the killer
+app.MapGet("/test-token", (ITokenService tokenService) =>
+{
+    try
+    {
+        // 1. Create a Fake User
+        var fakeUser = new UserEntity
+        {
+            Id = Guid.NewGuid(),
+            UserName = "TestUser",
+            Email = "test@test.com",
+            CreatedAt = DateTimeOffset.UtcNow // Valid date
+        };
+
+        var fakeSession = new UserSession
+        {
+            Id = Guid.NewGuid(),
+            Token = "fake-token",
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
+        };
+
+        // 2. Try to Generate Token
+        var token = tokenService.GenerateToken(fakeUser, fakeSession);
+
+        // 3. If we get here, Token Service is HEALTHY
+        return Results.Ok(new { Message = "Token Service Works!", Token = token });
+    }
+    catch (Exception ex)
+    {
+        // 4. If we crash, SHOW THE ERROR
+        return Results.Problem($"CRASH: {ex.Message} \n\n {ex.StackTrace}");
+    }
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status500InternalServerError);
 
 app.Run();

@@ -15,7 +15,7 @@ namespace MacroPrep.Server.Data.Entities
         public string Token { get; set; } = string.Empty;
 
         [Required]
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         [Required]
         public DateTimeOffset ExpiresAt { get; set; }

@@ -24,10 +24,15 @@ namespace MacroPrep.Server.Data.Entities
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
 
+        public DateOnly? DateOfBirth { get; set; }
+
         [Timestamp]
         public byte[] RowVersion { get; set; } = [];
 
         public bool IsVerified { get; set; } = false;
+
+        // Will determine access even if the user has already created the account
+        public bool HasCompletedSetup { get; set; } = false;
 
         public string? TimeZoneId { get; set; }
 

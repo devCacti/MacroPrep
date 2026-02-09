@@ -1,11 +1,18 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+
+@* Component that will handle redirection logic*@
+<AccessControl />
+
 <div class="page">
     <AuthorizeView>
         <Authorized>
-            <div class="sidebar">
-                <NavMenu /> 
-            </div>
+            @if (context.User.FindFirst("setup_completed")?.Value != "true")
+            {
+                <div class="sidebar">
+                    <NavMenu /> 
+                </div>
+            }
         </Authorized>
     </AuthorizeView>
 

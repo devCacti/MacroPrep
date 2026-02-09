@@ -1,4 +1,4 @@
-﻿/* Center the entire login page vertically and horizontally */
+/* Center the entire login page vertically and horizontally */
 .auth-layout {
     min-height: 100vh;
     width: 100%;
@@ -66,7 +66,7 @@
 }
 
 /* Validation Message Override (Blazor Default) */
-::deep .validation-message {
+.validation-message {
     font-size: var(--text-xs);
     color: #ef4444;
     margin-top: 0.25rem;
