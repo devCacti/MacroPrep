@@ -13,6 +13,8 @@ namespace MacroPrep.Shared.Models.ShoppingLists
         public int Quantity { get; set; } = 1;
 
         public bool IsChecked { get; set; } = false;
+        public bool IsDeleted { get; set; } = false;
+        public bool IsSynced { get; set; } = true;
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

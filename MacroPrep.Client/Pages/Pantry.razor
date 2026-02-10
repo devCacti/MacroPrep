@@ -6,10 +6,13 @@
 @using MacroPrep.Shared.Models.ShoppingLists
 @using MacroPrep.Shared.Enums.ShoppingLists
 @using Blazored.LocalStorage
+@inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject ShoppingListsService OfflineService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
+@inject RealTimeSyncService SignalR
+@inject SyncService Sync
 
 <PageTitle>The Pantry</PageTitle>
 
@@ -253,6 +256,20 @@
             if (Guid.TryParse(idClaim, out var parsedId))
                 _currentUserId = parsedId;
         }
+        var token = await LocalStorage.GetItemAsync<string>("authToken");
+        if (!string.IsNullOrEmpty(token))
+        {
+            await SignalR.InitializeAsync(token);
+
+            SignalR.OnListUpdated += HandleRealTimeUpdate;
+            SignalR.OnItemsChanged += HandleRealTimeUpdate;
+            SignalR.OnNotification += HandleNotification;
+
+            foreach (var vm in _viewModels)
+            {
+                await SignalR.JoinListGroup(vm.List.Id);
+            }
+        }
 
         if (_currentUserId == Guid.Empty)
         {
@@ -262,21 +279,45 @@
         }
 
         await OfflineService.InitializeAsync();
+        await LoadDataAsync();
+        _ = Sync.SyncPendingChangesAsync(); // Start syncing in the background when the component loads
+    }
 
-        var storedLists = await OfflineService.GetAllListsAsync(_currentUserId);
+    private void HandleNotification(string message)
+    {
+        Console.WriteLine("Received notification: " + message);
+        _ = FetchInvites(); // Refresh invites when a notification is received (e.g., new invite)
+    }
 
-        foreach (var list in storedLists)
+    private async void HandleRealTimeUpdate(Guid listId)
+    {
+        var vm = _viewModels.FirstOrDefault(v => v.List.Id == listId);
+        if (vm != null)
         {
-            var items = await OfflineService.GetItemsAsync(list.Id);
-
-            _viewModels.Add(new ListViewModel
+            try
             {
-                List = list,
-                Items = items
-            });
-            _newInputs[list.Id] = "";
-            _newMemberInputs[list.Id] = "";
+                var freshItems = await Http.GetFromJsonAsync<List<ListItemDto>>($"api/shopping-lists/{listId}/items");
+                if (freshItems != null)
+                {
+                    vm.Items = freshItems;
+
+                    foreach (var item in freshItems) await OfflineService.AddItemAsync(item);
+
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Failed to fetch real-time updates for list " + listId);
+            }
         }
+    }
+
+    private void Dispose()
+    {
+        SignalR.OnListUpdated -= HandleRealTimeUpdate;
+        SignalR.OnItemsChanged -= HandleRealTimeUpdate;
+        SignalR.OnNotification -= HandleNotification;
     }
 
     private async Task ForceLogout()
@@ -302,8 +343,11 @@
     private async Task ToggleSharedStatus(ListViewModel vm, bool isShared)
     {
         vm.List.IsShared = isShared;
+        vm.List.IsSynced = false;
         // If turning off, you might want to clear members logic here
         await OfflineService.SaveListAsync(vm.List);
+
+        _ = Sync.SyncPendingChangesAsync();
     }
 
     private async Task AddMember(ListViewModel vm)
@@ -314,8 +358,13 @@
         // In a real app, you'd call API to find User ID by Username here
         var newMember = new ListMemberDto
             {
-                Id = Guid.NewGuid(), // Placeholder ID
-                UserName = username
+                Id = Guid.NewGuid(),
+                ListId = vm.List.Id,
+                UserName = username,
+                IsSynced = false,
+                IsDeleted = false,
+                HasAccepted = false,
+
             };
 
         // Resize array (simplest way for fixed array in DTO)
@@ -324,7 +373,9 @@
         vm.List.Members = membersList.ToArray();
 
         _newMemberInputs[vm.List.Id] = ""; // Clear input
-        await OfflineService.SaveListAsync(vm.List);
+        await OfflineService.AddMemberAsync(newMember);
+        _ = Sync.SyncPendingChangesAsync();
+        Console.WriteLine("Sending invite to: " + username);
     }
 
     private async Task RemoveMember(ListViewModel vm, ListMemberDto member)
@@ -344,6 +395,7 @@
             OwnerId = _currentUserId,
             Members = Array.Empty<ListMemberDto>(),
             Name = "New List" + (_viewModels.Count + 1),
+            IsSynced = false
         };
 
         await OfflineService.SaveListAsync(newList);
@@ -351,6 +403,10 @@
         _viewModels.Insert(0, new ListViewModel { List = newList });
         _newInputs[newList.Id] = "";
         _newMemberInputs[newList.Id] = "";
+
+        // Join SignalR group for this new list
+        await SignalR.JoinListGroup(newList.Id);
+        _ = Sync.SyncPendingChangesAsync();
     }
 
     private async Task UpdateListTitle(ListDto list, string newName)
@@ -358,13 +414,16 @@
         if (string.IsNullOrWhiteSpace(newName)) return;
 
         list.Name = newName;
+        list.IsSynced = false;
         await OfflineService.SaveListAsync(list);
+        _ = Sync.SyncPendingChangesAsync();
     }
 
     private async Task DeleteListAsync(ListViewModel viewModel)
     {
         _viewModels.Remove(viewModel);
         await OfflineService.DeleteListAsync(viewModel.List.Id);
+        _ = Sync.SyncPendingChangesAsync();
     }
 
     private async Task AddItem(ListViewModel viewModel)
@@ -382,24 +441,96 @@
             Name = newItemName,
             Quantity = 1,
             IsChecked = false,
+            IsSynced = false
         };
 
         await OfflineService.AddItemAsync(newItem);
 
         viewModel.Items.Add(newItem);
         _newInputs[viewModel.List.Id] = "";
+        _ = Sync.SyncPendingChangesAsync();
     }
 
     private async Task DeleteItem(ListViewModel viewModel, ListItemDto item)
     {
         await OfflineService.DeleteItemAsync(item.Id);
         viewModel.Items.Remove(item);
+        _ = Sync.SyncPendingChangesAsync();
     }
 
     private async Task ToggleItem(ListViewModel viewModel, ListItemDto item, bool isChecked)
     {
         item.IsChecked = isChecked;
+        item.IsSynced = false;
         await OfflineService.AddItemAsync(item); // Using AddItemAsync to update the item since it checks for existing ID
+        _ = Sync.SyncPendingChangesAsync();
+    }
+
+    private async Task AcceptInvite(InviteViewModel invite)
+    {
+        // 1. Call the API Endpoint
+        var response = await Http.PostAsync($"api/shopping-lists/{invite.ListId}/invite/accept", null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // 2. Remove from the "Pending Invites" UI immediately
+            _pendingInvites.Remove(invite);
+
+            // 3. Optional: Trigger a full refresh to pull the new list into the main grid
+            // Or manually fetch just this list and add it to _viewModels
+            await LoadDataAsync();
+        }
+        else
+        {
+            // Handle error (maybe show a toast)
+            Console.WriteLine("Failed to accept invite");
+        }
+    }
+
+    private async Task DeclineInvite(InviteViewModel invite)
+    {
+        // 1. Call the API Endpoint
+        var response = await Http.DeleteAsync($"api/shopping-lists/{invite.ListId}/invite/decline");
+
+        if (response.IsSuccessStatusCode)
+        {
+            // 2. Remove from UI
+            _pendingInvites.Remove(invite);
+        }
+        else
+        {
+            Console.WriteLine("Failed to decline invite");
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var storedLists = await OfflineService.GetAllListsAsync(_currentUserId);
+        _viewModels.Clear();
+        foreach (var list in storedLists)
+        {
+            var items = await OfflineService.GetItemsForListAsync(list.Id);
+            _viewModels.Add(new ListViewModel { List = list, Items = items });
+
+            if (!_newInputs.ContainsKey(list.Id)) _newInputs[list.Id] = "";
+            if (!_newMemberInputs.ContainsKey(list.Id)) _newMemberInputs[list.Id] = "";
+        }
+
+        await FetchInvites();
+    }
+
+    private async Task FetchInvites()
+    {
+        try
+        {
+            _pendingInvites = await Http.GetFromJsonAsync<List<InviteViewModel>>("api/shopping-lists/my-lists")
+                              ?? new List<InviteViewModel>();
+        }
+        catch
+        {
+            // User might be offline or no invites
+            _pendingInvites = new List<InviteViewModel>();
+        }
     }
 
     // Method to accept Enter Key for adding items

@@ -45,6 +45,16 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SignalRPolicy", policy =>
+    {
+        policy.WithOrigins("https://localhost:7050", "http://localhost:7273")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -97,7 +107,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    app.UseCors("Development Testing");
+    app.UseCors("SignalRPolicy");
 }
 
 app.UseAuthentication();
@@ -119,11 +129,11 @@ void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTim
 }
 
 // API HUB ENDPOINT
-app.MapHub<ShoppingHub>("/shopping-hub");
+app.MapHub<ShoppingHub>("/hubs/shopping-hub");
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapHub<ShoppingHub>("/api/shopping-hub");
+    app.MapHub<ShoppingHub>("/api/hubs/shopping-hub");
 }
 
 // API AUTH GROUP
@@ -331,11 +341,11 @@ userGroup.MapGet("/profile", async (ClaimsPrincipal user, AppDbContext db) =>
 .RequireAuthorization("CompletedSetup"); // Only allow users who have completed setup to access this endpoint
 
 // API SHOPPING LISTS GROUP
-var listsGroup = app.MapGroup("/s-lists");
+var listsGroup = app.MapGroup("/shopping-lists");
 
 if (app.Environment.IsDevelopment())
 {
-    listsGroup = app.MapGroup("/api/s-lists");
+    listsGroup = app.MapGroup("/api/shopping-lists");
 }
 
 // BASE LISTS ENDPOINTS (Create, Read, Update, Delete) with proper authorization and error handling
@@ -348,20 +358,24 @@ listsGroup.MapPost("/", async (ListDto list, AppDbContext db, ClaimsPrincipal cl
         if (string.IsNullOrEmpty(userIdClaim))
             return Results.Unauthorized();
 
+        var listExists = await db.ShoppingLists.AnyAsync(l => l.Id == list.Id);
+        if (listExists)
+            return Results.Conflict(new { Message = "A list with the same ID already exists" });
+
         var newList = new ShoppingList
         {
-            Id = Guid.NewGuid(),
+            Id = list.Id,
             Name = list.Name,
             OwnerId = Guid.Parse(userIdClaim),
             IsShared = list.IsShared,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = list.CreatedAt,
             UpdatedAt = DateTimeOffset.UtcNow
         };
 
         db.ShoppingLists.Add(newList);
         await db.SaveChangesAsync();
 
-        return Results.Created($"/api/s-lists/{newList.Id}", newList.Id);
+        return Results.Created($"/api/shopping-lists/{newList.Id}", newList.Id);
     }
     catch (Exception ex)
     {
@@ -377,7 +391,7 @@ listsGroup.MapPost("/", async (ListDto list, AppDbContext db, ClaimsPrincipal cl
 ;
 
 // READ
-listsGroup.MapGet("/{listId}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
 {
     try
     {
@@ -441,7 +455,7 @@ listsGroup.MapGet("/{listId}", async (Guid listId, AppDbContext db, ClaimsPrinci
 ;
 
 // UPDATE
-listsGroup.MapPut("/{listId}", async (Guid listId, ListDto updatedList, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     try
     {
@@ -458,7 +472,7 @@ listsGroup.MapPut("/{listId}", async (Guid listId, ListDto updatedList, AppDbCon
             .Select(m => m.Type)
             .FirstOrDefaultAsync();
 
-        if (list.OwnerId != Guid.Parse(userIdClaim) && memberType >= MemberType.Master)
+        if (list.OwnerId != Guid.Parse(userIdClaim) && memberType <= MemberType.Master)
             return Results.Forbid();
 
         list.Name = updatedList.Name;
@@ -487,7 +501,7 @@ listsGroup.MapPut("/{listId}", async (Guid listId, ListDto updatedList, AppDbCon
 ;
 
 // DELETE
-listsGroup.MapDelete("/{listId}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
 {
     try
     {
@@ -502,7 +516,13 @@ listsGroup.MapDelete("/{listId}", async (Guid listId, AppDbContext db, ClaimsPri
         if (list.OwnerId != Guid.Parse(userIdClaim))
             return Results.Forbid();
 
+        // Delete all items and members associated with the list
+        var items = db.ListItems.Where(i => i.ListId == listId);
+        var members = db.ListMembers.Where(m => m.ListId == listId);
+        db.ListItems.RemoveRange(items);
+        db.ListMembers.RemoveRange(members);
         db.ShoppingLists.Remove(list);
+
         await db.SaveChangesAsync();
 
         return Results.NoContent();
@@ -523,7 +543,7 @@ listsGroup.MapDelete("/{listId}", async (Guid listId, AppDbContext db, ClaimsPri
 
 // ITEMS ENDPOINTS (Create, Update, Delete) with proper authorization and error handling will be added here (not included in this snippet for brevity)
 // CREATE
-listsGroup.MapPost("/{listId}/items", async (Guid listId, ListItemDto item, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     try
     {
@@ -543,9 +563,14 @@ listsGroup.MapPost("/{listId}/items", async (Guid listId, ListItemDto item, AppD
         if (list.OwnerId != Guid.Parse(userIdClaim) && memberType >= MemberType.Master)
             return Results.Forbid();
 
+        var itemExists = await db.ListItems.AnyAsync(i => i.Id == item.Id && i.ListId == listId);
+
+        if (itemExists)
+            return Results.Conflict(new { Message = "An item with the same ID already exists in this list" });
+
         var newItem = new ListItem
         {
-            Id = Guid.NewGuid(),
+            Id = item.Id,
             ListId = listId,
             Name = item.Name,
             Quantity = item.Quantity,
@@ -559,7 +584,7 @@ listsGroup.MapPost("/{listId}/items", async (Guid listId, ListItemDto item, AppD
 
         await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated");
 
-        return Results.Created($"/api/s-lists/{listId}/items/{newItem.Id}", newItem.Id);
+        return Results.Created($"/api/shopping-lists/{listId}/items/{newItem.Id}", newItem.Id);
     }
     catch (Exception ex)
     {
@@ -577,7 +602,7 @@ listsGroup.MapPost("/{listId}/items", async (Guid listId, ListItemDto item, AppD
 ;
 
 // READ
-listsGroup.MapGet("/{listId}/items", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapGet("/{listId:guid}/items", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
 {
     try
     {
@@ -621,7 +646,7 @@ listsGroup.MapGet("/{listId}/items", async (Guid listId, AppDbContext db, Claims
 ;
 
 // UPDATE
-listsGroup.MapPut("/{listId}/items/{itemId}", async (Guid listId, Guid itemId, ListItemDto updatedItem, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, ListItemDto updatedItem, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     try
     {
@@ -672,7 +697,7 @@ listsGroup.MapPut("/{listId}/items/{itemId}", async (Guid listId, Guid itemId, L
 ;
 
 // DELETE
-listsGroup.MapDelete("/{listId}/items/{itemId}", async (Guid listId, Guid itemId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     try
     {
@@ -720,7 +745,7 @@ listsGroup.MapDelete("/{listId}/items/{itemId}", async (Guid listId, Guid itemId
 
 // MEMBERSHIP ENDPOINTS (Invite, Accept Invite, Decline Invite, Leave List, Remove Member) with proper authorization and error handling
 // CREATE - Invite Member
-listsGroup.MapPost("/{listId}/invite", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims) =>
 {
     try
     {
@@ -731,6 +756,16 @@ listsGroup.MapPost("/{listId}/invite", async (Guid listId, string userName, AppD
         var isListOwner = await db.ShoppingLists.AnyAsync(l => l.Id == listId && l.OwnerId == Guid.Parse(userIdClaim));
         if (!isListOwner)
             return Results.Forbid();
+
+        // Check if the user is already a member of the list
+        var existingMember = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserName == userName);
+        if (existingMember != null)
+        {
+            if (existingMember.HasAccepted)
+                return Results.Conflict(new { Message = "User is already a member of the list" });
+            else
+                return Results.Conflict(new { Message = "An invite has already been sent to this user" });
+        }
 
         var userToInvite = await db.Users.FirstOrDefaultAsync(u => u.UserName == userName);
         if (userToInvite == null)
@@ -759,13 +794,15 @@ listsGroup.MapPost("/{listId}/invite", async (Guid listId, string userName, AppD
 .Produces(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status401Unauthorized)
 .Produces(StatusCodes.Status403Forbidden)
+.Produces(StatusCodes.Status404NotFound)
+.Produces(StatusCodes.Status409Conflict)
 .RequireAuthorization("Authenticated")
 .WithName("InviteToList")
 .WithOpenApi()
 ;
 
 // POST - Accept Invite
-listsGroup.MapPost("/{listId}/invite/accept", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -801,7 +838,7 @@ listsGroup.MapPost("/{listId}/invite/accept", async (Guid listId, AppDbContext d
 ;
 
 // DELETE - Decline Invite
-listsGroup.MapDelete("/{listId}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -829,7 +866,7 @@ listsGroup.MapDelete("/{listId}/invite/decline", async (Guid listId, AppDbContex
 ;
 
 // DELETE
-listsGroup.MapDelete("/{listId}/leave", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -858,7 +895,7 @@ listsGroup.MapDelete("/{listId}/leave", async (Guid listId, AppDbContext db, Cla
 ;
 
 // DELETE
-listsGroup.MapDelete("/{listId}/remove-member/{userId}", async (Guid listId, Guid userId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}/remove-member/{userId}", async (Guid listId, Guid userId, AppDbContext db, ClaimsPrincipal claims) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -886,6 +923,7 @@ listsGroup.MapDelete("/{listId}/remove-member/{userId}", async (Guid listId, Gui
 .WithOpenApi()
 ;
 
+// GET - Get All Lists for the Authenticated User (both owned and shared) with proper authorization and error handling
 listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -893,25 +931,32 @@ listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =
         return Results.Unauthorized();
 
     var lists = await db.ShoppingLists
-        .Where(l => l.OwnerId == Guid.Parse(userIdClaim) || l.Members.Any(m => m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted))
-        .Select(l => new
+        .Where(l => l.OwnerId == Guid.Parse(userIdClaim) || l.Members.Any(m => m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted) && l.IsShared)
+        .Select(l => new ListDto
         {
-            l.Id,
-            l.Name,
-            l.IsShared,
-            l.CreatedAt,
-            l.UpdatedAt,
-            Owner = new
+            Id = l.Id,
+            Name = l.Name,
+            OwnerId = l.OwnerId,
+            IsShared = l.IsShared,
+            Items = l.Items.Select(i => new ListItemDto
             {
-                l.OwnerId,
-                OwnerName = db.Users.Where(u => u.Id == l.OwnerId).Select(u => u.UserName).FirstOrDefault()
-            },
-            Members = l.Members.Where(m => m.HasAccepted).Select(m => new
+                Id = i.Id,
+                ListId = i.ListId,
+                Name = i.Name,
+                Quantity = i.Quantity,
+                IsChecked = i.IsChecked,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt
+            }).ToList(),
+            Members = l.Members.Select(m => new ListMemberDto
             {
-                m.UserId,
-                m.UserName,
-                m.Type
-            }).ToList()
+                UserId = m.UserId,
+                UserName = m.UserName,
+                Type = m.Type,
+                HasAccepted = m.HasAccepted
+            }).ToList(),
+            CreatedAt = l.CreatedAt,
+            UpdatedAt = l.UpdatedAt
         })
         .ToListAsync();
 

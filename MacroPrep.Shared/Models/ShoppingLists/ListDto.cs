@@ -18,8 +18,11 @@ namespace MacroPrep.Shared.Models.ShoppingLists
 
         public ListStatus Status { get; set; } = ListStatus.Active;
 
+
         // Shared with...
         public bool IsShared { get; set; } = false;
+        public bool IsDeleted { get; set; } = false;
+        public bool IsSynced { get; set; } = true;
 
         public byte[]? RowVersion { get; set; }
 

@@ -1,88 +1,139 @@
-﻿window.MacroPrepDB = {
-    db: null,
-    dbName: "MacroPrepOffline",
-    version: 4,
+﻿window.MacroPrep_DB = {
+    dbName: 'MacroPrep_DB',
+    version: 2,
 
-    init: function () {
+    // Helper to open the DB
+    openDb: function () {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.version);
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                const txn = event.target.transaction; // Get active transaction
 
-                let listsStore;
+                // Create Lists Store
                 if (!db.objectStoreNames.contains('lists')) {
-                    listsStore = db.createObjectStore('lists', { keyPath: 'id' });
-                } else {
-                    listsStore = txn.objectStore('lists');
+                    db.createObjectStore('lists', { keyPath: 'id' });
                 }
 
-                if (!listsStore.indexNames.contains('ownerId')) {
-                    listsStore.createIndex('ownerId', 'ownerId', { unique: false });
-                }
-
-                let itemsStore;
+                // Create Items Store with Index for querying by ListId
                 if (!db.objectStoreNames.contains('items')) {
-                    itemsStore = db.createObjectStore('items', { keyPath: 'id' });
-                } else {
-                    itemsStore = txn.objectStore('items');
-                }
-
-                if (!itemsStore.indexNames.contains('listId')) {
+                    const itemsStore = db.createObjectStore('items', { keyPath: 'id' });
                     itemsStore.createIndex('listId', 'listId', { unique: false });
                 }
+
+                // Create Members Store
+                if (!db.objectStoreNames.contains('members')) {
+                    db.createObjectStore('members', { keyPath: 'id' });
+                }
             };
 
-            request.onsuccess = (event) => {
-                this.db = event.target.result;
-                console.log("✅ MacroPrep DB Connected (v3)");
-                resolve("Connected");
-            };
-
-            request.onerror = (event) => {
-                reject(event.target.error);
-            };
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
         });
     },
 
-    save: function (storeName, item) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            store.put(item);
-            tx.oncomplete = () => resolve("Saved");
-            tx.onerror = () => reject(tx.error);
-        });
-    },
-
+    // 1. GET ALL
     getAll: function (storeName) {
         return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
+            this.openDb().then(db => {
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     },
 
-    getItemsByList: function (listId) {
+    // 👇 THIS IS THE FUNCTION YOU WERE MISSING
+    get: function (storeName, id) {
         return new Promise((resolve, reject) => {
-            const tx = this.db.transaction('items', 'readonly');
-            const store = tx.objectStore('items');
+            this.openDb().then(db => {
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(id);
 
-            const index = store.index('listId');
-            const request = index.getAll(listId);
-
-            request.onsuccess = () => resolve(request.result);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     },
 
+    // 3. SAVE (Add/Update)
+    save: function (storeName, item) {
+        return new Promise((resolve, reject) => {
+            this.openDb().then(db => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(item); // 'put' updates if key exists, adds if not
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        });
+    },
+
+    // 4. DELETE
     delete: function (storeName, id) {
         return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            store.delete(id);
-            tx.oncomplete = () => resolve("Deleted");
+            this.openDb().then(db => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(id);
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         });
+    },
+
+    // 5. GET ITEMS BY LIST ID (Using Index)
+    getItemsByList: function (listId) {
+        return new Promise((resolve, reject) => {
+            this.openDb().then(db => {
+                const tx = db.transaction('items', 'readonly');
+                const store = tx.objectStore('items');
+                const index = store.index('listId');
+                const request = index.getAll(listId);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        });
+    },
+
+    // 6. MARK SYNCHRONIZED
+    markSynced: function (storeName, id) {
+        return new Promise((resolve, reject) => {
+            this.openDb().then(db => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+
+                // Get the item first
+                const getReq = store.get(id);
+
+                getReq.onsuccess = () => {
+                    const item = getReq.result;
+                    if (item) {
+                        if (item.isDeleted) {
+                            // If it was a soft delete and we synced it, hard delete now
+                            store.delete(id);
+                        } else {
+                            // Mark clean
+                            item.isSynced = true;
+                            store.put(item);
+                        }
+                    }
+                    resolve();
+                };
+                getReq.onerror = () => reject(getReq.error);
+            });
+        });
+    },
+
+    // Init function (wrapper to ensure DB is created)
+    init: function () {
+        return this.openDb();
     }
 };
