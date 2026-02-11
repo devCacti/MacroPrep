@@ -312,6 +312,9 @@
 
                     // Update local database with the latest list info and items
                     vm.List = await AutoUpdateListInfo(freshList, vm.List);
+                    vm.Items = await OfflineService.GetItemsAsync(Guid.Parse(listId));
+                    vm.Members = await OfflineService.GetMembersAsync(Guid.Parse(listId));
+
                     await InvokeAsync(StateHasChanged);
                 }
 

@@ -34,16 +34,6 @@ namespace MacroPrep.Client.Services
                 .WithAutomaticReconnect() // Auto-retry if internet drops
                 .Build();
 
-            // Matches: await hubContext.Clients.Group(...).SendAsync("ListUpdated");
-            _hubConnection.On("ListUpdated", () =>
-            {
-                // We could pass the GUID here if the server sends it, 
-                // but for now we might just refresh the specific list if known
-                // or just trigger a generic refresh. 
-                // Let's assume your API sends "ListUpdated" with the listId? 
-                // If not, we just refresh.
-            });
-
             // Matches: await hubContext.Clients.Group(...).SendAsync("ListUpdated", listId);
             // (Wait, your API code used "ListUpdated" for items too. Let's standardize.)
             _hubConnection.On<string>("ListUpdated", (listId) =>
