@@ -47,6 +47,8 @@ if (builder.HostEnvironment.IsDevelopment())
 }
 
 builder.Services.AddScoped<ShoppingListsService>();
+builder.Services.AddScoped<RealTimeSyncService>();
+builder.Services.AddScoped<SyncService>();
 
 // Register a default HttpClient that uses the "API" configuration, so it can be injected directly into components and services
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));

@@ -160,7 +160,6 @@
 .add-item-row {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
 }
 
 .add-input {
@@ -389,17 +388,27 @@
     margin: 0.75rem 0;
 }
 
+/* The Member Chip base */
 .member-chip {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: white;
-    border: 1px solid #cbd5e1;
-    padding: 4px 8px 4px 4px;
+    padding: 4px 10px;
     border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    transition: var(--smooth);
+    border: 2px solid transparent;
 }
+
+    .member-chip.pending {
+        border: 2px dashed #eab308; /* Yellow-500 */
+        background-color: #fefce8;
+        opacity: 0.8;
+    }
+
+    .member-chip.accepted {
+        border: 2px solid #22c55e; /* Green-500 */
+        background-color: #f0fdf4;
+    }
 
 .member-initial {
     width: 24px;
