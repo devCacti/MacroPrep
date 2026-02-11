@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Generic;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,16 +35,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Development Testing", policy =>
-    {
-        policy.WithOrigins("https://localhost:7050", "https://localhost:7273")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-});
 
 builder.Services.AddCors(options =>
 {
@@ -431,6 +422,8 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
             }).ToList(),
             Members = list.Members.Select(m => new ListMemberDto
             {
+                Id = m.Id,
+                ListId = list.Id,
                 UserId = m.UserId,
                 UserName = m.UserName,
                 Type = m.Type,
@@ -477,7 +470,7 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
 
         list.Name = updatedList.Name;
         list.IsShared = updatedList.IsShared;
-        list.UpdatedAt = DateTimeOffset.UtcNow;
+        list.UpdatedAt = updatedList.UpdatedAt;
 
         await db.SaveChangesAsync();
 
@@ -580,9 +573,11 @@ listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item,
         };
 
         db.ListItems.Add(newItem);
+        list.UpdatedAt = DateTimeOffset.UtcNow; // Update the list's UpdatedAt when a new item is added
+
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated");
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
 
         return Results.Created($"/api/shopping-lists/{listId}/items/{newItem.Id}", newItem.Id);
     }
@@ -677,7 +672,7 @@ listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid item
 
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated");
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
 
         return Results.NoContent();
     }
@@ -724,7 +719,7 @@ listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid i
         db.ListItems.Remove(item);
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated");
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
 
         return Results.NoContent();
     }
@@ -777,7 +772,7 @@ listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName,
             ListId = listId,
             UserId = userToInvite.Id,
             UserName = userToInvite.UserName,
-            Type = MacroPrep.Shared.Enums.ShoppingLists.MemberType.Editor, // Default to Editor, can be changed later by the owner
+            Type = MemberType.Editor, // Default to Editor, can be changed later by the owner
             HasAccepted = false
         };
 
@@ -816,15 +811,16 @@ listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbCont
         return Results.Conflict(new { Message = "Invite already accepted" });
 
     member.HasAccepted = true;
-    await db.SaveChangesAsync();
 
     var list = await db.ShoppingLists.Include(l => l.Members).FirstOrDefaultAsync(l => l.Id == listId);
     if (list != null)
     {
         // Notify the owner and other members that a new member has accepted the invite
+        list.UpdatedAt = DateTimeOffset.UtcNow;
         var memberUserIds = list.Members.Where(m => m.HasAccepted).Select(m => m.UserId.ToString()).ToList();
         await hubContext.Clients.Users(memberUserIds).SendAsync("InviteAccepted", $"User {member.UserName} has accepted the invite to the list '{list.Name}'");
     }
+    await db.SaveChangesAsync();
 
     return Results.Ok(new { Message = "Invite accepted" });
 })
@@ -838,7 +834,7 @@ listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbCont
 ;
 
 // DELETE - Decline Invite
-listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -852,6 +848,15 @@ listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbC
         return Results.Conflict(new { Message = "Invite already accepted, cannot decline" });
 
     db.ListMembers.Remove(member);
+
+    var list = await db.ShoppingLists.Include(l => l.Members).FirstOrDefaultAsync(l => l.Id == listId);
+    if (list != null)
+    {
+        // Notify the owner that the invite was declined
+        var ownerUserId = list.OwnerId.ToString();
+        await hubContext.Clients.User(ownerUserId).SendAsync("InviteDeclined", $"User {member.UserName} has declined the invite to the list '{list.Name}'");
+    }
+
     await db.SaveChangesAsync();
 
     return Results.Ok(new { Message = "Invite declined" });
@@ -895,7 +900,7 @@ listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db
 ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}/remove-member/{userId}", async (Guid listId, Guid userId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}/member/{userName}", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -905,10 +910,11 @@ listsGroup.MapDelete("/{listId:guid}/remove-member/{userId}", async (Guid listId
     if (!isListOwner)
         return Results.Forbid();
 
-    var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == userId);
+    var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserName == userName);
     if (member == null)
         return Results.NotFound(new { Message = "Membership not found" });
 
+    await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
     db.ListMembers.Remove(member);
     await db.SaveChangesAsync();
 
@@ -937,7 +943,10 @@ listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =
             Id = l.Id,
             Name = l.Name,
             OwnerId = l.OwnerId,
+            OwnerName = db.Users.FirstOrDefault(u => u.Id == l.OwnerId)!.UserName ?? "Unkown User",
             IsShared = l.IsShared,
+            CreatedAt = l.CreatedAt,
+            UpdatedAt = l.UpdatedAt,
             Items = l.Items.Select(i => new ListItemDto
             {
                 Id = i.Id,
@@ -950,13 +959,14 @@ listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =
             }).ToList(),
             Members = l.Members.Select(m => new ListMemberDto
             {
+                Id = m.Id,
+                ListId = l.Id,
                 UserId = m.UserId,
                 UserName = m.UserName,
                 Type = m.Type,
                 HasAccepted = m.HasAccepted
-            }).ToList(),
-            CreatedAt = l.CreatedAt,
-            UpdatedAt = l.UpdatedAt
+            }).ToList()
+
         })
         .ToListAsync();
 
@@ -969,7 +979,31 @@ listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =
 .WithOpenApi()
 ;
 
+// GET - Get all Lists that the Authenticated User has been invited to but has NOT accepted yet with proper authorization and error handling
+listsGroup.MapGet("/invites", async (ClaimsPrincipal claims, AppDbContext db) =>
+{
+    var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim))
+        return Results.Unauthorized();
 
+    var invites = await db.ListMembers
+        .Where(m => m.UserId == Guid.Parse(userIdClaim) && !m.HasAccepted && db.ShoppingLists.Any(l => l.Id == m.ListId && l.IsShared))
+        .Select(m => new ListInviteDto
+        {
+            ListId = m.ListId,
+            ListName = m.List!.Name,
+            OwnerUserName = db.Users.Where(u => u.Id == m.List.OwnerId).Select(u => u.UserName).FirstOrDefault() ?? "Unknown",
+        })
+        .ToListAsync();
+
+    return Results.Ok(invites);
+})
+.Produces<List<ListInviteDto>>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized)
+.RequireAuthorization("Authenticated")
+.WithName("GetListInvites")
+.WithOpenApi()
+;
 
 // TEST ENDPOINT: Checks if Token Generation is the killer
 app.MapGet("/test-token", (ITokenService tokenService) =>
@@ -1007,6 +1041,7 @@ app.MapGet("/test-token", (ITokenService tokenService) =>
 .Produces(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status500InternalServerError)
 .WithName("TestToken")
-.WithOpenApi();
+.WithOpenApi()
+;
 
 app.Run();

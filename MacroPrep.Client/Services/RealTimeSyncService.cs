@@ -9,8 +9,8 @@ namespace MacroPrep.Client.Services
         private readonly NavigationManager _nav;
 
         // Events that the UI (Pantry.razor) will subscribe to
-        public event Action<Guid>? OnListUpdated;     // Triggered when a list is renamed/deleted
-        public event Action<Guid>? OnItemsChanged;    // Triggered when items are added/checked
+        public event Action<string>? OnListUpdated;     // Triggered when a list is renamed/deleted
+        public event Action<string>? OnItemsChanged;    // Triggered when items are added/checked
         public event Action<string>? OnNotification;  // Triggered when an invite is accepted
 
         public RealTimeSyncService(NavigationManager nav)
@@ -34,8 +34,6 @@ namespace MacroPrep.Client.Services
                 .WithAutomaticReconnect() // Auto-retry if internet drops
                 .Build();
 
-            // 2. Register Listeners (Must match the strings used in your API)
-
             // Matches: await hubContext.Clients.Group(...).SendAsync("ListUpdated");
             _hubConnection.On("ListUpdated", () =>
             {
@@ -48,7 +46,7 @@ namespace MacroPrep.Client.Services
 
             // Matches: await hubContext.Clients.Group(...).SendAsync("ListUpdated", listId);
             // (Wait, your API code used "ListUpdated" for items too. Let's standardize.)
-            _hubConnection.On<Guid>("ListUpdated", (listId) =>
+            _hubConnection.On<string>("ListUpdated", (listId) =>
             {
                 OnListUpdated?.Invoke(listId);
                 OnItemsChanged?.Invoke(listId); // Usually implies items changed too
@@ -64,19 +62,29 @@ namespace MacroPrep.Client.Services
             await _hubConnection.StartAsync();
         }
 
-        public async Task JoinListGroup(Guid listId)
+        public async Task JoinListGroup(string listId)
         {
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
-                await _hubConnection.SendAsync("JoinList", listId.ToString());
+                Console.WriteLine($"Joined list: {listId}");
+                await _hubConnection.SendAsync("JoinList", listId);
+            }
+            else
+            {
+                Console.WriteLine($"Failed to join list: {listId}");
             }
         }
 
-        public async Task LeaveListGroup(Guid listId)
+        public async Task LeaveListGroup(string listId)
         {
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
-                await _hubConnection.SendAsync("LeaveList", listId.ToString());
+                Console.WriteLine($"Left list: {listId}");
+                await _hubConnection.SendAsync("LeaveList", listId);
+            }
+            else
+            {
+                Console.WriteLine($"Failed to leave list: {listId}");
             }
         }
 

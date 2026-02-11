@@ -31,16 +31,19 @@ namespace MacroPrep.Client.Services.Offline
 
             if (userId != Guid.Empty)
             {
-                return activeLists.Where(l => l.OwnerId == userId).ToList();
+                return activeLists.Where(
+                    l => l.OwnerId == userId || 
+                    (l.Members != null && l.Members.Any(m => m.UserId == userId))
+                ).ToList();
             }
 
             return activeLists;
         }
 
         // Called by UI when user creates/updates a list
-        public async Task SaveListAsync(ListDto list)
+        public async Task SaveListAsync(ListDto list, bool synced = false)
         {
-            list.IsSynced = false; // 👈 Mark as "Dirty" (Needs Sync)
+            list.IsSynced = synced;
             list.IsDeleted = false;
             await _js.InvokeVoidAsync("MacroPrep_DB.save", "lists", list);
         }
@@ -76,11 +79,9 @@ namespace MacroPrep.Client.Services.Offline
             return items.Where(i => !i.IsDeleted).ToList();
         }
 
-        public async Task<List<ListItemDto>> GetItemsForListAsync(Guid listId) => await GetItemsAsync(listId);
-
-        public async Task AddItemAsync(ListItemDto item)
+        public async Task AddItemAsync(ListItemDto item, bool synced = false)
         {
-            item.IsSynced = false; // Mark dirty
+            item.IsSynced = synced;
             item.IsDeleted = false;
             await _js.InvokeVoidAsync("MacroPrep_DB.save", "items", item);
         }
@@ -101,18 +102,52 @@ namespace MacroPrep.Client.Services.Offline
             await _js.InvokeVoidAsync("MacroPrep_DB.save", "items", item);
         }
 
-        public async Task AddMemberAsync(ListMemberDto member)
+        public async Task AddMemberAsync(ListMemberDto member, bool synced = false)
         {
-            member.IsSynced = false;
+            member.IsSynced = synced;
             member.IsDeleted = false;
+            member.UserName = member.UserName.ToLower();
+
+            // Fetch all members for this list to check for duplicates (a duplicate is one with the same username)
+            try
+            {
+                var existingMembers = await _js.InvokeAsync<List<ListMemberDto>>("MacroPrep_DB.getMembersByList", member.ListId);
+
+                // check for existing member with same username (case-insensitive)
+                if (existingMembers != null)
+                {
+                    ListMemberDto? existingMember = existingMembers.FirstOrDefault(m => m.UserName.ToLower() == member.UserName);
+
+                    // delete the existing member
+                    if (existingMember != null)
+                        await _js.InvokeVoidAsync("MacroPrep_DB.delete", "members", existingMember.Id);
+                }
+            } catch { // The only exception should be "No Match"
+            }
+
+
+            // Verify there isn't already a member with the same email for this list
             await _js.InvokeVoidAsync("MacroPrep_DB.save", "members", member);
         }
 
-        public async Task RemoveMemberAsync(ListMemberDto member)
+        public async Task RemoveMemberAsync(Guid listId, string userName)
         {
+            var member = await _js.InvokeAsync<ListMemberDto>("MacroPrep_DB.getMemberByListAndUserName", listId, userName);
+
+            if (member == null)
+            {
+                throw new Exception("Did not find user in local DB");
+            }
+
             member.IsDeleted = true;
             member.IsSynced = false;
             await _js.InvokeVoidAsync("MacroPrep_DB.save", "members", member);
+        }
+
+        public async Task<List<ListMemberDto>> GetMembersAsync(Guid listId)
+        {
+            var members = await _js.InvokeAsync<List<ListMemberDto>>("MacroPrep_DB.getMembersByList", listId);
+            return members.Where(m => !m.IsDeleted).ToList();
         }
 
         // ==========================================
@@ -142,7 +177,7 @@ namespace MacroPrep.Client.Services.Offline
         public async Task DeleteListAndRelatedDataAsync(Guid listId)
         {
             // Gets all items and members for this list and deletes them, then deletes the list itself
-            var items = await GetItemsForListAsync(listId);
+            var items = await GetItemsAsync(listId);
             foreach (var item in items)
             {
                 await _js.InvokeVoidAsync("MacroPrep_DB.delete", "items", item.Id);
@@ -158,9 +193,12 @@ namespace MacroPrep.Client.Services.Offline
         }
 
         // Delete a member from IndexedDB immediately after a successful delete sync with the server
-        public async Task DeleteMemberPAsync(Guid memberId)
+        public async Task DeleteMemberPAsync(ListMemberDto member)
         {
-            await _js.InvokeVoidAsync("MacroPrep_DB.delete", "members", memberId);
+            var dMember = await _js.InvokeAsync<ListMemberDto>("MacroPrep_DB.getMemberByListAndUserName", member.ListId, member.UserName);
+            if (member == null) return;
+
+            await _js.InvokeVoidAsync("MacroPrep_DB.delete", "members", member.Id);
         }
 
         // Delete an item from IndexedDB immediately after a successful delete sync with the server
@@ -184,24 +222,28 @@ namespace MacroPrep.Client.Services.Offline
 
         private async Task<bool> MarkTableAsSynced(string storeName, Guid id)
         {
-            var obj = await _js.InvokeAsync<dynamic>($"MacroPrep_DB.get", storeName, id);
-            if (obj == null) return false;
+            try
+            {
+                // 1. Fetch as a Nullable JsonElement
+                var result = await _js.InvokeAsync<System.Text.Json.JsonElement?>($"MacroPrep_DB.get", storeName, id);
 
-            // In dynamic JS interop, we can't easily cast to DTO and back if types vary,
-            // but since we know the structure:
+                // 2. Check for null or 'undefined' safely
+                if (!result.HasValue ||
+                     result.Value.ValueKind == System.Text.Json.JsonValueKind.Null ||
+                     result.Value.ValueKind == System.Text.Json.JsonValueKind.Undefined)
+                {
+                    return false; // Not found in this table
+                }
 
-            // If it was marked as deleted and we successfully synced that delete, remove it for real now
-            // (Or keep it for history, your choice. Usually we Hard Delete now).
-            // checking 'IsDeleted' via JsonElement or dynamic can be tricky.
-            // Let's assume we just mark IsSynced = true.
-
-            // Note: If you implement Soft Deletes, you need logic here:
-            // IF obj.IsDeleted == true -> Hard Delete from DB
-            // ELSE -> obj.IsSynced = true -> Save
-
-            // Simplified approach:
-            await _js.InvokeVoidAsync("MacroPrep_DB.markSynced", storeName, id);
-            return true;
+                // 3. Found it! Mark as synced.
+                await _js.InvokeVoidAsync("MacroPrep_DB.markSynced", storeName, id);
+                return true;
+            }
+            catch
+            {
+                // If JS throws an error (e.g., store not found), treat as "not found"
+                return false;
+            }
         }
     }
 }

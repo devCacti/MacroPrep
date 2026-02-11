@@ -46,7 +46,7 @@
         });
     },
 
-    // 👇 THIS IS THE FUNCTION YOU WERE MISSING
+    // 2. GET BY ID
     get: function (storeName, id) {
         return new Promise((resolve, reject) => {
             this.openDb().then(db => {
@@ -98,6 +98,40 @@
                 const request = index.getAll(listId);
 
                 request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        });
+    },
+
+    getMembersByList: function (listId) {
+        return new Promise((resolve, reject) => {
+            this.openDb().then(db => {
+                const tx = db.transaction('members', 'readonly');
+                const store = tx.objectStore('members');
+                const request = store.getAll(); // No index, so get all and filter
+
+                request.onsuccess = () => {
+                    const allMembers = request.result;
+                    const filtered = allMembers.filter(m => m.listId === listId);
+                    resolve(filtered);
+                };
+                request.onerror = () => reject(request.error);
+            });
+        });
+    },
+
+    getMemberByListAndUserName: function (listId, username) {
+        return new Promise((resolve, reject) => {
+            this.openDb().then(db => {
+                const tx = db.transaction('members', 'readonly');
+                const store = tx.objectStore('members');
+                const request = store.getAll(); // No index, so get all and filter
+
+                request.onsuccess = () => {
+                    const allMembers = request.result;
+                    const member = allMembers.find(m => m.listId === listId && m.userName === username);
+                    resolve(member);
+                };
                 request.onerror = () => reject(request.error);
             });
         });

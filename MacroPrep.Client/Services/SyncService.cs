@@ -1,5 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using MacroPrep.Client.Services.Offline;
+using System.Net;
 using System.Net.Http.Json;
 
 namespace MacroPrep.Client.Services
@@ -29,6 +30,8 @@ namespace MacroPrep.Client.Services
                 var pendingItems = await _offlineService.GetPendingSyncItemsAsync();
                 var pendingMembers = await _offlineService.GetPendingSyncMembersAsync();
 
+                Console.WriteLine($"Syncing {pendingLists.Count} lists, {pendingItems.Count} items, {pendingMembers.Count} members...");
+
                 foreach (var list in pendingLists)
                 {
                     try
@@ -41,9 +44,10 @@ namespace MacroPrep.Client.Services
                         }
                         else
                         {
+                            list.UpdatedAt = DateTimeOffset.Now;
                             response = await _http.PutAsJsonAsync($"api/shopping-lists/{list.Id}", list);
 
-                            if (!response.IsSuccessStatusCode && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                            if (response.StatusCode == HttpStatusCode.NotFound)
                             {
                                 // If PUT failed because it didn't exist, try creating it
                                 response = await _http.PostAsJsonAsync("api/shopping-lists", list);
@@ -99,7 +103,11 @@ namespace MacroPrep.Client.Services
                             }
                         }
 
-                        if (response.IsSuccessStatusCode)
+                        if (response.IsSuccessStatusCode && item.IsDeleted)
+                        {
+                            await _offlineService.DeleteItemPAsync(item.Id);
+                        }
+                        else
                         {
                             await _offlineService.MarkAsSyncedAsync(item.Id);
                         }
@@ -115,22 +123,22 @@ namespace MacroPrep.Client.Services
                     try
                     {
                         // api/shopping-lists/{listid}/invite?userName=username
-                        Console.WriteLine("Sending......");
                         if (member.IsDeleted)
                         {
-                            var response = await _http.DeleteAsync($"api/shopping-lists/{member.ListId}/remove-member/{member.Id}");
+                            Console.WriteLine("Sending Delete Member...");
+                            var response = await _http.DeleteAsync($"api/shopping-lists/{member.ListId}/member/{member.UserName}");
 
-                            if (response.IsSuccessStatusCode)
-                                await _offlineService.DeleteMemberPAsync(member.Id);
+                            if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound)
+                                await _offlineService.DeleteMemberPAsync(member);
                             continue;
                         }
                         else
                         {
-                            Console.Write("Sending...");
+                            Console.Write("Sending Invite Member...");
                             var url = $"api/shopping-lists/{member.ListId}/invite?userName={Uri.EscapeDataString(member.UserName)}";
                             var response = await _http.PostAsync(url, null);
 
-                            if (response.IsSuccessStatusCode)
+                            if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Conflict)
                             {
                                 await _offlineService.MarkAsSyncedAsync(member.Id);
                             }
