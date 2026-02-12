@@ -43,8 +43,8 @@ namespace MacroPrep.Client.Services
             // 1. Build the connection to the Server Hub
             _hubConnection = new HubConnectionBuilder()
                 // Switch from "localhost" to the actual deployed URL when in production. Since in Dev the API is on a different port
-                //.WithUrl(_nav.ToAbsoluteUri("/api/hubs/shopping-hub"), options => options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken))
-                .WithUrl("https://localhost:7273/api/hubs/shopping-hub", options => options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken))
+                .WithUrl(_nav.ToAbsoluteUri("/api/hubs/shopping-hub"), options => options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken))
+                //.WithUrl("https://localhost:7273/api/hubs/shopping-hub", options => options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken))
                 .WithAutomaticReconnect() // Auto-retry if internet drops
                 .Build();
 
