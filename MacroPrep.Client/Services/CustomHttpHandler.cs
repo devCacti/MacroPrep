@@ -106,7 +106,7 @@ namespace MacroPrep.Client.Services
         private async Task ForceLogout()
         {
             await _localStorage.RemoveItemAsync("authToken");
-            _navigationManager.NavigateTo("/auth/login", true);
+            _navigationManager.NavigateTo("/auth/login");
         }
 
         private async Task<HttpRequestMessage> CloneRequest(HttpRequestMessage request)

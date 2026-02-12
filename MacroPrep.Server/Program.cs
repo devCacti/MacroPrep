@@ -407,6 +407,8 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
             return Results.Forbid();
         }
 
+        var listItems = await db.ListItems.Where(i => i.ListId == listId).ToListAsync();
+
         var listDto = new ListDto
         {
             Id = list.Id,
@@ -416,7 +418,7 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
             IsShared = list.IsShared,
             CreatedAt = list.CreatedAt,
             UpdatedAt = list.UpdatedAt,
-            Items = list.Items.Select(i => new ListItemDto
+            Items = listItems.Select(i => new ListItemDto
             {
                 Id = i.Id,
                 ListId = i.ListId,

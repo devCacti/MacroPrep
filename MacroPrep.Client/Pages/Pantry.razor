@@ -623,18 +623,15 @@
             // if they don't exist and they are marked as synced, it means they were deleted on the server and we should delete them locally as well,
             foreach (var localItem in _localItems)
             {
-                var serverItem = _serverItems.FirstOrDefault(i => i.Id == localItem.Id);
+                if (Sync.IsItemInFlight(localItem.Id)) continue;
 
-                if (serverItem == null && localItem.IsSynced)
-                {
-                    // If the item doesn't exist on the server and is marked as synced, it means it was deleted on the server, so we should delete it locally as well
-                    await OfflineService.DeleteItemAsync(localItem.Id);
-                }
+                // Use explicit string comparison or Ensure Guid types match
+                var existsOnServer = _serverItems.Any(i => i.Id.ToString().ToLower() == localItem.Id.ToString().ToLower());
 
-                if (serverItem == null && !localItem.IsSynced)
+                if (!existsOnServer && localItem.IsSynced && !localItem.IsDeleted)
                 {
-                    localList.Items.Add(localItem);
-                    Sync.RequestSync();
+                    Console.WriteLine($"Deleting {localItem.Name} because ID {localItem.Id} was not found in server list.");
+                    await OfflineService.DeleteItemPAsync(localItem.Id);
                 }
             }
 

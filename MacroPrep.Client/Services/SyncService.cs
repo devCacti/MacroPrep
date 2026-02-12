@@ -1,5 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using MacroPrep.Client.Services.Offline;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -15,6 +16,8 @@ namespace MacroPrep.Client.Services
         private bool _isSyncing = false;
         private bool _isWaitingToSync = false;
         public bool IsGlobalSyncing => _isSyncing || _isWaitingToSync;
+        private readonly HashSet<Guid> _inFlightItems = new();
+        private readonly ConcurrentDictionary<Guid, DateTime> _recentSyncs = new();
 
         public event Action? OnSyncStatusChanged;
         private void NotifyStateChanged() => OnSyncStatusChanged?.Invoke();
@@ -122,6 +125,9 @@ namespace MacroPrep.Client.Services
 
                 foreach (var item in pendingItems)
                 {
+                    _inFlightItems.Add(item.Id);
+                    NotifyStateChanged();
+
                     try
                     {
                         HttpResponseMessage response;
@@ -151,18 +157,23 @@ namespace MacroPrep.Client.Services
                             }
                         }
 
-                        if (response.IsSuccessStatusCode && item.IsDeleted)
+                        if (response.IsSuccessStatusCode)
                         {
-                            await _offlineService.DeleteItemPAsync(item.Id);
-                        }
-                        else
-                        {
+                            if (item.IsDeleted)
+                                await _offlineService.DeleteItemPAsync(item.Id);
+
                             await _offlineService.MarkAsSyncedAsync(item.Id);
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex);
+                    }
+                    finally
+                    {
+                        _inFlightItems.Remove(item.Id);
+                        _recentSyncs[item.Id] = DateTime.UtcNow; // Add the cooldown
+                        NotifyStateChanged();
                     }
                 }
 
@@ -205,6 +216,20 @@ namespace MacroPrep.Client.Services
                 NotifyStateChanged();
             }
 
+        }
+
+        public bool IsItemInFlight(Guid itemId)
+        {
+            if (_inFlightItems.Contains(itemId)) return true;
+
+            // Protection: If the item finished syncing less than 5 seconds ago, 
+            // treat it as still "in flight" to prevent the reconciliation race.
+            if (_recentSyncs.TryGetValue(itemId, out var syncTime))
+            {
+                if (DateTime.UtcNow - syncTime < TimeSpan.FromSeconds(5)) return true;
+                else _recentSyncs.TryRemove(itemId, out _); // Clean up old entries
+            }
+            return false;
         }
     }
 }
