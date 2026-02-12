@@ -9,6 +9,6 @@ namespace MacroPrep.Server.Data
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<ListItem> ListItems { get; set; }
-        public DbSet<ListMembers> ListMembers { get; set; }
+        public DbSet<ListMember> ListMembers { get; set; }
     }
 }

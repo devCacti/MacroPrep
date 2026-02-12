@@ -393,26 +393,30 @@ i.bi {
     }
 
 /* The Logout Button Style */
-.btn-outline-danger {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    max-width: max-content;
-    background: rgb(255 225 225);
-    border: 1px solid #ef4444 !important;
+.mp-btn-outline-danger {
+    padding: 0.75rem;
+    /* Changed to solid and slightly thicker to match the 'weight' of a shadowed button */
+    border: 1.5px solid #fca5a5;
     color: #ef4444;
-    padding: 0.5rem 1rem;
+    background: #fff; /* Clean white background feels more premium */
     border-radius: 15px;
-    font-weight: var(--weight-medium);
+    font-weight: 600;
     cursor: pointer;
-    transition: var(--smooth);
+    transition: all 0.3s ease; /* Using a standard smooth transition */
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    /* Added shadow to match the primary button's depth */
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
 }
 
-    .btn-outline-danger:hover {
-        background-color: transparent !important;
-        color: red;
+    .mp-btn-outline-danger:hover {
+        color: #ffffff;
+        background: #ef4444; /* Flips to solid on hover for a high-end feel */
+        border-color: #ef4444;
+        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+        transform: translateY(-1px); /* Adds a little 'lift' matching the primary hover */
     }
 
 .btn-outline-purple {
@@ -436,6 +440,26 @@ i.bi {
     pointer-events: none;
     background-color: transparent;
 }
+
+.mp-btn-outline-danger {
+    padding: 0.75rem;
+    border: 1px dashed #fca5a5;
+    color: #ef4444;
+    background: #fef2f2;
+    border-radius: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+    .mp-btn-outline-danger:hover {
+        color: #f21d1d;
+        background: #ffd3d3;
+    }
 
 /* --- MOBILE OVERRIDE (< 640px) --- */
 @media (max-width: 768px) {
@@ -626,4 +650,109 @@ i.bi {
 input:disabled {
     cursor: not-allowed;
     opacity: 0.7;
+}
+
+.offline-banner {
+    background-color: #dc3545; /* Bootstrap Danger Red */
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Base Button Style for Invites */
+.mp-btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    border-radius: 12px; /* Matches your inputs */
+    cursor: pointer;
+    transition: var(--smooth);
+    border: 1.5px solid transparent;
+}
+
+/* Acceptance Button (Primary) */
+.mp-btn-primary-sm {
+    background-color: #10b981;
+    color: white;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+    .mp-btn-primary-sm:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+    }
+
+/* Decline Button (Refined Outline Danger) */
+.mp-btn-outline-danger-sm {
+    background: white;
+    border-color: #fca5a5;
+    color: #ef4444;
+}
+
+    .mp-btn-outline-danger-sm:hover {
+        background: #fef2f2;
+        border-color: #ef4444;
+        color: #b91c1c;
+    }
+
+
+.spinning {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.sync-badge {
+    font-size: 0.75rem;
+    color: #c8a000;
+    background: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid #dbeafe;
+    font-weight: var(--weight-medium);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.synced-tick {
+    color: #28a745; /* Success Green */
+    font-size: 1.1rem;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Ensure the spinning icon is smooth */
+.spinning {
+    animation: spin 1s linear infinite;
+    display: inline-block;
 }

@@ -8,10 +8,28 @@ namespace MacroPrep.Client.Services
         private HubConnection? _hubConnection;
         private readonly NavigationManager _nav;
 
-        // Events that the UI (Pantry.razor) will subscribe to
-        public event Action<string>? OnListUpdated;     // Triggered when a list is renamed/deleted
-        public event Action<string>? OnItemsChanged;    // Triggered when items are added/checked
-        public event Action<string>? OnNotification;  // Triggered when an invite is accepted
+        // Events that the UI will subscribe to
+
+        /// <summary>                                       ///
+        /// START OF    -> PANTRY.RAZOR PAGE RELATED EVENTS ///
+        /// </summary>                                      ///
+        // List Specific
+        public event Action<string>? ListUpdated;           // ListId
+        public event Action<string>? ListDeleted;           // ListId
+        public event Action<string>? ListAccessRemoved;     // ListId
+
+        // Items (To be implemented)
+        public event Action<string>? ItemsChanged;          // ...
+
+        // Invites
+        public event Action<string>? InviteReceived;        // ListId
+        public event Action<string, string>? InviteAccepted;// ListId, Member UserName
+        public event Action<string, string>? InviteRejected;// ListId, Member UserName
+        public event Action<string, string>? MemberLeft;    // ListId, Member UserName
+
+        /// <summary>                                       ///
+        /// END OF      -> PANTRY.RAZOR PAGE RELATED EVENTS ///
+        /// </summary>                                      ///
 
         public RealTimeSyncService(NavigationManager nav)
         {
@@ -24,29 +42,34 @@ namespace MacroPrep.Client.Services
 
             // 1. Build the connection to the Server Hub
             _hubConnection = new HubConnectionBuilder()
-                //.WithUrl(_nav.ToAbsoluteUri("/api/hubs/shopping-hub"),
-                .WithUrl("https://localhost:7273/api/hubs/shopping-hub",
-                options =>
-                {
-                    // Pass the JWT token so the Hub knows who we are
-                    options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken);
-                })
+                // Switch from "localhost" to the actual deployed URL when in production. Since in Dev the API is on a different port
+                .WithUrl(_nav.ToAbsoluteUri("/api/hubs/shopping-hub"), options => options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken))
+                //.WithUrl("https://localhost:7273/api/hubs/shopping-hub", options => options.AccessTokenProvider = () => Task.FromResult((string?)jwtToken))
                 .WithAutomaticReconnect() // Auto-retry if internet drops
                 .Build();
 
-            // Matches: await hubContext.Clients.Group(...).SendAsync("ListUpdated", listId);
-            // (Wait, your API code used "ListUpdated" for items too. Let's standardize.)
-            _hubConnection.On<string>("ListUpdated", (listId) =>
-            {
-                OnListUpdated?.Invoke(listId);
-                OnItemsChanged?.Invoke(listId); // Usually implies items changed too
-            });
+            /// <summary>                                       ///
+            /// START OF    -> PANTRY.RAZOR PAGE RELATED EVENTS ///
+            /// </summary>                                      ///
+            // List Specific
+            _hubConnection.On<string>("ListUpdated", (listId) => ListUpdated?.Invoke(listId));
+            _hubConnection.On<string>("ListDeleted", (listId) => ListDeleted?.Invoke(listId));
+            _hubConnection.On<string>("ListAccessRemoved", (listId) => ListAccessRemoved?.Invoke(listId));
 
-            // Matches: await hubContext.Clients.Users(...).SendAsync("InviteAccepted", message);
-            _hubConnection.On<string>("InviteAccepted", (message) =>
-            {
-                OnNotification?.Invoke(message);
-            });
+            // Items (To be implemented)
+            _hubConnection.On<string>("ItemsChanged", (itemId) => ItemsChanged?.Invoke(itemId));
+
+            // Invites & Members
+            _hubConnection.On<string>("InviteReceived", (listId) => InviteReceived?.Invoke(listId));
+            _hubConnection.On<string, string>("InviteAccepted", (listId, memberId) => InviteAccepted?.Invoke(listId, memberId));
+            _hubConnection.On<string, string>("InviteRejected", (listId, memberId) => InviteRejected?.Invoke(listId, memberId));
+            _hubConnection.On<string, string>("MemberLeftList", (listId, memberId) => MemberLeft?.Invoke(listId, memberId));
+            /// <summary>                                       ///
+            /// END OF      -> PANTRY.RAZOR PAGE RELATED EVENTS ///
+            /// </summary>                                      ///
+
+
+
 
             // 3. Start the connection
             await _hubConnection.StartAsync();

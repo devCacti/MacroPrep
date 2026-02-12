@@ -469,3 +469,42 @@
         background: #fee2e2;
         border-color: #ef4444;
     }
+
+
+/* Container styling */
+.invites-container {
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+    .invites-container h3 {
+        font-size: var(--text-base);
+        color: #1e293b;
+        margin-bottom: 1rem;
+        font-weight: var(--weight-bold);
+    }
+
+/* Individual Invite Row */
+.invite-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8fafc; /* Subtle slate tint */
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+}
+
+    .invite-row span {
+        font-size: var(--text-sm);
+        color: #475569;
+    }
+
+    .invite-row .actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
