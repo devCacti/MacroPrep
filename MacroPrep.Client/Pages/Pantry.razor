@@ -300,29 +300,40 @@
             if (Guid.TryParse(idClaim, out var parsedId))
                 _currentUserId = parsedId;
         }
-        var token = await LocalStorage.GetItemAsync<string>("authToken");
-        if (!string.IsNullOrEmpty(token))
-        {
-            try
-            {
-                await SignalR.InitializeAsync(token);
-
-                SignalR.OnListUpdated += HandleRealTimeUpdate;
-                SignalR.OnItemsChanged += HandleRealTimeUpdate;
-                SignalR.OnListAccessRemoved += HandleEviction;
-                SignalR.OnNotification += HandleNotification;
-            }
-            catch
-            {
-                Console.WriteLine("Please check your internet connection or try again later.");
-            }
-        }
 
         if (_currentUserId == Guid.Empty)
         {
             // Force logout because there is something very wrong with the authentication state if we can't get a valid user ID
             await ForceLogout();
             return;
+        }
+
+        var token = await LocalStorage.GetItemAsync<string>("authToken");
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            try
+            {
+                await SignalR.InitializeAsync(token);
+
+                // List
+                SignalR.ListUpdated += HandleListUpdate;
+                SignalR.ListDeleted += HandleAccessRemoved;
+                SignalR.ListAccessRemoved += HandleAccessRemoved;
+
+                // Item
+                SignalR.ItemsChanged += HandleListUpdate;
+
+                // Invites and Members
+                SignalR.InviteReceived += HandleInviteReceived;
+                SignalR.InviteAccepted += HandleInviteAccepted;
+                SignalR.InviteRejected += HandleInviteRejected_Or_MemberLeft;
+                SignalR.MemberLeft += HandleInviteRejected_Or_MemberLeft;
+            }
+            catch
+            {
+                Console.WriteLine("Please check your internet connection or try again later.");
+            }
         }
 
         Sync.OnSyncStatusChanged += HandleSyncStatusChanged;
@@ -366,13 +377,7 @@
         }
     }
 
-    private async void HandleNotification(string message)
-    {
-        Console.WriteLine("Received notification: " + message);
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async void HandleRealTimeUpdate(string listId)
+    private async void HandleListUpdate(string listId)
     {
         if (!Guid.TryParse(listId, out var listGuid)) return;
 
@@ -407,22 +412,62 @@
         }
     }
 
-    private async void HandleSyncStatusChanged()
-    {
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async void HandleEviction(string listId)
+    private async void HandleAccessRemoved(string listId)
     {
         var vm = _viewModels.FirstOrDefault(v => v.List.Id.ToString() == listId);
         if (vm != null)
         {
             _viewModels.Remove(vm);
-            await OfflineService.DeleteListAndRelatedDataAsync(vm.List.Id);
+            await OfflineService.DeleteListAndRelatedDataAsync(Guid.Parse(listId));
+            await SignalR.LeaveListGroup(listId.ToString());
             await InvokeAsync(StateHasChanged);
         }
     }
 
+    private async void HandleInviteReceived(string listId)
+    {
+        await FetchLists(getInvites: true, getMyLists: false);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void HandleInviteAccepted(string listId, string memberUserName)
+    {
+        Console.WriteLine($" > Member {memberUserName} has accepted the invite to list {listId}.");
+        var vm = _viewModels.FirstOrDefault(v => v.List.Id.ToString() == listId);
+        if (vm != null)
+        {
+            var member = vm.Members.FirstOrDefault(m => m.UserName.ToString() == memberUserName);
+            if (member != null)
+            {
+                member.HasAccepted = true;
+                await OfflineService.AddMemberAsync(member, true);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async void HandleInviteRejected_Or_MemberLeft(string listId, string memberUserName)
+    {
+        var vm = _viewModels.FirstOrDefault(v => v.List.Id.ToString() == listId);
+        if (vm != null)
+        {
+            var member = vm.Members.FirstOrDefault(m => m.UserName.ToString() == memberUserName);
+            if (member != null)
+            {
+                vm.Members.Remove(member);
+                await OfflineService.DeleteMemberPAsync(member);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    // Syncing Status Changed Handler
+    private async void HandleSyncStatusChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Check list full sync status
     private bool IsListFullySynced(ListViewModel vm)
     {
         return !vm.IsSyncing && !Sync.IsGlobalSyncing && vm.List.IsSynced;
@@ -442,6 +487,9 @@
         }
     }
 
+    /// <summary>
+    /// Syncs local data with the server. This method is called on initial load if we are online, and also whenever we come back online after being offline.
+    /// </summary>
     private async Task SyncWithServer()
     {
         try
@@ -463,23 +511,6 @@
                 _retryTimer.Dispose();
                 _retryTimer = null;
                 Console.WriteLine("Server is back! Stopping retry timer.");
-            }
-
-            var token = await LocalStorage.GetItemAsync<string>("authToken");
-            if (!string.IsNullOrEmpty(token))
-            {
-                await SignalR.InitializeAsync(token);
-
-                // Remove any existing handlers to prevent duplicates, then re-attach them
-                SignalR.OnListUpdated -= HandleRealTimeUpdate;
-                SignalR.OnListUpdated -= HandleRealTimeUpdate;
-                SignalR.OnListAccessRemoved -= HandleEviction;
-                SignalR.OnNotification -= HandleNotification;
-
-                SignalR.OnListUpdated += HandleRealTimeUpdate;
-                SignalR.OnItemsChanged += HandleRealTimeUpdate;
-                SignalR.OnListAccessRemoved += HandleEviction;
-                SignalR.OnNotification += HandleNotification;
             }
 
             // Fetch invites and lists (invites: true, my-lists: true)
@@ -523,7 +554,7 @@
                             if (!_newInputs.ContainsKey(serverList.Id)) _newInputs[serverList.Id] = "";
                             if (!_newMemberInputs.ContainsKey(serverList.Id)) _newMemberInputs[serverList.Id] = "";
 
-
+                            await SignalR.LeaveListGroup(list.Id.ToString());
                             await SignalR.JoinListGroup(list.Id.ToString());
                             await InvokeAsync(StateHasChanged);
                             continue;
@@ -669,24 +700,6 @@
             Console.WriteLine($"Problem Updating List Information: {ex}");
         }
         return localList;
-    }
-
-    public void Dispose()
-    {
-        _objRef?.Dispose();
-        _retryTimer?.Dispose();
-
-        SignalR.OnListUpdated -= HandleRealTimeUpdate;
-        SignalR.OnItemsChanged -= HandleRealTimeUpdate;
-        SignalR.OnNotification -= HandleNotification;
-    }
-
-    private async Task ForceLogout()
-    {
-        await LocalStorage.RemoveItemAsync("authToken");
-        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
-
-        Nav.NavigateTo("/login");
     }
 
     private void ToggleSettings(Guid listId)
@@ -922,6 +935,7 @@
             if (!_newInputs.ContainsKey(list.Id)) _newInputs[list.Id] = "";
             if (!_newMemberInputs.ContainsKey(list.Id)) _newMemberInputs[list.Id] = "";
 
+            await SignalR.LeaveListGroup(list.Id.ToString());
             await SignalR.JoinListGroup(list.Id.ToString());
         }
 
@@ -973,5 +987,30 @@
     private async Task HandleKeyUp(KeyboardEventArgs e, ListViewModel viewModel)
     {
         if (e.Key == "Enter") await AddItem(viewModel);
+    }
+
+    private async Task ForceLogout()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+
+        Nav.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        _objRef?.Dispose();
+        _retryTimer?.Dispose();
+
+        if (SignalR == null) return;
+
+        SignalR.ListUpdated -= HandleListUpdate;
+        SignalR.ListDeleted -= HandleAccessRemoved;
+        SignalR.ListAccessRemoved -= HandleAccessRemoved;
+        SignalR.ItemsChanged -= HandleListUpdate;
+        SignalR.InviteReceived -= HandleInviteReceived;
+        SignalR.InviteAccepted -= HandleInviteAccepted;
+        SignalR.InviteRejected -= HandleInviteRejected_Or_MemberLeft;
+        SignalR.MemberLeft -= HandleInviteRejected_Or_MemberLeft;
     }
 }

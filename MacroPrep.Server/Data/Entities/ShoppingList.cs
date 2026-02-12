@@ -18,6 +18,6 @@ namespace MacroPrep.Server.Data.Entities
 
 
         public List<ListItem> Items { get; set; } = new();
-        public List<ListMembers> Members { get; set; } = new();
+        public List<ListMember> Members { get; set; } = new();
     }
 }

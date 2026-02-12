@@ -4,7 +4,7 @@ using MacroPrep.Shared.Enums.ShoppingLists;
 
 namespace MacroPrep.Server.Data.Entities
 {
-    public class ListMembers
+    public class ListMember
     {
         [Key]
         public Guid Id { get; set; }

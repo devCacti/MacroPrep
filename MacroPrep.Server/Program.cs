@@ -13,7 +13,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.SignalR;
-using System.Collections.Generic;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +23,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configure DateOnly data type
 builder.Services.AddSwaggerGen(c =>
 {
     // Tells Swagger: "Whenever you see DateOnly, treat it as a string formatted as a date"
@@ -35,7 +35,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
+// Add a CORS policy (Will only be used in development mode)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("SignalRPolicy", policy =>
@@ -47,11 +47,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add the Database context for the "DefaultConnection" application variable
 builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add the token service to the services
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// Add authentication schemes
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -69,8 +72,44 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+            (path.StartsWithSegments("/api/hubs/shopping-hub")))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        },
+
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"\n > [Auth] VALIDATION FAILED: {context.Exception.Message}\n");
+            return Task.CompletedTask;
+        },
+
+        // 3. Debug Successful Token Parsing
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine($"\n > [Auth] Token Validated! User: {context.Principal?.Identity?.Name}\n");
+            // Optional: Print claims to see if 'sub' or 'nameid' exists
+            foreach (var claim in context.Principal?.Claims ?? [])
+            {
+                Console.WriteLine($"       Claim: {claim.Type} = {claim.Value}");
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
+// Add Authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
@@ -78,8 +117,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("UncompletedSetup", policy => policy.RequireClaim("setup_completed", "false"));
 });
 
+// Add SignalR to the services
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 
+// Build the app
 var app = builder.Build();
 
 // Auto-Heal the Database
@@ -90,9 +132,9 @@ var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 await db.Database.MigrateAsync();
 
 // Configure the HTTP request pipeline.
-
 app.UseHttpsRedirection();
 
+// Use SwaggerUI and CORS policy if in dev environment
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -101,6 +143,7 @@ if (app.Environment.IsDevelopment())
     app.UseCors("SignalRPolicy");
 }
 
+// Add Auth
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -120,11 +163,16 @@ void SetSessionCookie(HttpContext context, Guid sessionId, string token, DateTim
 }
 
 // API HUB ENDPOINT
-app.MapHub<ShoppingHub>("/hubs/shopping-hub");
+// Used for SignalR
 
 if (app.Environment.IsDevelopment())
 {
+    // In production every endpoint will be under /api/ without choice due to being in the "api" alias, so we have to simulate it in development
     app.MapHub<ShoppingHub>("/api/hubs/shopping-hub");
+}
+else
+{
+    app.MapHub<ShoppingHub>("/hubs/shopping-hub");
 }
 
 // API AUTH GROUP
@@ -407,7 +455,8 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
             return Results.Forbid();
         }
 
-        var listItems = await db.ListItems.Where(i => i.ListId == listId).ToListAsync();
+        List<ListItem> listItems = await db.ListItems.Where(i => i.ListId == listId).ToListAsync();
+        List<ListMember> listMembers = new();
 
         var listDto = new ListDto
         {
@@ -456,7 +505,7 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
     ;
 
 // UPDATE
-listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     try
     {
@@ -488,7 +537,7 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
 
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+        await hubContext.Clients.Group(listId.ToString()).ListAccessRemoved(listId.ToString());
 
         return Results.NoContent();
     }
@@ -508,7 +557,7 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
     ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     try
     {
@@ -531,7 +580,7 @@ listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, Clai
         db.ShoppingLists.Remove(list);
 
         await db.SaveChangesAsync();
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListDeleted", listId);
+        await hubContext.Clients.Group(listId.ToString()).ListDeleted(listId.ToString());
 
         return Results.NoContent();
     }
@@ -551,7 +600,7 @@ listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, Clai
 
 // ITEMS ENDPOINTS (Create, Update, Delete) with proper authorization and error handling will be added here (not included in this snippet for brevity)
 // CREATE
-listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     try
     {
@@ -598,7 +647,7 @@ listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item,
 
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+        await hubContext.Clients.Group(listId.ToString()).ListUpdated(listId.ToString());
 
         return Results.Created($"/api/shopping-lists/{listId}/items/{newItem.Id}", newItem.Id);
     }
@@ -673,7 +722,7 @@ listsGroup.MapGet("/{listId:guid}/items", async (Guid listId, AppDbContext db, C
     ;
 
 // UPDATE
-listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, ListItemDto updatedItem, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, ListItemDto updatedItem, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     try
     {
@@ -711,7 +760,7 @@ listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid item
 
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+        await hubContext.Clients.Group(listId.ToString()).ListUpdated(listId.ToString());
 
         return Results.NoContent();
     }
@@ -731,7 +780,7 @@ listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid item
     ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     try
     {
@@ -767,7 +816,7 @@ listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid i
         await db.SaveChangesAsync();
 
         // notify change
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+        await hubContext.Clients.Group(listId.ToString()).ListUpdated(listId.ToString());
 
         // Return 204 No Content
         return Results.NoContent();
@@ -789,7 +838,7 @@ listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid i
 
 // MEMBERSHIP ENDPOINTS (Invite, Accept Invite, Decline Invite, Leave List, Remove Member) with proper authorization and error handling
 // CREATE - Invite Member
-listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     try
     {
@@ -815,7 +864,7 @@ listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName,
         if (userToInvite == null)
             return Results.Ok("Invite sent!"); // Don't reveal whether the user exists or not to prevent username enumeration attacks
 
-        var member = new ListMembers
+        var member = new ListMember
         {
             Id = Guid.NewGuid(),
             ListId = listId,
@@ -827,6 +876,8 @@ listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName,
 
         db.ListMembers.Add(member);
         await db.SaveChangesAsync();
+
+        await hubContext.Clients.User(userToInvite.Id.ToString().ToLower()).InviteReceived(listId.ToString());
 
         return Results.Ok("Invite sent!");
     }
@@ -846,7 +897,7 @@ listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName,
     ;
 
 // POST - Accept Invite
-listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) => 
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -867,8 +918,7 @@ listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbCont
         // Notify the owner and other members that a new member has accepted the invite
         list.UpdatedAt = DateTimeOffset.UtcNow;
         var memberUserIds = list.Members.Where(m => m.HasAccepted).Select(m => m.UserId.ToString()).ToList();
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
-
+        await hubContext.Clients.Group(listId.ToString()).InviteAccepted(listId.ToString(), member.UserName.ToString().ToLower());
     }
     await db.SaveChangesAsync();
 
@@ -884,7 +934,7 @@ listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbCont
     ;
 
 // DELETE - Decline Invite
-listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -904,7 +954,7 @@ listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbC
     {
         // Notify the owner that the invite was declined
         var ownerUserId = list.OwnerId.ToString();
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+        await hubContext.Clients.Group(listId.ToString()).InviteRejected(listId.ToString(), member.UserName.ToString().ToLower());
     }
 
     await db.SaveChangesAsync();
@@ -921,7 +971,7 @@ listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbC
     ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -935,7 +985,7 @@ listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db
     {
         db.ListMembers.Remove(member);
         await db.SaveChangesAsync();
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+        await hubContext.Clients.Group(listId.ToString()).MemberLeftList(listId.ToString(), member.UserName.ToString().ToLower());
         return Results.Ok(new { Message = "You have left the list" });
     }
 
@@ -951,7 +1001,7 @@ listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db
     ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}/member/{userName}", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
+listsGroup.MapDelete("/{listId:guid}/member/{userName}", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -965,10 +1015,13 @@ listsGroup.MapDelete("/{listId:guid}/member/{userName}", async (Guid listId, str
     if (member == null)
         return Results.NotFound(new { Message = "Membership not found" });
 
-    await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
-    await hubContext.Clients.User(member.UserId.ToString()).SendAsync("ListAccessRemoved", listId);
     db.ListMembers.Remove(member);
     await db.SaveChangesAsync();
+
+    var userId = db.Users.FirstOrDefault(u => u.UserName.ToLower() == member.UserName.ToLower())?.Id ?? member.UserId;
+
+    await hubContext.Clients.User(userId.ToString().ToLower()).ListAccessRemoved(listId.ToString()); // Notify the removed member that their access has been revoked
+    await hubContext.Clients.Group(listId.ToString()).ListUpdated(listId.ToString());
 
     return Results.Ok(new { Message = "Member removed from the list" });
 })
