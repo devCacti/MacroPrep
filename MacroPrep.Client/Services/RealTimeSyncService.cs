@@ -12,6 +12,7 @@ namespace MacroPrep.Client.Services
         public event Action<string>? OnListUpdated;     // Triggered when a list is renamed/deleted
         public event Action<string>? OnItemsChanged;    // Triggered when items are added/checked
         public event Action<string>? OnNotification;  // Triggered when an invite is accepted
+        public event Action<string>? OnListAccessRemoved; // Triggered when user is removed from a list
 
         public RealTimeSyncService(NavigationManager nav)
         {
@@ -24,6 +25,7 @@ namespace MacroPrep.Client.Services
 
             // 1. Build the connection to the Server Hub
             _hubConnection = new HubConnectionBuilder()
+                // Switch from "localhost" to the actual deployed URL when in production. Since in Dev the API is on a different port
                 //.WithUrl(_nav.ToAbsoluteUri("/api/hubs/shopping-hub"),
                 .WithUrl("https://localhost:7273/api/hubs/shopping-hub",
                 options =>
@@ -35,7 +37,6 @@ namespace MacroPrep.Client.Services
                 .Build();
 
             // Matches: await hubContext.Clients.Group(...).SendAsync("ListUpdated", listId);
-            // (Wait, your API code used "ListUpdated" for items too. Let's standardize.)
             _hubConnection.On<string>("ListUpdated", (listId) =>
             {
                 OnListUpdated?.Invoke(listId);
@@ -47,6 +48,14 @@ namespace MacroPrep.Client.Services
             {
                 OnNotification?.Invoke(message);
             });
+
+            // Matches: await hubContext.Clients.Users(...).SendAsync("ListAccessRemoved", message);
+            _hubConnection.On<string>("ListAccessRemoved", (message) =>
+            {
+                OnListAccessRemoved?.Invoke(message);
+            });
+
+
 
             // 3. Start the connection
             await _hubConnection.StartAsync();

@@ -181,11 +181,11 @@ authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, 
         Token = tokenService.GenerateToken(newUser, session)
     });
 })
-.Produces<UserDto>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status409Conflict)
-.WithName("Register")
-.WithOpenApi();
+    .Produces<UserDto>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status409Conflict)
+    .WithName("Register")
+    .WithOpenApi();
 
 // Login Endpoint
 authGroup.MapPost("/login", async (LoginRequest request, AppDbContext db, ITokenService tokenService, HttpContext context) =>
@@ -215,11 +215,11 @@ authGroup.MapPost("/login", async (LoginRequest request, AppDbContext db, IToken
 
     return Results.Ok(new {Token = tokenService.GenerateToken(user, session)});
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.WithName("Login")
-.WithOpenApi();
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .WithName("Login")
+    .WithOpenApi();
 
 // Complete Account Setup Endpoint
 authGroup.MapPost("/complete-setup", async (AccountSetupRequest request, AppDbContext db, ClaimsPrincipal user) =>
@@ -249,14 +249,14 @@ authGroup.MapPost("/complete-setup", async (AccountSetupRequest request, AppDbCo
 
     return Results.Ok(new { Message = "Profile updated successfully" });
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status409Conflict)
-.WithName("CompleteAccountSetup")
-.WithOpenApi()
-.RequireAuthorization("UncompletedSetup"); // Only allow users who have NOT completed setup to access this endpoint
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status409Conflict)
+    .WithName("CompleteAccountSetup")
+    .WithOpenApi()
+    .RequireAuthorization("UncompletedSetup"); // Only allow users who have NOT completed setup to access this endpoint
 
 // Refresh Token Endpoint - This will be used to refresh the JWT token using the session cookie
 authGroup.MapPost("/refresh", async (AppDbContext db, ITokenService tokenService, HttpContext context) =>
@@ -290,11 +290,10 @@ authGroup.MapPost("/refresh", async (AppDbContext db, ITokenService tokenService
 
     return Results.Ok(new { Token = tokenService.GenerateToken(session.User!, session) });
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.WithName("RefreshToken")
-.WithOpenApi()
-.RequireAuthorization("Authenticated");
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .WithName("RefreshToken")
+    .WithOpenApi();
 
 // API USER GROUP
 var userGroup = app.MapGroup("/user");
@@ -324,12 +323,12 @@ userGroup.MapGet("/profile", async (ClaimsPrincipal user, AppDbContext db) =>
     if (userDto == null) return Results.NotFound();
     return Results.Ok(userDto);
 })
-.Produces<UserDto>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.WithName("GetUserProfile")
-.WithOpenApi()
-.RequireAuthorization("Authenticated")
-.RequireAuthorization("CompletedSetup"); // Only allow users who have completed setup to access this endpoint
+    .Produces<UserDto>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .WithName("GetUserProfile")
+    .WithOpenApi()
+    .RequireAuthorization("Authenticated")
+    .RequireAuthorization("CompletedSetup"); // Only allow users who have completed setup to access this endpoint
 
 // API SHOPPING LISTS GROUP
 var listsGroup = app.MapGroup("/shopping-lists");
@@ -373,13 +372,13 @@ listsGroup.MapPost("/", async (ListDto list, AppDbContext db, ClaimsPrincipal cl
         return Results.Problem($"An error occurred while creating the list: {ex.Message}");
     }
 })
-.Produces<Guid>(StatusCodes.Status201Created)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.RequireAuthorization("Authenticated")
-.WithName("CreateShoppingList")
-.WithOpenApi()
-;
+    .Produces<Guid>(StatusCodes.Status201Created)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .RequireAuthorization("Authenticated")
+    .WithName("CreateShoppingList")
+    .WithOpenApi()
+    ;
 
 // READ
 listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
@@ -391,22 +390,29 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
             return Results.Unauthorized();
 
         var list = await db.ShoppingLists
-            .Include(l => l.Items)
             .Include(l => l.Members)
             .FirstOrDefaultAsync(l => l.Id == listId);
 
-        if (list == null)
-            return Results.NotFound();
+        if (list == null) return Results.NotFound();
 
-        var isMember = await db.ListMembers.AnyAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted);
-        if (list.OwnerId != Guid.Parse(userIdClaim) && !isMember)
+        var currentUserId = Guid.Parse(userIdClaim);
+        var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+        // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
+        bool isOwner = list.OwnerId == currentUserId;
+        bool isValidMember = member != null && member.HasAccepted;
+
+        if (!isOwner && !isValidMember)
+        {
             return Results.Forbid();
+        }
 
         var listDto = new ListDto
         {
             Id = list.Id,
             Name = list.Name,
             OwnerId = list.OwnerId,
+            OwnerName = db.Users.FirstOrDefault(u => u.Id == list.OwnerId)!.UserName ?? "User",
             IsShared = list.IsShared,
             CreatedAt = list.CreatedAt,
             UpdatedAt = list.UpdatedAt,
@@ -438,14 +444,14 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
         return Results.Problem($"An error occurred while fetching the list: {ex.Message}");
     }
 })
-.Produces<ListDto>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("GetShoppingList")
-.WithOpenApi()
-;
+    .Produces<ListDto>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("GetShoppingList")
+    .WithOpenApi()
+    ;
 
 // UPDATE
 listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
@@ -456,17 +462,23 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
         if (string.IsNullOrEmpty(userIdClaim))
             return Results.Unauthorized();
 
-        var list = await db.ShoppingLists.FirstOrDefaultAsync(l => l.Id == listId);
-        if (list == null)
-            return Results.NotFound();
+        var list = await db.ShoppingLists
+            .Include(l => l.Members)
+            .FirstOrDefaultAsync(l => l.Id == listId);
 
-        var memberType = await db.ListMembers
-            .Where(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted)
-            .Select(m => m.Type)
-            .FirstOrDefaultAsync();
+        if (list == null) return Results.NotFound();
 
-        if (list.OwnerId != Guid.Parse(userIdClaim) && memberType <= MemberType.Master)
+        var currentUserId = Guid.Parse(userIdClaim);
+        var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+        // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
+        bool isOwner = list.OwnerId == currentUserId;
+        bool isValidMember = member != null && member.HasAccepted && member.Type >= MemberType.Master;
+
+        if (!isOwner && !isValidMember)
+        {
             return Results.Forbid();
+        }
 
         list.Name = updatedList.Name;
         list.IsShared = updatedList.IsShared;
@@ -474,7 +486,7 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
 
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated");
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
 
         return Results.NoContent();
     }
@@ -483,18 +495,18 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
         return Results.Problem($"An error occurred while updating the list: {ex.Message}");
     }
 })
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("UpdateShoppingList")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status204NoContent)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("UpdateShoppingList")
+    .WithOpenApi()
+    ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     try
     {
@@ -517,6 +529,7 @@ listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, Clai
         db.ShoppingLists.Remove(list);
 
         await db.SaveChangesAsync();
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListDeleted", listId);
 
         return Results.NoContent();
     }
@@ -525,14 +538,14 @@ listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, Clai
         return Results.Problem($"An error occurred while deleting the list: {ex.Message}");
     }
 })
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("DeleteShoppingList")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status204NoContent)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("DeleteShoppingList")
+    .WithOpenApi()
+    ;
 
 // ITEMS ENDPOINTS (Create, Update, Delete) with proper authorization and error handling will be added here (not included in this snippet for brevity)
 // CREATE
@@ -544,17 +557,23 @@ listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item,
         if (string.IsNullOrEmpty(userIdClaim))
             return Results.Unauthorized();
 
-        var list = await db.ShoppingLists.FirstOrDefaultAsync(l => l.Id == listId);
-        if (list == null)
-            return Results.NotFound();
+        var list = await db.ShoppingLists
+            .Include(l => l.Members)
+            .FirstOrDefaultAsync(l => l.Id == listId);
 
-        var memberType = await db.ListMembers
-            .Where(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted)
-            .Select(m => m.Type)
-            .FirstOrDefaultAsync();
+        if (list == null) return Results.NotFound();
 
-        if (list.OwnerId != Guid.Parse(userIdClaim) && memberType >= MemberType.Master)
+        var currentUserId = Guid.Parse(userIdClaim);
+        var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+        // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
+        bool isOwner = list.OwnerId == currentUserId;
+        bool isValidMember = member != null && member.HasAccepted && member.Type >= MemberType.Editor;
+
+        if (!isOwner && !isValidMember)
+        {
             return Results.Forbid();
+        }
 
         var itemExists = await db.ListItems.AnyAsync(i => i.Id == item.Id && i.ListId == listId);
 
@@ -586,15 +605,15 @@ listsGroup.MapPost("/{listId:guid}/items", async (Guid listId, ListItemDto item,
         return Results.Problem($"An error occurred while adding the item: {ex.Message}");
     }
 })
-.Produces<Guid>(StatusCodes.Status201Created)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("AddListItem")
-.WithOpenApi()
-;
+    .Produces<Guid>(StatusCodes.Status201Created)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("AddListItem")
+    .WithOpenApi()
+    ;
 
 // READ
 listsGroup.MapGet("/{listId:guid}/items", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
@@ -605,13 +624,24 @@ listsGroup.MapGet("/{listId:guid}/items", async (Guid listId, AppDbContext db, C
         if (string.IsNullOrEmpty(userIdClaim))
             return Results.Unauthorized();
 
-        var list = await db.ShoppingLists.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == listId);
-        if (list == null)
-            return Results.NotFound();
+        var list = await db.ShoppingLists
+            .Include(l => l.Members)
+            .FirstOrDefaultAsync(l => l.Id == listId);
 
-        var isMember = await db.ListMembers.AnyAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted);
-        if (list.OwnerId != Guid.Parse(userIdClaim) && !isMember)
+        if (list == null) return Results.NotFound();
+
+        var currentUserId = Guid.Parse(userIdClaim);
+        var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+        // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
+        bool isOwner = list.OwnerId == currentUserId;
+        bool isValidMember = member != null && member.HasAccepted && member.Type >= MemberType.Viewer;
+
+        if (!isOwner && !isValidMember)
+        {
             return Results.Forbid();
+        }
+
 
         var items = list.Items.Select(i => new ListItemDto
         {
@@ -631,14 +661,14 @@ listsGroup.MapGet("/{listId:guid}/items", async (Guid listId, AppDbContext db, C
         return Results.Problem($"An error occurred while fetching the items: {ex.Message}");
     }
 })
-.Produces<List<ListItemDto>>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("GetListItems")
-.WithOpenApi()
-;
+    .Produces<List<ListItemDto>>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("GetListItems")
+    .WithOpenApi()
+    ;
 
 // UPDATE
 listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, ListItemDto updatedItem, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
@@ -649,17 +679,24 @@ listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid item
         if (string.IsNullOrEmpty(userIdClaim))
             return Results.Unauthorized();
 
-        var list = await db.ShoppingLists.FirstOrDefaultAsync(l => l.Id == listId);
-        if (list == null)
-            return Results.NotFound();
+        var list = await db.ShoppingLists
+            .Include(l => l.Members)
+            .FirstOrDefaultAsync(l => l.Id == listId);
 
-        var memberType = await db.ListMembers
-            .Where(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted)
-            .Select(m => m.Type)
-            .FirstOrDefaultAsync();
+        if (list == null) return Results.NotFound();
 
-        if (list.OwnerId != Guid.Parse(userIdClaim) && memberType >= MemberType.Master)
+        var currentUserId = Guid.Parse(userIdClaim);
+        var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+        // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
+        bool isOwner = list.OwnerId == currentUserId;
+        bool isValidMember = member != null && member.HasAccepted && member.Type >= MemberType.Editor;
+
+        if (!isOwner && !isValidMember)
+        {
             return Results.Forbid();
+        }
+
 
         var item = await db.ListItems.FirstOrDefaultAsync(i => i.Id == itemId && i.ListId == listId);
         if (item == null)
@@ -681,15 +718,15 @@ listsGroup.MapPut("/{listId:guid}/items/{itemId}", async (Guid listId, Guid item
         return Results.Problem($"An error occurred while updating the item: {ex.Message}");
     }
 })
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("UpdateListItem")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status204NoContent)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("UpdateListItem")
+    .WithOpenApi()
+    ;
 
 // DELETE
 listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid itemId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
@@ -700,27 +737,37 @@ listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid i
         if (string.IsNullOrEmpty(userIdClaim))
             return Results.Unauthorized();
 
-        var list = await db.ShoppingLists.FirstOrDefaultAsync(l => l.Id == listId);
-        if (list == null)
-            return Results.NotFound();
+        var list = await db.ShoppingLists
+            .Include(l => l.Members)
+            .FirstOrDefaultAsync(l => l.Id == listId);
 
-        var memberType = await db.ListMembers
-            .Where(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted)
-            .Select(m => m.Type)
-            .FirstOrDefaultAsync();
+        if (list == null) return Results.NotFound();
 
-        if (list.OwnerId != Guid.Parse(userIdClaim) && memberType >= MemberType.Master)
+        var currentUserId = Guid.Parse(userIdClaim);
+        var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+        // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
+        bool isOwner = list.OwnerId == currentUserId;
+        bool isValidMember = member != null && member.HasAccepted && member.Type >= MemberType.Editor;
+
+        if (!isOwner && !isValidMember)
+        {
             return Results.Forbid();
+        }
 
         var item = await db.ListItems.FirstOrDefaultAsync(i => i.Id == itemId && i.ListId == listId);
         if (item == null)
+            // This item was not found in the db
             return Results.NotFound();
 
+        // Remove item from db
         db.ListItems.Remove(item);
         await db.SaveChangesAsync();
 
+        // notify change
         await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
 
+        // Return 204 No Content
         return Results.NoContent();
     }
     catch (Exception ex)
@@ -728,14 +775,14 @@ listsGroup.MapDelete("/{listId:guid}/items/{itemId}", async (Guid listId, Guid i
         return Results.Problem($"An error occurred while deleting the item: {ex.Message}");
     }
 })
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("DeleteListItem")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status204NoContent)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("DeleteListItem")
+    .WithOpenApi()
+    ;
 
 
 // MEMBERSHIP ENDPOINTS (Invite, Accept Invite, Decline Invite, Leave List, Remove Member) with proper authorization and error handling
@@ -786,15 +833,15 @@ listsGroup.MapPost("/{listId:guid}/invite", async (Guid listId, string userName,
         return Results.Problem($"An error occurred while inviting the user: {ex.Message}");
     }
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.Produces(StatusCodes.Status409Conflict)
-.RequireAuthorization("Authenticated")
-.WithName("InviteToList")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status409Conflict)
+    .RequireAuthorization("Authenticated")
+    .WithName("InviteToList")
+    .WithOpenApi()
+    ;
 
 // POST - Accept Invite
 listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
@@ -818,20 +865,21 @@ listsGroup.MapPost("/{listId:guid}/invite/accept", async (Guid listId, AppDbCont
         // Notify the owner and other members that a new member has accepted the invite
         list.UpdatedAt = DateTimeOffset.UtcNow;
         var memberUserIds = list.Members.Where(m => m.HasAccepted).Select(m => m.UserId.ToString()).ToList();
-        await hubContext.Clients.Users(memberUserIds).SendAsync("InviteAccepted", $"User {member.UserName} has accepted the invite to the list '{list.Name}'");
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+
     }
     await db.SaveChangesAsync();
 
     return Results.Ok(new { Message = "Invite accepted" });
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status404NotFound)
-.Produces(StatusCodes.Status409Conflict)
-.RequireAuthorization("Authenticated")
-.WithName("AcceptListInvite")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status409Conflict)
+    .RequireAuthorization("Authenticated")
+    .WithName("AcceptListInvite")
+    .WithOpenApi()
+    ;
 
 // DELETE - Decline Invite
 listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
@@ -854,24 +902,24 @@ listsGroup.MapDelete("/{listId:guid}/invite/decline", async (Guid listId, AppDbC
     {
         // Notify the owner that the invite was declined
         var ownerUserId = list.OwnerId.ToString();
-        await hubContext.Clients.User(ownerUserId).SendAsync("InviteDeclined", $"User {member.UserName} has declined the invite to the list '{list.Name}'");
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
     }
 
     await db.SaveChangesAsync();
 
     return Results.Ok(new { Message = "Invite declined" });
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status404NotFound)
-.Produces(StatusCodes.Status409Conflict)
-.RequireAuthorization("Authenticated")
-.WithName("DeclineListInvite")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status409Conflict)
+    .RequireAuthorization("Authenticated")
+    .WithName("DeclineListInvite")
+    .WithOpenApi()
+    ;
 
 // DELETE
-listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
+listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
 {
     var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userIdClaim))
@@ -885,19 +933,20 @@ listsGroup.MapDelete("/{listId:guid}/leave", async (Guid listId, AppDbContext db
     {
         db.ListMembers.Remove(member);
         await db.SaveChangesAsync();
+        await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
         return Results.Ok(new { Message = "You have left the list" });
     }
-    
+
     return Results.Conflict(new { Message = "You cannot leave a list you haven't accepted an invite for." });
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status404NotFound)
-.Produces(StatusCodes.Status409Conflict)
-.RequireAuthorization("Authenticated")
-.WithName("LeaveList")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status409Conflict)
+    .RequireAuthorization("Authenticated")
+    .WithName("LeaveList")
+    .WithOpenApi()
+    ;
 
 // DELETE
 listsGroup.MapDelete("/{listId:guid}/member/{userName}", async (Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub> hubContext) =>
@@ -915,19 +964,20 @@ listsGroup.MapDelete("/{listId:guid}/member/{userName}", async (Guid listId, str
         return Results.NotFound(new { Message = "Membership not found" });
 
     await hubContext.Clients.Group(listId.ToString()).SendAsync("ListUpdated", listId);
+    await hubContext.Clients.User(member.UserId.ToString()).SendAsync("ListAccessRemoved", listId);
     db.ListMembers.Remove(member);
     await db.SaveChangesAsync();
 
     return Results.Ok(new { Message = "Member removed from the list" });
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces(StatusCodes.Status404NotFound)
-.RequireAuthorization("Authenticated")
-.WithName("RemoveListMember")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("Authenticated")
+    .WithName("RemoveListMember")
+    .WithOpenApi()
+    ;
 
 // GET - Get All Lists for the Authenticated User (both owned and shared) with proper authorization and error handling
 listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =>
@@ -943,7 +993,7 @@ listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =
             Id = l.Id,
             Name = l.Name,
             OwnerId = l.OwnerId,
-            OwnerName = db.Users.FirstOrDefault(u => u.Id == l.OwnerId)!.UserName ?? "Unkown User",
+            OwnerName = db.Users.FirstOrDefault(u => u.Id == l.OwnerId)!.UserName ?? "User",
             IsShared = l.IsShared,
             CreatedAt = l.CreatedAt,
             UpdatedAt = l.UpdatedAt,
@@ -972,12 +1022,12 @@ listsGroup.MapGet("/my-lists", async (ClaimsPrincipal claims, AppDbContext db) =
 
     return Results.Ok(lists);
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.RequireAuthorization("Authenticated")
-.WithName("GetMyShoppingLists")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .RequireAuthorization("Authenticated")
+    .WithName("GetMyShoppingLists")
+    .WithOpenApi()
+    ;
 
 // GET - Get all Lists that the Authenticated User has been invited to but has NOT accepted yet with proper authorization and error handling
 listsGroup.MapGet("/invites", async (ClaimsPrincipal claims, AppDbContext db) =>
@@ -998,12 +1048,12 @@ listsGroup.MapGet("/invites", async (ClaimsPrincipal claims, AppDbContext db) =>
 
     return Results.Ok(invites);
 })
-.Produces<List<ListInviteDto>>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.RequireAuthorization("Authenticated")
-.WithName("GetListInvites")
-.WithOpenApi()
-;
+    .Produces<List<ListInviteDto>>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status401Unauthorized)
+    .RequireAuthorization("Authenticated")
+    .WithName("GetListInvites")
+    .WithOpenApi()
+    ;
 
 // TEST ENDPOINT: Checks if Token Generation is the killer
 app.MapGet("/test-token", (ITokenService tokenService) =>
@@ -1038,10 +1088,24 @@ app.MapGet("/test-token", (ITokenService tokenService) =>
         return Results.Problem($"CRASH: {ex.Message} \n\n {ex.StackTrace}");
     }
 })
-.Produces(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status500InternalServerError)
-.WithName("TestToken")
-.WithOpenApi()
-;
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status500InternalServerError)
+    .WithName("TestToken")
+    .WithOpenApi()
+    ;
+
+var testGroup = app.MapGroup("/");
+
+if (app.Environment.IsDevelopment())
+{
+    testGroup = app.MapGroup("/api");
+}
+
+
+// Try a connection. This endpoint will only respond 200OK if the user has a internet connection this should help the app know if the issue is the connectivity
+testGroup.MapGet("/test-connection", () => Results.Ok(new { Message = "Connection is healthy!" }))
+    .Produces(StatusCodes.Status200OK)
+    .WithName("TestConnection")
+    .WithOpenApi();
 
 app.Run();

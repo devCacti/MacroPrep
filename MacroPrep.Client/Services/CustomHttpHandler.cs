@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace MacroPrep.Client.Services
 {
@@ -44,10 +45,15 @@ namespace MacroPrep.Client.Services
                     if (refreshSuccessful)
                     {
                         var newToken = await _localStorage.GetItemAsync<string>("authToken");
-                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
+
+                        var clonedRequest = await CloneRequest(request);
+
+
+                        clonedRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
 
                         _isRefreshingToken = false;
-                        return await base.SendAsync(request, cancellationToken);
+
+                        return await base.SendAsync(clonedRequest, cancellationToken);
                     }
                 }
                 catch (Exception)
@@ -55,11 +61,13 @@ namespace MacroPrep.Client.Services
                     // Handle exceptions (e.g., network errors) if needed
                     throw;
                 }
+                finally
+                {
+                    _isRefreshingToken = false;
+                }
 
                 // Redirect to login if the response is not 200 OK or if an exception occurs
-                _isRefreshingToken = false;
-                await _localStorage.RemoveItemAsync("authToken");
-                _navigationManager.NavigateTo("/auth/login", true);
+                await ForceLogout();
             }
 
             return response;
@@ -71,15 +79,21 @@ namespace MacroPrep.Client.Services
             {
                 var client = _httpClientFactory.CreateClient("AuthClient");
 
-                var response = await client.PostAsync("api/auth/refresh", null);
+                // We must create a manual request to ensure we can attach credentials (cookies)
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/refresh");
+
+                request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+
+                var response = await client.SendAsync(request);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
-                    await _localStorage.SetItemAsync("authToken", result!.Token);
-
-                    return true;
+                    if (result != null)
+                    {
+                        await _localStorage.SetItemAsync("authToken", result.Token);
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -106,12 +120,16 @@ namespace MacroPrep.Client.Services
                 ms.Position = 0;
                 clone.Content = new StreamContent(ms);
 
-                foreach (var header in request.Content.Headers)
-                    clone.Content.Headers.Add(header.Key, header.Value);
+                if (request.Content.Headers != null)
+                    foreach (var header in request.Content.Headers)
+                        clone.Content.Headers.Add(header.Key, header.Value);
             }
 
             foreach (var header in request.Headers)
                 clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+
+            foreach (var option in request.Options)
+                clone.Options.TryAdd(option.Key, option.Value);
 
             return clone;
         }

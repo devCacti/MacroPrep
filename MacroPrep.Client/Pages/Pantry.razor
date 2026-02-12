@@ -6,6 +6,7 @@
 @using MacroPrep.Shared.Models.ShoppingLists
 @using MacroPrep.Shared.Enums.ShoppingLists
 @using Blazored.LocalStorage
+@using System.Collections.Concurrent;
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject ShoppingListsService OfflineService
@@ -13,10 +14,19 @@
 @inject NavigationManager Nav
 @inject RealTimeSyncService SignalR
 @inject SyncService Sync
+@inject IJSRuntime JS
+@implements IDisposable
 
 <PageTitle>The Pantry</PageTitle>
 
 <div class="page-wrapper">
+
+    @if (_isOffline)
+    {
+        <div class="offline-banner">
+            <i class="bi bi-wifi-off"></i> You are currently offline. Changes will sync when you reconnect.
+        </div>
+    }
     <div class="content-container">
 
         <header class="page-header">
@@ -36,10 +46,16 @@
                 @foreach (var invite in _pendingInvites)
                 {
                     <div class="invite-row">
-                        <span><strong>@invite.OwnerUserName</strong> invited you to <strong>@invite.ListName</strong></span>
+                        <span>
+                            <strong>@invite.OwnerUserName</strong> invited you to <strong>@invite.ListName</strong>
+                        </span>
                         <div class="actions">
-                            <button class="mp-btn mp-btn-primary" @onclick="() => AcceptInvite(invite)">Accept</button>
-                            <button class="mp-btn-outline-danger" @onclick="() => DeclineInvite(invite)">Decline</button>
+                            <button class="mp-btn-sm mp-btn-primary-sm" @onclick="() => AcceptInvite(invite)">
+                                Accept
+                            </button>
+                            <button class="mp-btn-sm mp-btn-outline-danger-sm" @onclick="() => DeclineInvite(invite)">
+                                Decline
+                            </button>
                         </div>
                     </div>
                 }
@@ -52,33 +68,46 @@
                 var currentVm = vm;
                 var isSettingsOpen = _settingsOpen.ContainsKey(currentVm.List.Id) && _settingsOpen[currentVm.List.Id];
 
-                <div class="shopping-card">
+                    <div class="shopping-card">
 
                     @* --- HEADER --- *@
-                    <div class="card-header-section @(currentVm.List.IsShared ? "shared-bg" : "")">
-                        <div class="header-top">
+                        <div class="card-header-section @(currentVm.List.IsShared ? "shared-bg" : "")">
+                            <div class="header-top">
                             @* Title Input: Disabled if Viewer *@
-                            <input type="text" class="list-title-input"
-                                   value="@currentVm.List.Name"
-                                   disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Editor)"
-                                   @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))" />
+                                <input type="text" class="list-title-input"
+                                       value="@currentVm.List.Name"
+                                       disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Editor)"
+                                       @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))" />
+
+                            @if (currentVm.IsSyncing || Sync.IsGlobalSyncing)
+                            {
+                                <span class="sync-badge">
+                                    <i class="bi bi-arrow-repeat spinning"></i> Syncing...
+                                </span>
+                            }
+                            else if (IsListFullySynced(currentVm))
+                            {
+                                <span class="synced-tick" title="All changes saved to server">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </span>
+                            }
 
                             @* Shared Badge *@
                             @if (currentVm.List.IsShared)
                             {
-                                <span class="badge-shared" title="Shared List">
-                                    <i class="bi bi-people-fill"></i>By:
-                                    <span class="owner-tag"> @(currentVm.IsOwner(_currentUserId) ? "You" : currentVm.List.OwnerName)</span>
-                                </span>
+                                        <span class="badge-shared" title="Shared List">
+                                            <i class="bi bi-people-fill"></i>By:
+                                            <span class="owner-tag"> @(currentVm.IsOwner(_currentUserId) ? "You" : currentVm.List.OwnerName)</span>
+                                        </span>
                             }
 
                             @* Settings Toggle Button: Everyone can see this to access "Leave List" *@
-                            <button class="icon-action-btn @(isSettingsOpen ? "active" : "")"
-                                    @onclick="@(() => ToggleSettings(currentVm.List.Id))"
-                                    title="List Settings">
-                                <i class="bi bi-gear-fill"></i>
-                            </button>
-                        </div>
+                                <button class="icon-action-btn @(isSettingsOpen ? "active" : "")"
+                                        @onclick="@(() => ToggleSettings(currentVm.List.Id))"
+                                        title="List Settings">
+                                    <i class="bi bi-gear-fill"></i>
+                                </button>
+                            </div>
 
                         @* Progress Bar *@
                         @{
@@ -86,135 +115,135 @@
                             var completed = currentVm.Items.Count(i => i.IsChecked);
                             var percent = total == 0 ? 0 : (int)((double)completed / total * 100);
                         }
-                        <div class="progress-info">
-                            <span class="progress-text">@completed of @total items completed</span>
+                            <div class="progress-info">
+                                <span class="progress-text">@completed of @total items completed</span>
+                            </div>
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill" style="width: @(percent)%"></div>
+                            </div>
                         </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" style="width: @(percent)%"></div>
-                        </div>
-                    </div>
 
                     @* --- BODY --- *@
-                    <div class="card-body">
+                        <div class="card-body">
                         @if (!isSettingsOpen)
                         {
                             @* --- ITEMS LIST --- *@
-                            <div class="items-list">
+                                    <div class="items-list">
                                 @foreach (var item in currentVm.Items)
                                 {
-                                    <label class="item-row">
+                                                <label class="item-row">
                                         @* Checkbox: Disabled if Viewer *@
-                                        <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"
-                                               disabled="@(currentVm.GetUserRole(_currentUserId) == MemberType.Viewer)"
-                                               @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
+                                                    <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"
+                                                           disabled="@(currentVm.GetUserRole(_currentUserId) == MemberType.Viewer)"
+                                                           @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
 
-                                        <div class="item-details">
-                                            <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
+                                                    <div class="item-details">
+                                                        <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
                                             @if (item.Quantity > 1)
                                             {
-                                                <span class="item-qty">x@(item.Quantity)</span>
+                                                                <span class="item-qty">x@(item.Quantity)</span>
                                             }
-                                        </div>
+                                                    </div>
 
                                         @* Delete Item: Hidden if Viewer *@
                                         @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Editor)
                                         {
-                                            <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
-                                                <i class="bi bi-x"></i>
-                                            </button>
+                                                            <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
+                                                                <i class="bi bi-x"></i>
+                                                            </button>
                                         }
-                                    </label>
+                                                </label>
                                 }
-                            </div>
+                                    </div>
 
                             @* Add Item: Hidden if Viewer *@
                             @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Editor)
                             {
-                                <div class="add-item-row">
-                                    <input type="text" class="add-input" placeholder="Add item..."
-                                           @bind="_newInputs[currentVm.List.Id]"
-                                           @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
-                                    <button class="mp-btn mp-btn-primary btn-icon-only" @onclick="@(() => AddItem(currentVm))">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </button>
-                                </div>
+                                            <div class="add-item-row">
+                                                <input type="text" class="add-input" placeholder="Add item..."
+                                                       @bind="_newInputs[currentVm.List.Id]"
+                                                       @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
+                                                <button class="mp-btn mp-btn-primary btn-icon-only" @onclick="@(() => AddItem(currentVm))">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </button>
+                                            </div>
                             }
                         }
                         else
                         {
                             @* --- SETTINGS PANEL (Expanded) --- *@
-                            <div class="settings-panel">
-                                <h4 class="settings-title">List Settings</h4>
+                                    <div class="settings-panel">
+                                        <h4 class="settings-title">List Settings</h4>
 
                                 @* 1. Share Toggle: Only Creator/Master can see *@
                                 @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
                                 {
-                                    <div class="setting-row">
-                                        <div class="setting-info">
-                                            <span class="setting-label">Share List</span>
-                                            <span class="setting-desc">Allow others to view and edit</span>
-                                        </div>
-                                        <label class="toggle-switch">
-                                            <input type="checkbox" checked="@currentVm.List.IsShared"
-                                                   @onchange="@(e => ToggleSharedStatus(currentVm, (bool)e.Value!))">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
+                                                <div class="setting-row">
+                                                    <div class="setting-info">
+                                                        <span class="setting-label">Share List</span>
+                                                        <span class="setting-desc">Allow others to view and edit</span>
+                                                    </div>
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" checked="@currentVm.List.IsShared"
+                                                               @onchange="@(e => ToggleSharedStatus(currentVm, (bool)e.Value!))">
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                </div>
                                 }
 
                                 @* 2. Member Management: Only Creator/Master can see *@
                                 @if (currentVm.List.IsShared && currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
                                 {
-                                    <div class="members-section">
-                                        <span class="setting-label">Members</span>
-                                        <div class="member-chips">
+                                                <div class="members-section">
+                                                    <span class="setting-label">Members</span>
+                                                    <div class="member-chips">
                                             @foreach (var member in (currentVm.Members))
                                             {
-                                                <div class="member-chip @(member.HasAccepted ? "accepted" : "pending")">
-                                                    <span class="member-initial">@member.UserName[0]</span>
-                                                    <span>@member.UserName</span>
+                                                                <div class="member-chip @(member.HasAccepted ? "accepted" : "pending")">
+                                                                    <span class="member-initial">@member.UserName[0]</span>
+                                                                    <span>@member.UserName</span>
                                                     @if (!member.HasAccepted)
                                                     {
-                                                        <small>(Pending)</small>
+                                                                            <small>(Pending)</small>
                                                     }
-                                                    <button class="remove-member-btn @(_currentUserId == member.UserId ? "disabled" : "")"
-                                                            @onclick="() => RemoveMember(currentVm, member)">
-                                                        <i class="bi bi-x"></i>
-                                                    </button>
-                                                </div>
+                                                                    <button class="remove-member-btn @(_currentUserId == member.UserId ? "disabled" : "")"
+                                                                            @onclick="() => RemoveMember(currentVm, member)">
+                                                                        <i class="bi bi-x"></i>
+                                                                    </button>
+                                                                </div>
                                             }
-                                        </div>
-                                        <div class="add-member-row">
-                                            <input type="text" class="add-input" placeholder="Enter username..."
-                                                   @bind="_newMemberInputs[currentVm.List.Id]" />
-                                            <button class="mp-btn mp-btn-secondary" @onclick="() => AddMember(currentVm)">
-                                                Add
-                                            </button>
-                                        </div>
-                                    </div>
+                                                    </div>
+                                                    <div class="add-member-row">
+                                                        <input type="text" class="add-input" placeholder="Enter username..."
+                                                               @bind="_newMemberInputs[currentVm.List.Id]" />
+                                                        <button class="mp-btn mp-btn-secondary" @onclick="() => AddMember(currentVm)">
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                </div>
                                 }
 
-                                <div class="settings-divider"></div>
+                                        <div class="settings-divider"></div>
 
                                 @* 3. Danger Zone: DELETE vs LEAVE *@
                                 @if (currentVm.IsOwner(_currentUserId))
                                 {
                                     @* OWNER: Can Delete *@
-                                    <button class="delete-list-btn-full" @onclick="@(() => DeleteListAsync(currentVm))">
-                                        <i class="bi bi-trash"></i> Delete this List
-                                    </button>
+                                                <button class="delete-list-btn-full" @onclick="@(() => DeleteListAsync(currentVm))">
+                                                    <i class="bi bi-trash"></i> Delete this List
+                                                </button>
                                 }
                                 else
                                 {
                                     @* MEMBER: Can Leave *@
-                                    <button class="delete-list-btn-full" @onclick="@(() => LeaveListAsync(currentVm))">
-                                        <i class="bi bi-box-arrow-right"></i> Leave List
-                                    </button>
+                                                <button class="delete-list-btn-full" @onclick="@(() => LeaveListAsync(currentVm))">
+                                                    <i class="bi bi-box-arrow-right"></i> Leave List
+                                                </button>
                                 }
-                            </div>
+                                    </div>
                         }
+                        </div>
                     </div>
-                </div>
             }
         </div>
     </div>
@@ -229,6 +258,7 @@
 
         // Helper to check if current user is the owner
         public bool IsOwner(Guid currentUserId) => List.OwnerId == currentUserId;
+        public bool IsSyncing { get; set; } = false;
 
         // Helper to get current user's role
         public MemberType GetUserRole(Guid currentUserId)
@@ -239,6 +269,7 @@
         }
     }
 
+    private readonly ConcurrentDictionary<string, bool> _activeUpdates = new();
     private Dictionary<Guid, string> _newInputs = new();
     private Dictionary<Guid, bool> _settingsOpen = new();
     private Dictionary<Guid, string> _newMemberInputs = new();
@@ -247,6 +278,14 @@
 
     private List<ListViewModel> _viewModels = new();
     private List<ListDto> ShoppingLists { get; set; } = new List<ListDto>();
+
+    private bool _isOffline = false;
+    private bool _hasConnection = true;
+
+    private DotNetObjectReference<Pantry>? _objRef;
+    private IJSObjectReference? _jsModule;
+
+    private System.Threading.Timer? _retryTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -264,11 +303,19 @@
         var token = await LocalStorage.GetItemAsync<string>("authToken");
         if (!string.IsNullOrEmpty(token))
         {
-            await SignalR.InitializeAsync(token);
+            try
+            {
+                await SignalR.InitializeAsync(token);
 
-            SignalR.OnListUpdated += HandleRealTimeUpdate;
-            SignalR.OnItemsChanged += HandleRealTimeUpdate;
-            SignalR.OnNotification += HandleNotification;
+                SignalR.OnListUpdated += HandleRealTimeUpdate;
+                SignalR.OnItemsChanged += HandleRealTimeUpdate;
+                SignalR.OnListAccessRemoved += HandleEviction;
+                SignalR.OnNotification += HandleNotification;
+            }
+            catch
+            {
+                Console.WriteLine("Please check your internet connection or try again later.");
+            }
         }
 
         if (_currentUserId == Guid.Empty)
@@ -278,52 +325,249 @@
             return;
         }
 
-        await OfflineService.InitializeAsync();
-        await LoadDataAsync();
-        _ = Sync.SyncPendingChangesAsync(); // Start syncing in the background when the component loads
+        Sync.OnSyncStatusChanged += HandleSyncStatusChanged;
 
-        foreach (var vm in _viewModels)
+        // Initialize the offline service
+        await OfflineService.InitializeAsync();
+
+        // Loads all local data, even if it's outdated
+        await LoadLocalData();
+    } 
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            await SignalR.LeaveListGroup(vm.List.Id.ToString());
-            await SignalR.JoinListGroup(vm.List.Id.ToString());
+            bool isOnline = true;
+
+            try
+            {
+                // Checks Internet Connection
+                _objRef = DotNetObjectReference.Create(this);
+
+                _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", 
+                    $"./js/connectivity.js?v={DateTime.Now.Ticks}");
+
+                isOnline = await JS.InvokeAsync<bool>("ConnectionManager.register", _objRef);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine($"JS Interop failed: {ex.Message}");
+            }
+
+            _isOffline = !isOnline;
+            _hasConnection = isOnline;
+
+            // If online, sync with server
+            if (isOnline)
+                await SyncWithServer();
+
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    private void HandleNotification(string message)
+    private async void HandleNotification(string message)
     {
         Console.WriteLine("Received notification: " + message);
-        _ = FetchLists(); // Refresh invites when a notification is received (e.g., new invite)
+        await InvokeAsync(StateHasChanged);
     }
 
     private async void HandleRealTimeUpdate(string listId)
     {
-        Console.WriteLine($"List update triggered! {listId}");
+        if (!Guid.TryParse(listId, out var listGuid)) return;
+
+        var vm = _viewModels.FirstOrDefault(v => v.List.Id == listGuid);
+        if (vm == null) return;
+
+        if (!_activeUpdates.TryAdd(listGuid.ToString(), true)) return;
+
+        try
+        {
+            vm.IsSyncing = true;
+            await InvokeAsync(StateHasChanged);
+
+            await Task.Delay(1500);
+
+            var response = await Http.GetAsync($"api/shopping-lists/{listId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var freshList = await response.Content.ReadFromJsonAsync<ListDto>();
+                if (freshList != null)
+                {
+                    vm.List = await AutoUpdateListInfo(freshList, vm.List);
+                    vm.Items = await OfflineService.GetItemsAsync(listGuid);
+                }
+            }
+        }
+        finally
+        {
+            vm.IsSyncing = false;
+            _activeUpdates.TryRemove(listGuid.ToString(), out _);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async void HandleSyncStatusChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void HandleEviction(string listId)
+    {
         var vm = _viewModels.FirstOrDefault(v => v.List.Id.ToString() == listId);
         if (vm != null)
         {
-            try
-            {
-                var response = await Http.GetAsync($"api/shopping-lists/{listId}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var freshList = await response.Content.ReadFromJsonAsync<ListDto>();
-                    if (freshList == null) return;
-
-                    // Update local database with the latest list info and items
-                    vm.List = await AutoUpdateListInfo(freshList, vm.List);
-                    vm.Items = await OfflineService.GetItemsAsync(Guid.Parse(listId));
-                    vm.Members = await OfflineService.GetMembersAsync(Guid.Parse(listId));
-
-                    await InvokeAsync(StateHasChanged);
-                }
-
-            }
-            catch
-            {
-                Console.WriteLine("Failed to fetch real-time updates for list " + listId);
-            }
+            _viewModels.Remove(vm);
+            await OfflineService.DeleteListAndRelatedDataAsync(vm.List.Id);
+            await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private bool IsListFullySynced(ListViewModel vm)
+    {
+        return !vm.IsSyncing && !Sync.IsGlobalSyncing && vm.List.IsSynced;
+    }
+
+    [JSInvokable]
+    public async Task SetOfflineStatus(bool isOffline)
+    {
+        _isOffline = isOffline;
+        _hasConnection = !isOffline;
+        await InvokeAsync(StateHasChanged);
+
+        if (!isOffline)
+        {
+            // When coming back online, attempt to sync immediately
+            await SyncWithServer();
+        }
+    }
+
+    private async Task SyncWithServer()
+    {
+        try
+        {
+            // 5 second timeout
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var response = await Http.GetAsync("api/test-connection", cts.Token);
+
+            if (!response.IsSuccessStatusCode) throw new Exception("Server Unreachable");
+
+            _hasConnection = true;
+            _isOffline = false;
+
+            await InvokeAsync(StateHasChanged);
+
+
+            if (_retryTimer != null)
+            {
+                _retryTimer.Dispose();
+                _retryTimer = null;
+                Console.WriteLine("Server is back! Stopping retry timer.");
+            }
+
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                await SignalR.InitializeAsync(token);
+
+                // Remove any existing handlers to prevent duplicates, then re-attach them
+                SignalR.OnListUpdated -= HandleRealTimeUpdate;
+                SignalR.OnListUpdated -= HandleRealTimeUpdate;
+                SignalR.OnListAccessRemoved -= HandleEviction;
+                SignalR.OnNotification -= HandleNotification;
+
+                SignalR.OnListUpdated += HandleRealTimeUpdate;
+                SignalR.OnItemsChanged += HandleRealTimeUpdate;
+                SignalR.OnListAccessRemoved += HandleEviction;
+                SignalR.OnNotification += HandleNotification;
+            }
+
+            // Fetch invites and lists (invites: true, my-lists: true)
+            await FetchLists();
+
+            // FetchLists() will update the local database with lists that belong to the user or that the user has been invited to
+            // But because the following foreach loop looks through the local database.
+            // We still haven't retreived the info of all the lists the user has, we need to fetch the lists in the db
+            var localLists = await OfflineService.GetAllListsAsync(_currentUserId);
+
+            // Now local lists has all the online lists and the ones that were already there, however, now we loop through them, the ones
+            // marked as synced that weren't found on the server get permanently deleted, 
+            _viewModels.Clear();
+
+            foreach (var list in localLists) {
+                try {
+                    var listResponse = await Http.GetAsync($"api/shopping-lists/{list.Id}");
+                    if (listResponse.IsSuccessStatusCode) {
+                        var serverList = await listResponse.Content.ReadFromJsonAsync<ListDto>();
+                        if (serverList != null)
+                        {
+                            // If this user is no longer a member, remove the list locally, it exists on the view model but doesn't necesserily mean the user is still a member, causing the list to be removed locally
+                            if (!serverList.Members.Any(m => m.UserId == _currentUserId) && serverList.OwnerId != _currentUserId)
+                            {
+                                // Completely remove from local db, even items and members
+                                await OfflineService.DeleteListAndRelatedDataAsync(list.Id);
+                                await InvokeAsync(StateHasChanged);
+                                continue;
+                            }
+
+                            await AutoUpdateListInfo(serverList, list);
+
+                            // Add list to the view model
+                            _viewModels.Add(new ListViewModel {
+                                List = serverList,
+                                Items = await OfflineService.GetItemsAsync(serverList.Id),
+                                Members = await OfflineService.GetMembersAsync(serverList.Id)
+                            });
+
+                            // Reset Item and Member inputs for this list
+                            if (!_newInputs.ContainsKey(serverList.Id)) _newInputs[serverList.Id] = "";
+                            if (!_newMemberInputs.ContainsKey(serverList.Id)) _newMemberInputs[serverList.Id] = "";
+
+
+                            await SignalR.JoinListGroup(list.Id.ToString());
+                            await InvokeAsync(StateHasChanged);
+                            continue;
+                        }
+                    }
+
+                    // If the previous conditions were not met, it means the list either doesn't exist in the server or is invalid
+                    // If any of those are met, we check our list, if it is synced (Which means the local db thinks it matches the server, the list is meant to be deleted everywhere)
+                    if (list.IsSynced)
+                    {
+                        // Deletes all data related to the list, items and members.
+                        await OfflineService.DeleteListAndRelatedDataAsync(list.Id);
+                        await InvokeAsync(StateHasChanged);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Something went wrong fetching lists. Try again later.");
+                    Console.WriteLine(ex);
+                }
+            }
+
+            Sync.RequestSync();
+
+        } catch(Exception ex)
+        {
+            if (_retryTimer == null && !_hasConnection)
+            {
+                _retryTimer = new System.Threading.Timer(async _ =>
+                {
+                    Console.WriteLine("Starting 30s auto-retry timer...");
+                    await SyncWithServer();
+                }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+            }
+
+            _isOffline = true;
+            _hasConnection = false;
+            Console.WriteLine("You are currently offline. Changes will sync when you reconnect.");
+            Console.WriteLine(ex);
+
+            await InvokeAsync(StateHasChanged);
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task<ListDto> AutoUpdateListInfo(ListDto? serverList, ListDto localList)
@@ -363,12 +607,12 @@
                     else if (localItem.UpdatedAt - serverItem.UpdatedAt > tolerance)
                     {
                         // If the local item is newer, update the server item with the local version
-                        _ = Sync.SyncPendingChangesAsync();
+                        Sync.RequestSync();
                     }
                     // Nothing happens if the updated at timestamps are within the tolerance window, we assume they are the same version and do not need to update either side
                     // THIS SHOULD BE CHANGED TO ROW VERSIONING IN THE FUTURE TO AVOID ANY POSSIBLE ISSUES WITH CLOCK SYNCHRONIZATION OR SIMULTANEOUS UPDATES
                 }
-                else 
+                else
                 {
                     // if the local item doesn't exist, add it to the local database
                     await OfflineService.AddItemAsync(serverItem!, true);
@@ -390,7 +634,7 @@
                 if (serverItem == null && !localItem.IsSynced)
                 {
                     localList.Items.Add(localItem);
-                    _ = Sync.SyncPendingChangesAsync();
+                    Sync.RequestSync();
                 }
             }
 
@@ -417,12 +661,11 @@
                 if (serverMember == null && !member.IsSynced)
                 {
                     localList.Members.Add(member);
-                    _ = Sync.SyncPendingChangesAsync();
+                    Sync.RequestSync();
                 }
             }
 
             await OfflineService.SaveListAsync(localList, true); // Made to be synced from server and not to it
-
         }
         catch (Exception ex)
         {
@@ -431,8 +674,11 @@
         return localList;
     }
 
-    private void Dispose()
+    public void Dispose()
     {
+        _objRef?.Dispose();
+        _retryTimer?.Dispose();
+
         SignalR.OnListUpdated -= HandleRealTimeUpdate;
         SignalR.OnItemsChanged -= HandleRealTimeUpdate;
         SignalR.OnNotification -= HandleNotification;
@@ -465,7 +711,7 @@
         // If turning off, you might want to clear members logic here
         await OfflineService.SaveListAsync(vm.List);
 
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task AddMember(ListViewModel vm)
@@ -498,26 +744,26 @@
 
         _newMemberInputs[vm.List.Id] = ""; // Clear input
         Console.WriteLine("Sending invite to: " + username);
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task RemoveMember(ListViewModel vm, ListMemberDto member)
     {
         vm.Members.Remove(member);
         await OfflineService.RemoveMemberAsync(vm.List.Id, member.UserName.ToLower());
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task CreateNewList()
     {
         var newList = new ListDto
-        {
-            Id = Guid.NewGuid(),
-            OwnerId = _currentUserId,
-            Members = Array.Empty<ListMemberDto>(),
-            Name = "New List" + (_viewModels.Count + 1),
-            IsSynced = false
-        };
+            {
+                Id = Guid.NewGuid(),
+                OwnerId = _currentUserId,
+                Members = Array.Empty<ListMemberDto>(),
+                Name = "New List" + (_viewModels.Count + 1),
+                IsSynced = false
+            };
 
         await OfflineService.SaveListAsync(newList);
 
@@ -527,7 +773,7 @@
 
         // Join SignalR group for this new list
         await SignalR.JoinListGroup(newList.Id.ToString());
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task UpdateListTitle(ListDto list, string newName)
@@ -537,14 +783,14 @@
         list.Name = newName;
         list.IsSynced = false;
         await OfflineService.SaveListAsync(list);
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task DeleteListAsync(ListViewModel viewModel)
     {
         _viewModels.Remove(viewModel);
         await OfflineService.DeleteListAsync(viewModel.List.Id);
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task AddItem(ListViewModel viewModel)
@@ -556,27 +802,27 @@
         if (string.IsNullOrEmpty(newItemName)) return;
 
         var newItem = new ListItemDto
-        {
-            Id = Guid.NewGuid(),
-            ListId = viewModel.List.Id,
-            Name = newItemName,
-            Quantity = 1,
-            IsChecked = false,
-            IsSynced = false
-        };
+            {
+                Id = Guid.NewGuid(),
+                ListId = viewModel.List.Id,
+                Name = newItemName,
+                Quantity = 1,
+                IsChecked = false,
+                IsSynced = false
+            };
 
 
         viewModel.Items.Add(newItem);
         _newInputs[viewModel.List.Id] = "";
         await OfflineService.AddItemAsync(newItem);
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task DeleteItem(ListViewModel viewModel, ListItemDto item)
     {
         viewModel.Items.Remove(item);
         await OfflineService.DeleteItemAsync(item.Id);
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task ToggleItem(ListViewModel viewModel, ListItemDto item, bool isChecked)
@@ -584,7 +830,7 @@
         item.IsChecked = isChecked;
         item.IsSynced = false;
         await OfflineService.AddItemAsync(item); // Using AddItemAsync to update the item since it checks for existing ID
-        _ = Sync.SyncPendingChangesAsync();
+        Sync.RequestSync();
     }
 
     private async Task AcceptInvite(ListInviteDto invite)
@@ -600,8 +846,10 @@
             // 3. Optional: Trigger a full refresh to pull the new list into the main grid
             // Or manually fetch just this list and add it to _viewModels
             await SignalR.JoinListGroup(invite.ListId.ToString()); // Join SignalR group for real-time updates on this list
+            await FetchLists();
+            await LoadLocalData();
 
-            await LoadDataAsync();
+            await InvokeAsync(StateHasChanged);
         }
         else
         {
@@ -647,41 +895,52 @@
         // 4. Also delete the list locally so it disappears
         await OfflineService.DeleteListAsync(vm.List.Id);
 
-        _ = Sync.SyncPendingChangesAsync();
+        // api/shopping-lists/{listId}/leave
+        // without using the sync service, for this we have to call the API directly
+        try
+        {
+            var response = await Http.DeleteAsync($"api/shopping-lists/{vm.List.Id}/leave");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Failed to leave list on server.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while trying to leave list: {ex.Message}");
+        }
     }
 
-    private async Task LoadDataAsync()
+    private async Task LoadLocalData()
     {
-        // Update all data from the local database 
-        await FetchLists();
         var storedLists = await OfflineService.GetAllListsAsync(_currentUserId);
         _viewModels.Clear();
         foreach (var list in storedLists)
         {
-            var response = await Http.GetAsync($"api/shopping-lists/{list.Id}");
-            if (response.IsSuccessStatusCode)
-            {
-                var serverList = await response.Content.ReadFromJsonAsync<ListDto>();
-                if (serverList != null)
-                    await AutoUpdateListInfo(serverList, list);
-            }
-
             var items = await OfflineService.GetItemsAsync(list.Id);
             var members = await OfflineService.GetMembersAsync(list.Id);
-            _viewModels.Add(new ListViewModel { List = list, Items = items, Members = members});
+            _viewModels.Add(new ListViewModel { List = list, Items = items, Members = members });
 
             if (!_newInputs.ContainsKey(list.Id)) _newInputs[list.Id] = "";
             if (!_newMemberInputs.ContainsKey(list.Id)) _newMemberInputs[list.Id] = "";
+
+            await SignalR.JoinListGroup(list.Id.ToString());
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task FetchLists(bool getInvites = true, bool getMyLists = true)
     {
         if (getInvites)
-            try {
+            try
+            {
                 _pendingInvites = await Http.GetFromJsonAsync<List<ListInviteDto>>("api/shopping-lists/invites")
                                   ?? new List<ListInviteDto>();
-            } catch {
+            }
+            catch
+            {
                 // User might be offline or no invites
                 _pendingInvites = new List<ListInviteDto>();
             }
