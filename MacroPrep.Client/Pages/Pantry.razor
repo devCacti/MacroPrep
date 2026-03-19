@@ -473,6 +473,7 @@
         return !vm.IsSyncing && !Sync.IsGlobalSyncing && vm.List.IsSynced;
     }
 
+    // JS Invokable methods
     [JSInvokable]
     public async Task SetOfflineStatus(bool isOffline)
     {
@@ -485,6 +486,21 @@
             // When coming back online, attempt to sync immediately
             await SyncWithServer();
         }
+    }
+
+    [JSInvokable]
+    public async Task OnAppWakeUp()
+    {
+        Console.WriteLine("App woke up. Performing connection checks...");
+
+        await SignalR.EnsureConnectionAsync();
+
+        foreach (var vm in _viewModels)
+        {
+            await SignalR.JoinListGroup(vm.List.Id.ToString());
+        }
+
+        await SyncWithServer();
     }
 
     /// <summary>

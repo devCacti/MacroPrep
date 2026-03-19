@@ -30,6 +30,10 @@ namespace MacroPrep.Client.Services
         /// <summary>                                       ///
         /// END OF      -> PANTRY.RAZOR PAGE RELATED EVENTS ///
         /// </summary>                                      ///
+        
+        public HubConnectionState ConnectionState => _hubConnection?.State ?? HubConnectionState.Disconnected;
+
+
 
         public RealTimeSyncService(NavigationManager nav)
         {
@@ -38,7 +42,15 @@ namespace MacroPrep.Client.Services
 
         public async Task InitializeAsync(string jwtToken)
         {
-            if (_hubConnection is not null) return;
+            if (_hubConnection is not null)
+            {
+                if (_hubConnection.State == HubConnectionState.Disconnected)
+                {
+                    Console.WriteLine("Hub connection exists but is not connected. Attempting to reconnect...");
+                    await _hubConnection.StartAsync();
+                }
+                return;
+            }
 
             // 1. Build the connection to the Server Hub
             _hubConnection = new HubConnectionBuilder()
@@ -68,16 +80,33 @@ namespace MacroPrep.Client.Services
             /// END OF      -> PANTRY.RAZOR PAGE RELATED EVENTS ///
             /// </summary>                                      ///
 
-
-
-
             // 3. Start the connection
             await _hubConnection.StartAsync();
         }
 
+        public async Task EnsureConnectionAsync()
+        {
+            // The connection doesn't exist
+            if (_hubConnection is null) return;
+
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+            {
+                Console.WriteLine("Connection was dead. Restarting...");
+
+                try
+                {
+                    await _hubConnection.StartAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to restart connection: {ex.Message}");
+                }
+            }
+        }
+
         public async Task JoinListGroup(string listId)
         {
-            if (_hubConnection?.State == HubConnectionState.Connected)
+            if (_hubConnection is not null && _hubConnection.State == HubConnectionState.Connected)
             {
                 Console.WriteLine($"Joined list: {listId}");
                 await _hubConnection.SendAsync("JoinList", listId);
@@ -90,7 +119,7 @@ namespace MacroPrep.Client.Services
 
         public async Task LeaveListGroup(string listId)
         {
-            if (_hubConnection?.State == HubConnectionState.Connected)
+            if (_hubConnection is not null && _hubConnection.State == HubConnectionState.Connected)
             {
                 Console.WriteLine($"Left list: {listId}");
                 await _hubConnection.SendAsync("LeaveList", listId);

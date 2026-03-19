@@ -4,7 +4,7 @@ using MacroPrep.Shared.Enums.Account;
 namespace MacroPrep.Server.Data.Entities
 {
     // Subject to change as we add more features, but this is the core concept for the user entity
-    public class UserEntity
+    public class User
     {
         [Key]
         public Guid Id { get; set; } = new Guid();

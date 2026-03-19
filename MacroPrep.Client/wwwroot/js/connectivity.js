@@ -1,16 +1,25 @@
 ﻿window.ConnectionManager = {
     register: function (dotNetReference) {
-        // 1. Listen for "I lost connection"
+        // Checks if the browser currently has an active internet connection
         window.addEventListener('offline', () => {
             dotNetReference.invokeMethodAsync('SetOfflineStatus', true);
         });
 
-        // 2. Listen for "I got connection back"
         window.addEventListener('online', () => {
             dotNetReference.invokeMethodAsync('SetOfflineStatus', false);
         });
 
-        // 3. Return current status immediately
+        // If the browser tab becomes visible again, trigger connectivity checks
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible') {
+                console.log("App returned to foreground, checking connectivity...");
+
+                if (navigator.onLine) {
+                    await dotNetReference.invokeMethodAsync('OnAppWakeUp');
+                }
+            }
+        });
+
         return navigator.onLine; // true = online, false = offline
     }
 };

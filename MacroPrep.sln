@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.11.35312.102
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11612.150 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MacroPrep.Client", "MacroPrep.Client\MacroPrep.Client.csproj", "{A4B38A17-0539-4BFF-B005-326E94DD32D8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MacroPrep.Shared", "MacroPrep.Shared\MacroPrep.Shared.csproj", "{652171DD-9427-485C-B233-23455FEE7DF3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MacroPrep.Server", "MacroPrep.Server\MacroPrep.Server.csproj", "{A23730AE-C9B5-46A4-A7BE-E8915E86ACD7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroPrep.Server.Tests", "MacroPrep.Server.Tests\MacroPrep.Server.Tests.csproj", "{5E0412F1-C427-4E2F-A141-87C5B67B5190}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{A23730AE-C9B5-46A4-A7BE-E8915E86ACD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A23730AE-C9B5-46A4-A7BE-E8915E86ACD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A23730AE-C9B5-46A4-A7BE-E8915E86ACD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E0412F1-C427-4E2F-A141-87C5B67B5190}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E0412F1-C427-4E2F-A141-87C5B67B5190}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E0412F1-C427-4E2F-A141-87C5B67B5190}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E0412F1-C427-4E2F-A141-87C5B67B5190}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
