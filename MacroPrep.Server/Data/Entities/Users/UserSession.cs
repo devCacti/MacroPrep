@@ -23,6 +23,6 @@ namespace MacroPrep.Server.Data.Entities
         public bool IsRevoked { get; set; } = false;
 
         [ForeignKey("UserId")]
-        public UserEntity? User { get; set; }
+        public User? User { get; set; }
     }
 }

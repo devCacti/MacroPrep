@@ -198,7 +198,7 @@ authGroup.MapPost("/register", async (RegisterRequest request, AppDbContext db, 
     string salt = BCrypt.Net.BCrypt.GenerateSalt(12); // 12 Factor salt
     string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, salt);
 
-    var newUser = new UserEntity
+    var newUser = new User
     {
         Id = Guid.NewGuid(),
         UserName = request.UserName,
@@ -1116,7 +1116,7 @@ app.MapGet("/test-token", (ITokenService tokenService) =>
     try
     {
         // 1. Create a Fake User
-        var fakeUser = new UserEntity
+        var fakeUser = new User
         {
             Id = Guid.NewGuid(),
             UserName = "TestUser",
