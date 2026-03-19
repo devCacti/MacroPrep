@@ -537,7 +537,7 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
 
         await db.SaveChangesAsync();
 
-        await hubContext.Clients.Group(listId.ToString()).ListAccessRemoved(listId.ToString());
+        await hubContext.Clients.Group(listId.ToString()).ListUpdated(listId.ToString());
 
         return Results.NoContent();
     }
