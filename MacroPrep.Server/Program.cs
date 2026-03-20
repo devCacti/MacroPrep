@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.SignalR;
+using Azure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -348,6 +349,8 @@ var userGroup = app.MapGroup("/user");
 
 if (app.Environment.IsDevelopment())
 {
+    // The reason for this is because all endpoints in the server will be under /api without the api knowing, so we need to simulate this in development
+    // Because in development it's harder to make this alias, we just create the group with the /api prefix only for development.
     userGroup = app.MapGroup("/api/user");
 }
 
@@ -425,8 +428,26 @@ listsGroup.MapPost("/", async (ListDto list, AppDbContext db, ClaimsPrincipal cl
     .Produces(StatusCodes.Status401Unauthorized)
     .RequireAuthorization("Authenticated")
     .WithName("CreateShoppingList")
-    .WithOpenApi()
-    ;
+    .WithOpenApi(operation =>
+    {
+        operation.Summary = "Creates a new shopping list.";
+        operation.Description = "Creates a new shopping list with the provided details. The authenticated user will be set as the owner of the list.";
+
+        operation.RequestBody.Description = "The shopping list details to create.";
+        operation.RequestBody.Required = true;
+        operation.RequestBody.Content["application/json"].Schema = new OpenApiSchema
+        {
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.Schema,
+                Id = nameof(ListDto)
+            }
+        };
+        operation.Responses["201"].Description = "The shopping list was successfully created. The response contains the ID of the newly created list.";
+        operation.Responses["400"].Description = "The request was invalid, such as missing required fields or invalid data formats.";
+        operation.Responses["401"].Description = "The user is not authenticated or the NameIdentifier claim is missing.";
+        return operation;
+    });
 
 // READ
 listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims) =>
@@ -501,8 +522,17 @@ listsGroup.MapGet("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsP
     .Produces(StatusCodes.Status404NotFound)
     .RequireAuthorization("Authenticated")
     .WithName("GetShoppingList")
-    .WithOpenApi()
-    ;
+    .WithOpenApi(op => {
+        op.Summary = "Retrieves a specific shopping list.";
+        op.Description = "Fetches details for a shopping list if the user is the owner or an accepted member.";
+
+        op.Responses["200"].Description = "The shopping list was successfully retrieved.";
+        op.Responses["401"].Description = "The user is not authenticated or the NameIdentifier claim is missing.";
+        op.Responses["403"].Description = "The user does not have permission to view this list (must be owner or accepted member).";
+        op.Responses["404"].Description = "No shopping list was found with the provided ID.";
+
+        return op;
+    });
 
 // UPDATE
 listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>
@@ -553,8 +583,7 @@ listsGroup.MapPut("/{listId:guid}", async (Guid listId, ListDto updatedList, App
     .Produces(StatusCodes.Status404NotFound)
     .RequireAuthorization("Authenticated")
     .WithName("UpdateShoppingList")
-    .WithOpenApi()
-    ;
+    .WithOpenApi();
 
 // DELETE
 listsGroup.MapDelete("/{listId:guid}", async (Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext) =>

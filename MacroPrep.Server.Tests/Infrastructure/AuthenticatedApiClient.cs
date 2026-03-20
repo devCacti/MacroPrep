@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using MacroPrep.Shared.Models.Auth;
 
@@ -7,12 +8,20 @@ namespace MacroPrep.Server.Tests.Infrastructure
     public class AuthenticatedApiClient
     {
         public HttpClient Client;
+        public CookieContainer CookieContainer { get; } = new();
         public string? CurrentToken { get; private set; }
         public string? CurrentUserId { get; private set; }
 
         public AuthenticatedApiClient(string baseUrl)
         {
-            Client = new HttpClient { BaseAddress = new Uri(baseUrl) };
+            // A cookie container is needed to store the refresh token cookie, which is HttpOnly.
+            var handler = new HttpClientHandler
+            {
+                CookieContainer = CookieContainer,
+                UseCookies = true
+            };
+
+            Client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
         }
 
         public async Task AuthenticateAsync(string userName, string email, string password)
