@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MacroPrep.Server.Data.Entities.Recipes
+namespace MacroPrep.Server.Data.Entities
 {
     public class Instrument
     {

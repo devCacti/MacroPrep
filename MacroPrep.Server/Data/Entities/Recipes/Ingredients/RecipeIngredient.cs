@@ -9,7 +9,6 @@ namespace MacroPrep.Server.Data.Entities
 
         public decimal Ammount { get; set; } = 1;
 
-
         private MeasuringUnit? unit;
         public MeasuringUnit? Unit{
             get { return unit ?? Ingredient.DefaultUnit; }
@@ -21,6 +20,8 @@ namespace MacroPrep.Server.Data.Entities
 
         [Required]
         public virtual Recipe Recipe { get; set; }
+
+        public virtual ICollection<Tag>? Tags { get; set; }
 
         public RecipeIngredient(Recipe recipe, Ingredient ingredient, decimal ammount = 1, MeasuringUnit? unit = null)
         {
