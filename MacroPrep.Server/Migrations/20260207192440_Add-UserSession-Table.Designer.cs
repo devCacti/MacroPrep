@@ -107,7 +107,7 @@ namespace MacroPrep.Server.Migrations
 
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.UserSession", b =>
                 {
-                    b.HasOne("MacroPrep.Server.Data.Entities.UserEntity", "User")
+                    b.HasOne("MacroPrep.Server.Data.Entities.UserEntity", "UserEntity")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

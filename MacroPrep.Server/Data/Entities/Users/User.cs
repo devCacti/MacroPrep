@@ -4,10 +4,10 @@ using MacroPrep.Shared.Enums.Account;
 namespace MacroPrep.Server.Data.Entities
 {
     // Subject to change as we add more features, but this is the core concept for the user entity
-    public class UserEntity
+    public class User
     {
         [Key]
-        public Guid Id { get; set; } = new Guid();
+        public Guid Id { get; set; }
 
         [Required]
         public string UserName { get; set; } = string.Empty;
@@ -40,5 +40,19 @@ namespace MacroPrep.Server.Data.Entities
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+        public User()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public User(string userName, string email, string passwordHash, string passwordSalt)
+        {
+            Id = Guid.NewGuid();
+            UserName = userName;
+            Email = email;
+            PasswordHash = passwordHash;
+            PasswordSalt = passwordSalt;
+        }
     }
 }

@@ -9,7 +9,7 @@ namespace MacroPrep.Server.Services
     // THE INTERFACE
     public interface ITokenService
     {
-        string GenerateToken(UserEntity user, UserSession session);
+        string GenerateToken(User user, UserSession session);
     }
 
     // THE IMPLEMENTATION
@@ -18,7 +18,7 @@ namespace MacroPrep.Server.Services
         private readonly IConfiguration _config;
         public TokenService(IConfiguration config) => _config = config;
 
-        public string GenerateToken(UserEntity user, UserSession session)
+        public string GenerateToken(User user, UserSession session)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
 
