@@ -11,6 +11,7 @@ namespace MacroPrep.Server.Data.Entities
         public string Name { get; set; }
 
         public virtual ICollection<Ingredient>? Ingredients { get; set; }
+        public virtual ICollection<RecipeIngredient>? RecipeIngredients { get; set; }
 
         public MeasuringUnit(string name)
         {

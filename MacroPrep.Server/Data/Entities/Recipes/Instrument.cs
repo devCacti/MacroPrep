@@ -23,6 +23,5 @@ namespace MacroPrep.Server.Data.Entities
             Id = Guid.NewGuid();
             Name = name;
         }
-
     }
 }
