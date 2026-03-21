@@ -5,10 +5,10 @@ namespace MacroPrep.Server.Data.Entities
     public class Instrument
     {
         [Key, Required]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public string? Description { get; set; }
 
@@ -17,6 +17,8 @@ namespace MacroPrep.Server.Data.Entities
 
         public virtual ICollection<Procedure>? Procedures { get; set; }
         public virtual ICollection<Recipe>? Recipes { get; set; }
+
+        public Instrument() { }
 
         public Instrument(string name)
         {

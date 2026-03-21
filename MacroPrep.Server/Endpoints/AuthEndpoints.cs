@@ -60,7 +60,7 @@ namespace MacroPrep.Server.Endpoints
                 Path = "/api/auth"
             };
 
-            context.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
+            http.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
         }
 
         private static async Task<IResult> Register(RegisterRequest request, AppDbContext db, ITokenService tokenService, HttpContext http)
