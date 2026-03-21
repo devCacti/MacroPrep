@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MacroPrep.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260321004452_AddedRecipeTables")]
-    partial class AddedRecipeTables
+    [Migration("20260321004831_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
