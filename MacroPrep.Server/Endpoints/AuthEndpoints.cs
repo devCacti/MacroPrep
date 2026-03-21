@@ -10,6 +10,8 @@ namespace MacroPrep.Server.Endpoints
 {
     public static class AuthEndpoints
     {
+        private static bool isProduction = false;
+
         public static void MapAuthEndpoints(this WebApplication app)
         {
             var group = app.MapGroup("/auth").WithTags("Authentication");
@@ -41,7 +43,7 @@ namespace MacroPrep.Server.Endpoints
                 .RequireAuthorization("UncompletedSetup") // Only allow users who have NOT completed setup to access this endpoint
                 .WithOpenApi();
 
-            group.MapPost("/refresh-token", RefreshToken)
+            group.MapPost("/refresh", RefreshToken)
                 .Produces(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("RefreshToken")
@@ -55,9 +57,10 @@ namespace MacroPrep.Server.Endpoints
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = isProduction ? SameSiteMode.Strict : SameSiteMode.None,
                 Expires = expires,
-                Path = "/api/auth"
+                Path = "/api/auth",
+                IsEssential = !isProduction
             };
 
             http.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
@@ -138,7 +141,7 @@ namespace MacroPrep.Server.Endpoints
             return Results.Ok(new { Token = tokenService.GenerateToken(user, session) });
         }
     
-        private static async Task<IResult> CompleteSetup(AccountSetupRequest request, AppDbContext db, ClaimsPrincipal user)
+        private static async Task<IResult> CompleteSetup(AccountSetupRequest request, AppDbContext db, ClaimsPrincipal user, ITokenService tokenService)
         {
             // Extract UserID from the JWT Claim
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -163,7 +166,9 @@ namespace MacroPrep.Server.Endpoints
 
             await db.SaveChangesAsync();
 
-            return Results.Ok(new { Message = "Profile updated successfully" });
+            return Results.Ok(new {
+                Message = "Profile updated successfully",
+            });
         }
 
         private static async Task<IResult> RefreshToken(AppDbContext db, ITokenService tokenService, HttpContext http)

@@ -9,9 +9,9 @@ namespace MacroPrep.Server.Endpoints
     {
         public static void MapUserEndpoints(this WebApplication app)
         {
-            var group = app.MapGroup("/users").WithTags("Users");
+            var group = app.MapGroup("/user").WithTags("Users");
             if (app.Environment.IsDevelopment())
-                group = app.MapGroup("/api/users").WithTags("Users");
+                group = app.MapGroup("/api/user").WithTags("Users");
 
             group.MapGet("/profile", GetUserProfile)
                 .Produces<UserDto>(StatusCodes.Status200OK)
