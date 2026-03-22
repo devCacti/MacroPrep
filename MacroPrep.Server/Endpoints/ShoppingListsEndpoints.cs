@@ -144,7 +144,7 @@ namespace MacroPrep.Server.Endpoints
                 .WithName("AcceptInvite")
                 .WithOpenApi();
 
-            group.MapPost("/{listId:guid}/invite/decline", DeclineInvite)
+            group.MapDelete("/{listId:guid}/invite/decline", DeclineInvite)
                 .Produces(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status401Unauthorized)
@@ -153,7 +153,7 @@ namespace MacroPrep.Server.Endpoints
                 .WithName("DeclineInvite")
                 .WithOpenApi();
 
-            group.MapPost("/{listId:guid}/leave", LeaveList)
+            group.MapDelete("/{listId:guid}/leave", LeaveList)
                 .Produces(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status401Unauthorized)

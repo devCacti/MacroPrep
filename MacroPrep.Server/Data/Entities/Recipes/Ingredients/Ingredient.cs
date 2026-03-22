@@ -13,8 +13,8 @@ namespace MacroPrep.Server.Data.Entities
         public MeasuringUnit DefaultUnit { get; set; } = null!;
 
         public virtual ICollection<IngredientCategory>? Categories { get; set; }
-        public virtual ICollection<Tag>? Tags { get; set; }
         public virtual ICollection<RecipeIngredient>? RecipeIngredients { get; set; }
+        public virtual ICollection<Tag>? Tags { get; set; }
 
         public Ingredient() { }
 

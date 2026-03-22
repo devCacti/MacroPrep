@@ -36,6 +36,8 @@ namespace MacroPrep.Server.Data.Entities
         public AccountType Type { get; set; } = AccountType.User;
         public AccountPlan Plan { get; set; } = AccountPlan.Free;
 
+        public virtual ICollection<Tag>? Tags { get; set; }
+
         public string? TimeZoneId { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;

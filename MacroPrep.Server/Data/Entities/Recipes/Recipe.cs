@@ -34,6 +34,7 @@ namespace MacroPrep.Server.Data.Entities
         public virtual User Owner { get; set; } = null!;
         public virtual ICollection<RecipeIngredient>? Ingredients { get; set; }
         public virtual ICollection<Procedure>? Procedures { get; set; }
+        public virtual ICollection<Tag>? Tags { get; set; }
 
 
         public Recipe() { }

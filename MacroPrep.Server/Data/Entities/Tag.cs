@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MacroPrep.Shared.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace MacroPrep.Server.Data.Entities
 {
@@ -10,9 +11,13 @@ namespace MacroPrep.Server.Data.Entities
         [Required]
         public string Name { get; set; }
 
-        public string? Type { get; set; }
+        public TagType Type { get; set; } = TagType.None;
 
-        public Tag(string name, string? type = null)
+        public virtual ICollection<Recipe>? Recipes { get; set; }
+        public virtual ICollection<Ingredient>? Ingredients { get; set; }
+        public virtual ICollection<User>? Users { get; set; }
+
+        public Tag(string name, TagType type)
         {
             Id = Guid.NewGuid();
             Name = name;
