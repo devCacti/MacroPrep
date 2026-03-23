@@ -6,7 +6,7 @@ namespace MacroPrep.Server.Tests.Infrastructure
     public abstract class FunctionalTestBase : IAsyncLifetime
     {
         protected AuthenticatedApiClient ApiClient { get; private set; }
-        private readonly IConfiguration _config;
+        protected readonly IConfiguration _config;
 
         protected FunctionalTestBase()
         {

@@ -54,7 +54,7 @@ namespace MacroPrep.Server.Tests.Functional.Auth
             var uniqueId = Guid.NewGuid().ToString("N")[..8]; // Generate a short unique ID
 
             var testUserName = $"auto.test.{uniqueId}";
-            var testEmail = $"auto.test.{uniqueId}@macroprep.local";
+            var testEmail = testUserName + "@macroprep.local";
 
             await authClient.AuthenticateAsync(testUserName, testEmail, _testPassword);
             Console.WriteLine($"Loging in user: {testUserName} with email: {testEmail}");

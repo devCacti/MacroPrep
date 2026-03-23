@@ -11,7 +11,15 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-var serverAddress = "https://localhost:7273/";
+string serverAddress;
+
+if (builder.HostEnvironment.IsDevelopment())
+{
+    serverAddress = "https://localhost:7273/";
+} else {
+    // Base address comes from the hosting environment, meaning that if the app is deployed in "https://macroprep.devcacti.com", that will be the base address.
+    serverAddress = builder.HostEnvironment.BaseAddress;
+}
 
 // Add Authorization Core
 builder.Services.AddAuthorizationCore();
@@ -23,28 +31,14 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddTransient<CustomHttpHandler>();
 
 // Configure named HttpClients for authentication and API calls
-if (builder.HostEnvironment.IsDevelopment())
-{
-    builder.Services.AddHttpClient("AuthClient", client => 
-        client.BaseAddress = new Uri(serverAddress))
-        .AddHttpMessageHandler<CustomHttpHandler>();
-} else {
-    builder.Services.AddHttpClient("AuthClient", client => 
-        client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
-        .AddHttpMessageHandler<CustomHttpHandler>();
-}
+builder.Services.AddHttpClient("AuthClient", client => 
+    client.BaseAddress = new Uri(serverAddress))
+    .AddHttpMessageHandler<CustomHttpHandler>();
 
 // The "ApiClient" will automatically include the JWT token in the Authorization header and handle token refresh
-if (builder.HostEnvironment.IsDevelopment())
-{
-    builder.Services.AddHttpClient("API", client =>
-        client.BaseAddress = new Uri(serverAddress))
-        .AddHttpMessageHandler<CustomHttpHandler>();
-} else {
-    builder.Services.AddHttpClient("API", client =>
-        client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
-        .AddHttpMessageHandler<CustomHttpHandler>();
-}
+builder.Services.AddHttpClient("API", client =>
+    client.BaseAddress = new Uri(serverAddress))
+    .AddHttpMessageHandler<CustomHttpHandler>();
 
 builder.Services.AddScoped<ShoppingListsService>();
 builder.Services.AddScoped<RealTimeSyncService>();

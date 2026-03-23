@@ -7,7 +7,7 @@ namespace MacroPrep.Server.Data.Entities
     public class User
     {
         [Key]
-        public Guid Id { get; set; } = new Guid();
+        public Guid Id { get; set; }
 
         [Required]
         public string UserName { get; set; } = string.Empty;
@@ -36,9 +36,25 @@ namespace MacroPrep.Server.Data.Entities
         public AccountType Type { get; set; } = AccountType.User;
         public AccountPlan Plan { get; set; } = AccountPlan.Free;
 
+        public virtual ICollection<Tag>? Tags { get; set; }
+
         public string? TimeZoneId { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+        public User()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public User(string userName, string email, string passwordHash, string passwordSalt)
+        {
+            Id = Guid.NewGuid();
+            UserName = userName;
+            Email = email;
+            PasswordHash = passwordHash;
+            PasswordSalt = passwordSalt;
+        }
     }
 }

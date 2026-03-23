@@ -4,6 +4,7 @@ using MacroPrep.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MacroPrep.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260321004831_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,21 +38,6 @@ namespace MacroPrep.Server.Migrations
                     b.HasIndex("IngredientsId");
 
                     b.ToTable("IngredientIngredientCategory");
-                });
-
-            modelBuilder.Entity("IngredientTag", b =>
-                {
-                    b.Property<Guid>("IngredientsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TagsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("IngredientsId", "TagsId");
-
-                    b.HasIndex("TagsId");
-
-                    b.ToTable("IngredientTag");
                 });
 
             modelBuilder.Entity("InstrumentProcedure", b =>
@@ -383,6 +371,9 @@ namespace MacroPrep.Server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("IngredientId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -390,10 +381,12 @@ namespace MacroPrep.Server.Migrations
                     b.Property<Guid?>("RecipeIngredientId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IngredientId");
 
                     b.HasIndex("RecipeIngredientId");
 
@@ -492,36 +485,6 @@ namespace MacroPrep.Server.Migrations
                     b.ToTable("UserSessions");
                 });
 
-            modelBuilder.Entity("RecipeTag", b =>
-                {
-                    b.Property<Guid>("RecipesId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TagsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("RecipesId", "TagsId");
-
-                    b.HasIndex("TagsId");
-
-                    b.ToTable("RecipeTag");
-                });
-
-            modelBuilder.Entity("TagUser", b =>
-                {
-                    b.Property<Guid>("TagsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UsersId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("TagsId", "UsersId");
-
-                    b.HasIndex("UsersId");
-
-                    b.ToTable("TagUser");
-                });
-
             modelBuilder.Entity("IngredientIngredientCategory", b =>
                 {
                     b.HasOne("MacroPrep.Server.Data.Entities.IngredientCategory", null)
@@ -533,21 +496,6 @@ namespace MacroPrep.Server.Migrations
                     b.HasOne("MacroPrep.Server.Data.Entities.Ingredient", null)
                         .WithMany()
                         .HasForeignKey("IngredientsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("IngredientTag", b =>
-                {
-                    b.HasOne("MacroPrep.Server.Data.Entities.Ingredient", null)
-                        .WithMany()
-                        .HasForeignKey("IngredientsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MacroPrep.Server.Data.Entities.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -668,6 +616,10 @@ namespace MacroPrep.Server.Migrations
 
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.Tag", b =>
                 {
+                    b.HasOne("MacroPrep.Server.Data.Entities.Ingredient", null)
+                        .WithMany("Tags")
+                        .HasForeignKey("IngredientId");
+
                     b.HasOne("MacroPrep.Server.Data.Entities.RecipeIngredient", null)
                         .WithMany("Tags")
                         .HasForeignKey("RecipeIngredientId");
@@ -684,39 +636,11 @@ namespace MacroPrep.Server.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("RecipeTag", b =>
-                {
-                    b.HasOne("MacroPrep.Server.Data.Entities.Recipe", null)
-                        .WithMany()
-                        .HasForeignKey("RecipesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MacroPrep.Server.Data.Entities.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TagUser", b =>
-                {
-                    b.HasOne("MacroPrep.Server.Data.Entities.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MacroPrep.Server.Data.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.Ingredient", b =>
                 {
                     b.Navigation("RecipeIngredients");
+
+                    b.Navigation("Tags");
                 });
 
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.Instrument", b =>

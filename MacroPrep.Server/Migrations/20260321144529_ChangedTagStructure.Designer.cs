@@ -4,6 +4,7 @@ using MacroPrep.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MacroPrep.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260321144529_ChangedTagStructure")]
+    partial class ChangedTagStructure
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -275,6 +278,9 @@ namespace MacroPrep.Server.Migrations
                     b.Property<float>("Servings")
                         .HasColumnType("real");
 
+                    b.Property<Guid?>("TagId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -287,6 +293,8 @@ namespace MacroPrep.Server.Migrations
                     b.HasIndex("InstrumentId");
 
                     b.HasIndex("OwnerId");
+
+                    b.HasIndex("TagId");
 
                     b.ToTable("Recipes");
                 });
@@ -492,21 +500,6 @@ namespace MacroPrep.Server.Migrations
                     b.ToTable("UserSessions");
                 });
 
-            modelBuilder.Entity("RecipeTag", b =>
-                {
-                    b.Property<Guid>("RecipesId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TagsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("RecipesId", "TagsId");
-
-                    b.HasIndex("TagsId");
-
-                    b.ToTable("RecipeTag");
-                });
-
             modelBuilder.Entity("TagUser", b =>
                 {
                     b.Property<Guid>("TagsId")
@@ -627,6 +620,10 @@ namespace MacroPrep.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MacroPrep.Server.Data.Entities.Tag", null)
+                        .WithMany("Recipes")
+                        .HasForeignKey("TagId");
+
                     b.Navigation("Owner");
                 });
 
@@ -682,21 +679,6 @@ namespace MacroPrep.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("RecipeTag", b =>
-                {
-                    b.HasOne("MacroPrep.Server.Data.Entities.Recipe", null)
-                        .WithMany()
-                        .HasForeignKey("RecipesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MacroPrep.Server.Data.Entities.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("TagUser", b =>
@@ -755,6 +737,11 @@ namespace MacroPrep.Server.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("MacroPrep.Server.Data.Entities.Tag", b =>
+                {
+                    b.Navigation("Recipes");
                 });
 #pragma warning restore 612, 618
         }
