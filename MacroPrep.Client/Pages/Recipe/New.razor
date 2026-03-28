@@ -1,7 +1,123 @@
-﻿@page "/recipe/new";
+﻿@using MacroPrep.Shared.Models.Recipes;
+@page "/recipe/new"
 
-<h1>New Recipe</h1>
+
+
+<PageTitle>New Recipe</PageTitle>
+
+<div class="page-wrapper">
+	<div class="content-container">
+		<header class="page-header">
+			<div class="header-text">
+				<h1 class="page-title">Create a new Recipe</h1>
+				<p>In this page you will be describing all the information about the recipe.</p>
+			</div>
+		</header>
+		<div class="recipe-form-container">
+			<form class="recipe-form">
+    
+				<div class="recipe-section section-one">
+					<InputText @bind-Value="recipe.Name" class="recipe-title" placeholder="Recipe Title"></InputText>
+					<InputTextArea @bind-Value="recipe.Description" @oninput="@(e => LimitText(e))" class="recipe-description" maxlength="250" placeholder="Recipe Description (optional)"></InputTextArea>
+					<p class="recipe-description-length-control">@(recipe.Description?.Length ?? 0) / 250</p> 
+
+					<hr />
+					
+					<p></p>
+
+					<h4>Ingredients & Details</h4>
+
+					<div class="details-container servings-container">
+						<label class="detail-label">Servings</label>
+						<div class="serving-buttons">
+							@foreach (var count in predefinedServings)
+							{
+								<button type="button"
+										class="serving-btn @(!isOtherServingSelected && recipe.Servings == count ? "active" : "")"
+										@onclick="() => SelectServing(count)">
+									@count
+								</button>
+							}
+							<button type="button"
+									class="serving-btn @(isOtherServingSelected ? "active" : "")"
+									@onclick="SelectOtherServing">
+								Other
+							</button>
+						</div>
+
+						@if (isOtherServingSelected)
+						{
+							<div class="other-input-wrapper">
+								<InputNumber @bind-Value="recipe.Servings" class="detail-input other-servings-input" placeholder="Enter amount" />
+							</div>
+						}
+					</div>
+
+					<div class="details-container times-container">
+						<div class="time-group">
+							<label class="detail-label">Prep Time <span class="time-unit">(min)</span></label>
+							<InputNumber @bind-Value="recipe.PreparationTimeMinutes" class="detail-input time-input" />
+						</div>
+    
+						<div class="time-group">
+							<label class="detail-label">Cook Time <span class="time-unit">(min)</span></label>
+							<InputNumber @bind-Value="recipe.CookingTimeMinutes" class="detail-input time-input" />
+						</div>
+    
+						<div class="time-group">
+							<label class="detail-label">Rest Time <span class="time-unit">(min)</span></label>
+							<InputNumber @bind-Value="recipe.RestingTimeMinutes" class="detail-input time-input" />
+						</div>
+					</div>
+				</div> 
+
+				<hr />
+
+				<div class="recipe-section section-two">
+					<h4 class="info-title">Instructions</h4>
+				</div>
+
+			</form>
+		</div>
+
+	</div>
+</div>
 
 @code {
+	private const int descriptionLengthLimit = 250;
+	private RecipeDto recipe = new RecipeDto();
+
+	// Servings Logic
+	private int[] predefinedServings = { 1, 2, 3, 4, 6, 8 };
+	private bool isOtherServingSelected = false;
+
+	public async ValueTask Dispose()
+	{
+		
+	}
+
+
+
+	// HELPER Functions
+	private void LimitText(ChangeEventArgs e)
+	{
+		var value = e.Value?.ToString() ?? "";
+
+		if (value.Length > descriptionLengthLimit)
+			value = value.Substring(0, descriptionLengthLimit);
+
+		recipe.Description = value;
+	}
+
+	private void SelectServing(int count)
+	{
+		isOtherServingSelected = false;
+		recipe.Servings = count;
+	}
+
+	private void SelectOtherServing()
+	{
+		isOtherServingSelected = true;
+	}
 
 }
