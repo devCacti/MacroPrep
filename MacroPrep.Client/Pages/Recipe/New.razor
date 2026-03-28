@@ -25,7 +25,7 @@
 					
 					<p></p>
 
-					<h4>Ingredients & Details</h4>
+					<h4>Details</h4>
 
 					<div class="details-container servings-container">
 						<label class="detail-label">Servings</label>
@@ -69,12 +69,28 @@
 							<InputNumber @bind-Value="recipe.RestingTimeMinutes" class="detail-input time-input" />
 						</div>
 					</div>
+
+					<hr />
+
+					<div class="add-item-row">
+						<h4>Ingredients</h4>
+						<button class="mp-btn mp-btn-primary btn-icon-only">
+							<i class="bi bi-plus-lg"></i>
+						</button>
+
+					</div>
 				</div> 
 
 				<hr />
 
 				<div class="recipe-section section-two">
-					<h4 class="info-title">Instructions</h4>
+					<div class="add-item-row">
+						<h4 class="info-title">Instructions</h4>
+						<button class="mp-btn mp-btn-primary btn-icon-only">
+							<i class="bi bi-plus-lg"></i>
+						</button>
+
+					</div>
 				</div>
 
 			</form>
@@ -88,12 +104,19 @@
 	private RecipeDto recipe = new RecipeDto();
 
 	// Servings Logic
-	private int[] predefinedServings = { 1, 2, 3, 4, 6, 8 };
+	private int[] predefinedServings = { 1, 2, 4, 6 };
 	private bool isOtherServingSelected = false;
+
 
 	public async ValueTask Dispose()
 	{
-		
+
+	}
+
+
+	private async Task Submit()
+	{
+		Console.WriteLine("Submiting Recipe Information");
 	}
 
 

@@ -343,6 +343,11 @@ i.bi {
     flex: none; /* Prevent stretching */
 }
 
+.add-item-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
 /* Base "MacroPrep" Button Style */
 .mp-btn {
     flex: 1; /* Ensures both buttons stay equal width */

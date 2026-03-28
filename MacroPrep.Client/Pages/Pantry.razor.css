@@ -157,10 +157,6 @@
 }
 
 /* 7. Inputs & Footers */
-.add-item-row {
-    display: flex;
-    gap: 0.5rem;
-}
 
 .card-footer-action {
     border-top: 1px solid #f1f5f9;
