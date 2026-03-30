@@ -9,6 +9,8 @@ namespace MacroPrep.Shared.Models.Recipes
 {
     public class RecipeDto
     {
+        public Guid? Id { get; set; }
+
         [Required]
         public string Name { get; set; }
 
@@ -22,6 +24,9 @@ namespace MacroPrep.Shared.Models.Recipes
         public float PreparationTimeMinutes { get; set; } = 0;
         public float RestingTimeMinutes { get; set; } = 0;
         public virtual float TotalTimeMinutes { get => CookingTimeMinutes + PreparationTimeMinutes + RestingTimeMinutes; }
+
+        // Ingredients
+        public ICollection<RecipeIngredientDto>? Ingredients { get; set; }
 
 
         public RecipeDto()
