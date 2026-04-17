@@ -24,6 +24,13 @@ namespace MacroPrep.Shared.Models.Recipes
         public string? MeasuringUnit { get; set; }
 
         // Optional: Flattened tags if your frontend UI needs to display them next to the ingredient
-        // public List<string>? Tags { get; set; } 
+        // public List<string>? Tags { get; set; }
+        // 
+
+        // Check for null or empty instances, this method returns true if the ingredient is like an instance that has not been changed or has the default values of the constructor
+        public bool IsEmpty()
+        {
+            return IngredientId == Guid.Empty && Amount == 0 && string.IsNullOrEmpty(MeasuringUnit) && string.IsNullOrEmpty(IngredientName);
+        }
     }
 }

@@ -70,8 +70,8 @@
     /* You can add specific styles for the left side here */
 }
 
-.section-right {
-    /* You can add specific styles for the right side here */
+.section-two {
+    gap: 10px;
 }
 
 .info-title {

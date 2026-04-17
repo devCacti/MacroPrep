@@ -1,4 +1,5 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
+@using MacroPrep.Client.Shared;
 @page "/recipe/new"
 
 
@@ -17,9 +18,9 @@
 			<form class="recipe-form">
     
 				<div class="recipe-section section-one">
-					<InputText @bind-Value="recipe.Name" class="recipe-title" placeholder="Recipe Title"></InputText>
-					<InputTextArea @bind-Value="recipe.Description" @oninput="@(e => LimitText(e))" class="recipe-description" maxlength="250" placeholder="Recipe Description (optional)"></InputTextArea>
-					<p class="recipe-description-length-control">@(recipe.Description?.Length ?? 0) / 250</p> 
+					<InputText @bind-Value="_recipe.Name" class="recipe-title" placeholder="Recipe Title"></InputText>
+					<InputTextArea @bind-Value="_recipe.Description" @oninput="@(e => LimitText(e))" class="recipe-description" maxlength="250" placeholder="Recipe Description (optional)"></InputTextArea>
+					<p class="recipe-description-length-control">@(_recipe.Description?.Length ?? 0) / 250</p> 
 
 					<hr />
 					
@@ -30,25 +31,25 @@
 					<div class="details-container servings-container">
 						<label class="detail-label">Servings</label>
 						<div class="serving-buttons">
-							@foreach (var count in predefinedServings)
+							@foreach (var count in _predefinedServings)
 							{
 								<button type="button"
-										class="serving-btn @(!isOtherServingSelected && recipe.Servings == count ? "active" : "")"
+										class="serving-btn @(!_isOtherServingSelected && _recipe.Servings == count ? "active" : "")"
 										@onclick="() => SelectServing(count)">
 									@count
 								</button>
 							}
 							<button type="button"
-									class="serving-btn @(isOtherServingSelected ? "active" : "")"
+									class="serving-btn @(_isOtherServingSelected ? "active" : "")"
 									@onclick="SelectOtherServing">
 								Other
 							</button>
 						</div>
 
-						@if (isOtherServingSelected)
+						@if (_isOtherServingSelected)
 						{
 							<div class="other-input-wrapper">
-								<InputNumber @bind-Value="recipe.Servings" class="detail-input other-servings-input" placeholder="Enter amount" />
+								<InputNumber @bind-Value="_recipe.Servings" class="detail-input other-servings-input" placeholder="Enter amount" />
 							</div>
 						}
 					</div>
@@ -56,34 +57,34 @@
 					<div class="details-container times-container">
 						<div class="time-group">
 							<label class="detail-label">Prep Time <span class="time-unit">(min)</span></label>
-							<InputNumber @bind-Value="recipe.PreparationTimeMinutes" class="detail-input time-input" />
+							<InputNumber @bind-Value="_recipe.PreparationTimeMinutes" class="detail-input time-input" />
 						</div>
     
 						<div class="time-group">
 							<label class="detail-label">Cook Time <span class="time-unit">(min)</span></label>
-							<InputNumber @bind-Value="recipe.CookingTimeMinutes" class="detail-input time-input" />
+							<InputNumber @bind-Value="_recipe.CookingTimeMinutes" class="detail-input time-input" />
 						</div>
     
 						<div class="time-group">
 							<label class="detail-label">Rest Time <span class="time-unit">(min)</span></label>
-							<InputNumber @bind-Value="recipe.RestingTimeMinutes" class="detail-input time-input" />
+							<InputNumber @bind-Value="_recipe.RestingTimeMinutes" class="detail-input time-input" />
 						</div>
 					</div>
 
-					<hr />
+				</div> 
 
+				<hr />
+
+				<div class="recipe-section section-two">
 					<div class="add-item-row">
 						<h4>Ingredients</h4>
 						<button class="mp-btn mp-btn-primary btn-icon-only">
 							<i class="bi bi-plus-lg"></i>
 						</button>
 
+
+
 					</div>
-				</div> 
-
-				<hr />
-
-				<div class="recipe-section section-two">
 					<div class="add-item-row">
 						<h4 class="info-title">Instructions</h4>
 						<button class="mp-btn mp-btn-primary btn-icon-only">
@@ -100,12 +101,13 @@
 </div>
 
 @code {
-	private const int descriptionLengthLimit = 250;
-	private RecipeDto recipe = new RecipeDto();
+	private const int _descriptionLengthLimit = 250;
+	private RecipeDto _recipe = new RecipeDto();
+	private List<RecipeIngredientDto> _ingredients = new List<RecipeIngredientDto>();
 
 	// Servings Logic
-	private int[] predefinedServings = { 1, 2, 4, 6 };
-	private bool isOtherServingSelected = false;
+	private int[] _predefinedServings = { 1, 2, 4, 6 };
+	private bool _isOtherServingSelected = false;
 
 
 	// public async ValueTask Dispose() { }
@@ -123,21 +125,21 @@
 	{
 		var value = e.Value?.ToString() ?? "";
 
-		if (value.Length > descriptionLengthLimit)
-			value = value.Substring(0, descriptionLengthLimit);
+		if (value.Length > _descriptionLengthLimit)
+			value = value.Substring(0, _descriptionLengthLimit);
 
-		recipe.Description = value;
+		_recipe.Description = value;
 	}
 
 	private void SelectServing(int count)
 	{
-		isOtherServingSelected = false;
-		recipe.Servings = count;
+		_isOtherServingSelected = false;
+		_recipe.Servings = count;
 	}
 
 	private void SelectOtherServing()
 	{
-		isOtherServingSelected = true;
+		_isOtherServingSelected = true;
 	}
 
 }
