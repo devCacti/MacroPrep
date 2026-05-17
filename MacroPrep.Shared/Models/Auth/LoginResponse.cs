@@ -1,4 +1,6 @@
-﻿namespace MacroPrep.Shared.Models.Auth
+﻿using System.Text.Json.Serialization;
+
+namespace MacroPrep.Shared.Models.Auth
 {
-    public record LoginResponse { public string Token = string.Empty; }
+    public record LoginResponse { [JsonPropertyName("token")] public string Token { get; set; } = string.Empty; }
 }
