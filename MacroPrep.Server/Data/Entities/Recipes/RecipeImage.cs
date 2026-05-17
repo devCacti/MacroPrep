@@ -1,6 +1,5 @@
 ﻿using Microsoft.Identity.Client;
 using System.ComponentModel.DataAnnotations;
-using MacroPrep.Shared.Enums.Recipes;
 
 namespace MacroPrep.Server.Data.Entities
 {
@@ -18,15 +17,6 @@ namespace MacroPrep.Server.Data.Entities
         public float? Width { get; set; }
         public float? Height { get; set; }
 
-
-        // Images within a specific section of the recipe will appear under the corresponding index in the ui.
-        // If the SectionIndex variable is larger than the number of items on the section, the image will be placed at the end of the section.
-        // If the Section variable is set to Cover, the image will be used as the cover image for the recipe.
-        // If there is already a cover image, the new image will be discarded.
-        public RecipeSection Section { get; set; }
-        public int SectionIndex { get; set; } // For ordering images within a section
-
-
         public virtual Recipe Recipe { get; set; } = null!;
 
         public RecipeImage() { }
@@ -40,22 +30,5 @@ namespace MacroPrep.Server.Data.Entities
             Height = height;
             Recipe = new Recipe(new User(), string.Empty);
         }
-
-
-        // Images should be shown in "/api/recipes/{recipeId}/images/{image.Id}"
-        public static async Task<IResult> AddImageToRecipe(Guid recipeId, RecipeImage image, AppDbContext db)
-        {
-            var recipe = await db.Recipes.FindAsync(recipeId);
-            
-            if (recipe == null)
-                return Results.NotFound(new { Message = "Recipe not found" });
-            
-            image.Recipe = recipe;
-            db.RecipeImages.Add(image);
-            
-            await db.SaveChangesAsync();
-
-            return Results.Created($"/api/recipes/{recipeId}/images/{image.Id}", image);
-        } 
     }
 }

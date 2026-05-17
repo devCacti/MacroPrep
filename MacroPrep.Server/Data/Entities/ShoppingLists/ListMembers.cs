@@ -25,8 +25,5 @@ namespace MacroPrep.Server.Data.Entities
 
         [ForeignKey(nameof(ListId))]
         public virtual ShoppingList? List { get; set; }
-
-        [ForeignKey(nameof(UserId))]
-        public virtual User? Member { get; set; }
     }
 }

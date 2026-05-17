@@ -5,7 +5,6 @@ using MacroPrep.Shared.Models.Auth;
 using MacroPrep.Shared.Models.User;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using Microsoft.OpenApi.Models;
 
 namespace MacroPrep.Server.Endpoints
 {
@@ -25,54 +24,14 @@ namespace MacroPrep.Server.Endpoints
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status409Conflict)
                 .WithName("Register")
-                .WithOpenApi(operation =>
-                {
-                    operation.Summary = "Register a new user account";
-                    operation.Description = "Creates a new user account with the provided username, email, and password. Returns a JWT token upon successful registration.";
-                    operation.RequestBody.Description = "Registration details including username, email, password, and confirm password.";
-                    operation.RequestBody.Required = true;
-                    operation.RequestBody.Content["application/json"].Schema = new OpenApiSchema
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.Schema,
-                            Id = nameof(RegisterRequest)
-                        }
-                    };
-
-                    operation.Responses["200"].Description = "User registered successfully. Returns a JWT token.";
-                    operation.Responses["400"].Description = "Bad request. This can occur if required fields are missing or invalid.";
-                    operation.Responses["409"].Description = "Conflict. This can occur if the username or email already exists.";
-
-                    return operation;
-                });
+                .WithOpenApi();
 
             group.MapPost("/login", Login)
                 .Produces(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("Login")
-                .WithOpenApi(operation =>
-                {
-                    operation.Summary = "Authenticate a user and return a JWT token";
-                    operation.Description = "Authenticates a user using their username/email and password. Returns a JWT token upon successful authentication.";
-                    operation.RequestBody.Description = "Login details including username/email and password.";
-                    operation.RequestBody.Required = true;
-                    operation.RequestBody.Content["application/json"].Schema = new OpenApiSchema
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.Schema,
-                            Id = nameof(LoginRequest)
-                        }
-                    };
-
-                    operation.Responses["200"].Description = "User authenticated successfully. Returns a JWT token.";
-                    operation.Responses["400"].Description = "Bad request. This can occur if required fields are missing or invalid.";
-                    operation.Responses["401"].Description = "Unauthorized. This can occur if the username/email or password is incorrect.";
-
-                    return operation;
-                });
+                .WithOpenApi();
 
             group.MapPost("/complete-setup", CompleteSetup)
                 .Produces(StatusCodes.Status200OK)
@@ -82,44 +41,13 @@ namespace MacroPrep.Server.Endpoints
                 .Produces(StatusCodes.Status409Conflict)
                 .WithName("CompleteAccountSetup")
                 .RequireAuthorization("UncompletedSetup") // Only allow users who have NOT completed setup to access this endpoint
-                .WithOpenApi(operation =>
-                {
-                    operation.Summary = "Complete initial account setup";
-                    operation.Description = "Allows authenticated users who have not completed their account setup to provide additional profile information. This endpoint is typically used for onboarding new users after registration.";
-                    operation.RequestBody.Description = "Account setup details including first name, last name, and date of birth.";
-                    operation.RequestBody.Required = true;
-                    operation.RequestBody.Content["application/json"].Schema = new OpenApiSchema
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.Schema,
-                            Id = nameof(AccountSetupRequest)
-                        }
-                    };
-
-                    operation.Responses["200"].Description = "Account setup completed successfully.";
-                    operation.Responses["400"].Description = "Bad request. This can occur if required fields are missing or invalid.";
-                    operation.Responses["401"].Description = "Unauthorized. This can occur if the user is not authenticated.";
-                    operation.Responses["403"].Description = "Forbidden. This can occur if the user has already completed account setup and is trying to access this endpoint again.";
-                    operation.Responses["409"].Description = "Conflict. This can occur if there is a concurrency issue while updating the user's profile.";
-
-                    return operation;
-                });
+                .WithOpenApi();
 
             group.MapPost("/refresh", RefreshToken)
                 .Produces(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("RefreshToken")
-                .WithOpenApi(operation =>
-                {
-                    operation.Summary = "Refresh JWT token using session cookie";
-                    operation.Description = "Refreshes the JWT token for an authenticated user using the session cookie. This endpoint checks the validity of the session and issues a new JWT token if the session is still valid.";
-
-                    operation.Responses["200"].Description = "Token refreshed successfully. Returns a new JWT token.";
-                    operation.Responses["401"].Description = "Unauthorized. This can occur if the session cookie is missing, invalid, expired, or if the session has been revoked.";
-
-                    return operation;
-                });
+                .WithOpenApi();
         }
 
         // Helper method to configure cookie policy for authentication 
@@ -149,7 +77,8 @@ namespace MacroPrep.Server.Endpoints
                 return Results.Conflict(new { Message = "Username or email already exists" });
 
             // Password Hashing
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            string salt = BCrypt.Net.BCrypt.GenerateSalt(12); // 12 Factor salt
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, salt);
 
             var newUser = new User
             {
@@ -157,6 +86,7 @@ namespace MacroPrep.Server.Endpoints
                 UserName = request.UserName,
                 Email = request.Email,
                 PasswordHash = passwordHash,
+                PasswordSalt = salt,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
             };
@@ -167,6 +97,7 @@ namespace MacroPrep.Server.Endpoints
             {
                 Id = Guid.NewGuid(),
                 Token = Guid.NewGuid().ToString(), // Rotation Secret
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(7), // Expires after 7 days
                 UserId = newUser.Id,
                 User = newUser
             };
@@ -197,6 +128,7 @@ namespace MacroPrep.Server.Endpoints
             {
                 Id = Guid.NewGuid(),
                 Token = Guid.NewGuid().ToString(),
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(7), // Expires after 7 days
                 UserId = user.Id,
                 User = user
             };
@@ -230,6 +162,7 @@ namespace MacroPrep.Server.Endpoints
             userEntity.LastName = request.LastName;
             userEntity.DateOfBirth = request.DateOfBirth;
             userEntity.HasCompletedSetup = true; // The flag that unlocks the rest of the app
+            userEntity.UpdatedAt = DateTimeOffset.UtcNow;
 
             await db.SaveChangesAsync();
 
@@ -250,22 +183,24 @@ namespace MacroPrep.Server.Endpoints
 
             var session = await db.UserSessions.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == sessionId);
 
-            if (session == null || session.User == null || session.IsRevoked || session.ExpiresAt < DateTimeOffset.UtcNow || session.Token != sessionToken)
+            if (session == null || session.IsRevoked || session.ExpiresAt < DateTimeOffset.UtcNow || session.Token != sessionToken)
             {
                 if (session != null)
                 {
-                    session.IsRevoked = true; // Revoke the session if token is invalid or expired.
+                    session.IsRevoked = true; // Revoke the session if token is invalid or expired. A compromised account will have its 
                     await db.SaveChangesAsync();
                 }
                 return Results.Unauthorized();
             }
 
-            session.Token = Guid.NewGuid().ToString(); // Rotate the session token and update the db
+            session.Token = Guid.NewGuid().ToString(); // Rotate the session token
+            session.ExpiresAt = DateTimeOffset.UtcNow.AddDays(7); // Extend the session expiration
+
             await db.SaveChangesAsync();
 
             SetSessionCookie(http, session.Id, session.Token, session.ExpiresAt);
 
-            return Results.Ok(new { Token = tokenService.GenerateToken(session.User, session) });
+            return Results.Ok(new { Token = tokenService.GenerateToken(session.User!, session) });
         }
 
     }
