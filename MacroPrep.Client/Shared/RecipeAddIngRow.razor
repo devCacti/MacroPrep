@@ -1,0 +1,42 @@
+﻿@using MacroPrep.Shared.Models.Recipes;
+
+<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
+	@if (!_isGhostRow)
+	{
+		<div class="drag-handle">⁝⁝</div>
+
+	}
+
+    <div class="input-group">
+        @* Quantity Input (Small) *@
+        <input type="text"
+               class="input-qty"
+               placeholder="Qty"
+               @bind="Ingredient.Amount"
+               @bind:event="oninput" />
+
+        @* Unit Input (Small) *@
+        <input type="text"
+               class="input-unit"
+               placeholder="Unit"
+               @bind="Ingredient.MeasuringUnit"
+               @bind:event="oninput" />
+
+        @* Name Input (Expands to fill remaining space) *@
+        <input type="text"
+               class="input-name"
+               placeholder="@(_isGhostRow ? "Add ingredient..." : "Name")"
+               value="@Ingredient.IngredientName"
+               enterkeyhint="next" />
+    </div>
+</div>
+
+@code {
+
+	private bool _isGhostRow => Ingredient.IsEmpty();
+
+	[Parameter]
+	public RecipeIngredientDto Ingredient { get; set; } = new RecipeIngredientDto();
+
+
+}

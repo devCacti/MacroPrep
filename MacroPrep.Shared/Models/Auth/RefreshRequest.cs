@@ -1,6 +1,6 @@
 ﻿namespace MacroPrep.Shared.Models.Auth
 {
-    public class RefreshRequest
+    public record RefreshRequest
     {
         public Guid SessionID { get; set; }
     }

@@ -4,6 +4,7 @@ using MacroPrep.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MacroPrep.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329000410_Updated_Measuring_Unit")]
+    partial class Updated_Measuring_Unit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -194,8 +197,6 @@ namespace MacroPrep.Server.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ListId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("ListMembers");
                 });
@@ -399,10 +400,15 @@ namespace MacroPrep.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("RecipeIngredientId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RecipeIngredientId");
 
                     b.ToTable("Tags");
                 });
@@ -436,6 +442,10 @@ namespace MacroPrep.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordSalt")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -493,21 +503,6 @@ namespace MacroPrep.Server.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserSessions");
-                });
-
-            modelBuilder.Entity("RecipeIngredientTag", b =>
-                {
-                    b.Property<Guid>("RecipeIngredientsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TagsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("RecipeIngredientsId", "TagsId");
-
-                    b.HasIndex("TagsId");
-
-                    b.ToTable("RecipeIngredientTag");
                 });
 
             modelBuilder.Entity("RecipeTag", b =>
@@ -619,15 +614,7 @@ namespace MacroPrep.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MacroPrep.Server.Data.Entities.User", "Member")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("List");
-
-                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.Procedure", b =>
@@ -692,6 +679,13 @@ namespace MacroPrep.Server.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("MacroPrep.Server.Data.Entities.Tag", b =>
+                {
+                    b.HasOne("MacroPrep.Server.Data.Entities.RecipeIngredient", null)
+                        .WithMany("Tags")
+                        .HasForeignKey("RecipeIngredientId");
+                });
+
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.UserSession", b =>
                 {
                     b.HasOne("MacroPrep.Server.Data.Entities.User", "User")
@@ -701,21 +695,6 @@ namespace MacroPrep.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("RecipeIngredientTag", b =>
-                {
-                    b.HasOne("MacroPrep.Server.Data.Entities.RecipeIngredient", null)
-                        .WithMany()
-                        .HasForeignKey("RecipeIngredientsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MacroPrep.Server.Data.Entities.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("RecipeTag", b =>
@@ -777,6 +756,11 @@ namespace MacroPrep.Server.Migrations
                     b.Navigation("Ingredients");
 
                     b.Navigation("Procedures");
+                });
+
+            modelBuilder.Entity("MacroPrep.Server.Data.Entities.RecipeIngredient", b =>
+                {
+                    b.Navigation("Tags");
                 });
 
             modelBuilder.Entity("MacroPrep.Server.Data.Entities.ShoppingList", b =>

@@ -10,9 +10,15 @@ namespace MacroPrep.Shared.Models.Auth
         [MaxLength(50, ErrorMessage = "First Name cannot be longer than 50 characters")]
         public string FirstName { get; set; } = string.Empty;
 
+        private string? _lastName;
+
         [MinLength(2, ErrorMessage = "Last Name must be at least 2 characters long")]
         [MaxLength(50, ErrorMessage = "Last Name cannot be longer than 50 characters")]
-        public string LastName { get; set; } = string.Empty;
+        public string? LastName
+        {
+            get => _lastName;
+            set => _lastName = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
 
         [DataType(DataType.Date, ErrorMessage = "Invalid date format")]
         public DateOnly? DateOfBirth { get; set; }

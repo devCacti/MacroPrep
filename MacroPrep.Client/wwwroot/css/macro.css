@@ -317,6 +317,22 @@ i.bi {
     text-decoration: none;
 }
 
+.add-input {
+    flex-grow: 1;
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    font-size: var(--text-sm);
+    outline: none;
+    transition: var(--smooth);
+}
+
+    .add-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+
 .add-btn {
     gap: 0.5rem;
     max-width: max-content;
@@ -325,6 +341,11 @@ i.bi {
 .btn-icon-only {
     width: 40px; /* Square button */
     flex: none; /* Prevent stretching */
+}
+
+.add-item-row {
+    display: flex;
+    gap: 0.5rem;
 }
 
 /* Base "MacroPrep" Button Style */
