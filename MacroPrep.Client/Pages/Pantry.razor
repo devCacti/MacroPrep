@@ -76,29 +76,23 @@
                     @* Title Input: Disabled if Viewer *@
                         <input type="text" class="list-title-input"
                                 value="@currentVm.List.Name"
-                                disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Editor)"
+                                disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Master)"
                                 @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))" />
 
-                    @if (currentVm.IsSyncing || Sync.IsGlobalSyncing)
-                    {
-                        <span class="sync-badge">
-                            <i class="bi bi-arrow-repeat spinning"></i>
-                        </span>
-                    }
-                    else if (IsListFullySynced(currentVm))
-                    {
-                        <span class="synced-tick" title="All changes saved to server">
-                            <i class="bi bi-check-circle-fill"></i>
-                        </span>
-                    }
+                        @if (currentVm.HasUnsyncedChanges)
+                        {
+                            <span class="sync-badge">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </span>
+                        }
 
-                    @* Shared Badge *@
-                    @if (currentVm.List.IsShared)
-                    {
-                                <span class="badge-shared" title="Shared List">
-                                    <i class="bi bi-people-fill"></i>
-                                </span>
-                    }
+                        @* Shared Badge *@
+                        else if (currentVm.List.IsShared)
+                        {
+                            <span class="badge-shared" title="Shared List">
+                                    <i class="bi bi-people-fill @(IsListFullySynced(currentVm) ? "synced" : "unsynced")"></i>
+                            </span>
+                        }
 
                     @* Settings Toggle Button: Everyone can see this to access "Leave List" *@
                         <button class="icon-action-btn @(isSettingsOpen ? "active" : "")"
@@ -135,8 +129,8 @@
                                     disabled="@(currentVm.GetUserRole(_currentUserId) == MemberType.Viewer)"
                                     @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
 
-                            <div class="item-details">
-                                <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
+                            <div class="item-details" @onclick="@(() => ToggleItem(currentVm, item, !item.IsChecked))">
+                                <a class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</a>
                                 @if (item.Quantity > 1)
                                 {
                                     <span class="item-qty">x@(item.Quantity)</span>
@@ -257,6 +251,9 @@
         // Helper to check if current user is the owner
         public bool IsOwner(Guid currentUserId) => List.OwnerId == currentUserId;
         public bool IsSyncing { get; set; } = false;
+
+
+        public bool HasUnsyncedChanges => !List.IsSynced || Items.Any(i => !i.IsSynced) || Members.Any(m => !m.IsSynced);
 
         // Helper to get current user's role
         public MemberType GetUserRole(Guid currentUserId)
@@ -384,11 +381,11 @@
 
         if (!_activeUpdates.TryAdd(listGuid.ToString(), true)) return;
 
+        vm.IsSyncing = true;
+        await InvokeAsync(StateHasChanged);
+
         try
         {
-            vm.IsSyncing = true;
-            await InvokeAsync(StateHasChanged);
-
             await Task.Delay(1500);
 
             var response = await Http.GetAsync($"api/shopping-lists/{listId}");
@@ -404,8 +401,8 @@
         }
         finally
         {
-            vm.IsSyncing = false;
             _activeUpdates.TryRemove(listGuid.ToString(), out _);
+            vm.IsSyncing = false;
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -462,13 +459,50 @@
     // Syncing Status Changed Handler
     private async void HandleSyncStatusChanged()
     {
+        // 1. Fetch the absolute latest state from your local database
+        var storedLists = await OfflineService.GetAllListsAsync(_currentUserId);
+
+        // 2. Loop through what is currently on the screen
+        foreach (var vm in _viewModels)
+        {
+            var latestList = storedLists.FirstOrDefault(l => l.Id == vm.List.Id);
+            if (latestList != null)
+            {
+                // Update the List's sync status in memory
+                vm.List.IsSynced = latestList.IsSynced;
+
+                // Fetch the latest items for this list and update their statuses
+                var storedItems = await OfflineService.GetItemsAsync(vm.List.Id);
+                foreach (var item in vm.Items)
+                {
+                    var latestItem = storedItems.FirstOrDefault(i => i.Id == item.Id);
+                    if (latestItem != null)
+                    {
+                        item.IsSynced = latestItem.IsSynced;
+                    }
+                }
+
+                // Fetch the latest members for this list and update their statuses
+                var storedMembers = await OfflineService.GetMembersAsync(vm.List.Id);
+                foreach (var member in vm.Members)
+                {
+                    var latestMember = storedMembers.FirstOrDefault(m => m.Id == member.Id);
+                    if (latestMember != null)
+                    {
+                        member.IsSynced = latestMember.IsSynced;
+                    }
+                }
+            }
+        }
+
+        // 3. Now that memory matches the DB, tell the UI to re-render
         await InvokeAsync(StateHasChanged);
     }
 
     // Check list full sync status
     private bool IsListFullySynced(ListViewModel vm)
     {
-        return !vm.IsSyncing && !Sync.IsGlobalSyncing && vm.List.IsSynced;
+        return !vm.IsSyncing && vm.List.IsSynced && !vm.HasUnsyncedChanges;
     }
 
     // JS Invokable methods
@@ -740,6 +774,9 @@
 
     private async Task AddMember(ListViewModel vm)
     {
+        vm.IsSyncing = true;
+        await InvokeAsync(StateHasChanged);
+
         var username = _newMemberInputs[vm.List.Id];
         if (string.IsNullOrWhiteSpace(username)) return;
 
@@ -767,6 +804,8 @@
         }
 
         _newMemberInputs[vm.List.Id] = ""; // Clear input
+        vm.IsSyncing = false;
+        await InvokeAsync(StateHasChanged);
         Console.WriteLine("Sending invite to: " + username);
         Sync.RequestSync();
     }
@@ -821,6 +860,7 @@
     {
         if (!_newInputs.ContainsKey(viewModel.List.Id)) return;
 
+
         var newItemName = _newInputs[viewModel.List.Id].Trim();
 
         if (string.IsNullOrEmpty(newItemName)) return;
@@ -837,6 +877,7 @@
 
 
         viewModel.Items.Add(newItem);
+        viewModel.List.IsSynced = false;
         _newInputs[viewModel.List.Id] = "";
         await OfflineService.AddItemAsync(newItem);
         Sync.RequestSync();
@@ -844,7 +885,9 @@
 
     private async Task DeleteItem(ListViewModel viewModel, ListItemDto item)
     {
+        viewModel.List.IsSynced = false;
         viewModel.Items.Remove(item);
+        await OfflineService.SaveListAsync(viewModel.List, false);
         await OfflineService.DeleteItemAsync(item.Id);
         Sync.RequestSync();
     }
@@ -916,9 +959,6 @@
         // 3. Mark myself as deleted in the DB so SyncService tells the server
         await OfflineService.RemoveMemberAsync(vm.List.Id, me.UserName);
 
-        // 4. Also delete the list locally so it disappears
-        await OfflineService.DeleteListAsync(vm.List.Id);
-
         // api/shopping-lists/{listId}/leave
         // without using the sync service, for this we have to call the API directly
         try
@@ -929,6 +969,9 @@
             {
                 Console.WriteLine("Failed to leave list on server.");
             }
+
+            // 4. Also delete the list locally so it disappears
+            await OfflineService.DeleteListAsync(vm.List.Id);
         }
         catch (Exception ex)
         {
