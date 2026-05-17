@@ -73,8 +73,16 @@
                 var refreshResponse = await Http.PostAsync("/api/auth/refresh", null);
                 if (refreshResponse.IsSuccessStatusCode)
                 {
-                    var result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>();
-                    await LocalStorage.SetItemAsync("authToken", result!.Token);
+                    LoginResponse? result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+                    if (result == null)
+                    {
+                        throw new Exception("Result: " + result);
+                    }
+
+                    Console.WriteLine(result.ToString());
+
+                    await LocalStorage.SetItemAsync("authToken", result.Token);
 
                     // Update the auth state so the app knows setup is done and can redirect accordingly
                     ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
@@ -90,7 +98,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Setup error: {ex.Message}");
+            Console.WriteLine("An error occurred while setting up your account. Please try again later.");
+            Console.WriteLine(ex);
         }
         finally
         {
