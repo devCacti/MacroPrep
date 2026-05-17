@@ -28,6 +28,7 @@
         </div>
     }
     <div class="content-container">
+
         <header class="page-header">
             <div class="header-text">
                 <h1 class="page-title">The Pantry</h1>
@@ -61,187 +62,188 @@
             </div>
         }
 
-        
         <div class="pantry-grid">
-        @foreach (var vm in _viewModels)
-        {
-            var currentVm = vm;
-            var isSettingsOpen = _settingsOpen.ContainsKey(currentVm.List.Id) && _settingsOpen[currentVm.List.Id];
+            @foreach (var vm in _viewModels)
+            {
+                var currentVm = vm;
+                var isSettingsOpen = _settingsOpen.ContainsKey(currentVm.List.Id) && _settingsOpen[currentVm.List.Id];
 
-            <div class="shopping-card">
+                    <div class="shopping-card">
 
-            @* --- HEADER --- *@
-                <div class="card-header-section @(currentVm.List.IsShared ? "shared-bg" : "")">
-                    <div class="header-top">
-                    @* Title Input: Disabled if Viewer *@
-                        <input type="text" class="list-title-input"
-                                value="@currentVm.List.Name"
-                                disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Editor)"
-                                @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))" />
+                    @* --- HEADER --- *@
+                        <div class="card-header-section @(currentVm.List.IsShared ? "shared-bg" : "")">
+                            <div class="header-top">
+                            @* Title Input: Disabled if Viewer *@
+                                <input type="text" class="list-title-input"
+                                       value="@currentVm.List.Name"
+                                       disabled="@(currentVm.GetUserRole(_currentUserId) < MemberType.Editor)"
+                                       @onchange="@(e => UpdateListTitle(currentVm.List, (string)e.Value!))" />
 
-                    @if (currentVm.IsSyncing || Sync.IsGlobalSyncing)
-                    {
-                        <span class="sync-badge">
-                            <i class="bi bi-arrow-repeat spinning"></i>
-                        </span>
-                    }
-                    else if (IsListFullySynced(currentVm))
-                    {
-                        <span class="synced-tick" title="All changes saved to server">
-                            <i class="bi bi-check-circle-fill"></i>
-                        </span>
-                    }
-
-                    @* Shared Badge *@
-                    @if (currentVm.List.IsShared)
-                    {
-                                <span class="badge-shared" title="Shared List">
-                                    <i class="bi bi-people-fill"></i>
+                            @if (currentVm.IsSyncing || Sync.IsGlobalSyncing)
+                            {
+                                <span class="sync-badge">
+                                    <i class="bi bi-arrow-repeat spinning"></i>
                                 </span>
-                    }
+                            }
+                            else if (IsListFullySynced(currentVm))
+                            {
+                                <span class="synced-tick" title="All changes saved to server">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </span>
+                            }
 
-                    @* Settings Toggle Button: Everyone can see this to access "Leave List" *@
-                        <button class="icon-action-btn @(isSettingsOpen ? "active" : "")"
-                                @onclick="@(() => ToggleSettings(currentVm.List.Id))"
-                                title="List Settings">
-                            <i class="bi bi-gear-fill"></i>
-                        </button>
-                    </div>
-                    
+                            @* Shared Badge *@
+                            @if (currentVm.List.IsShared)
+                            {
+                                        <span class="badge-shared" title="Shared List">
+                                            <i class="bi bi-people-fill"></i>By:
+                                            <span class="owner-tag"> @(currentVm.IsOwner(_currentUserId) ? "You" : currentVm.List.OwnerName)</span>
+                                        </span>
+                            }
+
+                            @* Settings Toggle Button: Everyone can see this to access "Leave List" *@
+                                <button class="icon-action-btn @(isSettingsOpen ? "active" : "")"
+                                        @onclick="@(() => ToggleSettings(currentVm.List.Id))"
+                                        title="List Settings">
+                                    <i class="bi bi-gear-fill"></i>
+                                </button>
+                            </div>
+
+                        @* Progress Bar *@
                         @{
                             var total = currentVm.Items.Count;
                             var completed = currentVm.Items.Count(i => i.IsChecked);
                             var percent = total == 0 ? 0 : (int)((double)completed / total * 100);
                         }
-                        <div class="progress-info">
-                            <span class="progress-text">@completed of @total items completed</span>
-                        </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" style="width: @(percent)%"></div>
-                        </div>
-                </div>
-
-            @* --- BODY --- *@
-                <div class="card-body">
-                @if (!isSettingsOpen)
-                {
-                    @* --- ITEMS LIST --- *@
-                    <div class="items-list">
-                    @foreach (var item in currentVm.Items)
-                    {
-                        <div class="item-row">
-                            @* Checkbox: Disabled if Viewer *@
-                            <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"
-                                    disabled="@(currentVm.GetUserRole(_currentUserId) == MemberType.Viewer)"
-                                    @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
-
-                            <div class="item-details">
-                                <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
-                                @if (item.Quantity > 1)
-                                {
-                                    <span class="item-qty">x@(item.Quantity)</span>
-                                }
+                            <div class="progress-info">
+                                <span class="progress-text">@completed of @total items completed</span>
                             </div>
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill" style="width: @(percent)%"></div>
+                            </div>
+                        </div>
 
-                            @* Delete Item: Hidden if Viewer *@
+                    @* --- BODY --- *@
+                        <div class="card-body">
+                        @if (!isSettingsOpen)
+                        {
+                            @* --- ITEMS LIST --- *@
+                                    <div class="items-list">
+                                @foreach (var item in currentVm.Items)
+                                {
+                                                <label class="item-row">
+                                        @* Checkbox: Disabled if Viewer *@
+                                                    <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"
+                                                           disabled="@(currentVm.GetUserRole(_currentUserId) == MemberType.Viewer)"
+                                                           @onchange="@(e => ToggleItem(currentVm, item, (bool)e.Value!))" />
+
+                                                    <div class="item-details">
+                                                        <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
+                                            @if (item.Quantity > 1)
+                                            {
+                                                                <span class="item-qty">x@(item.Quantity)</span>
+                                            }
+                                                    </div>
+
+                                        @* Delete Item: Hidden if Viewer *@
+                                        @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Editor)
+                                        {
+                                                            <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
+                                                                <i class="bi bi-x"></i>
+                                                            </button>
+                                        }
+                                                </label>
+                                }
+                                    </div>
+
+                            @* Add Item: Hidden if Viewer *@
                             @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Editor)
                             {
-                                <button class="btn-delete-item" @onclick="@(() => DeleteItem(currentVm, item))">
-                                    <i class="bi bi-x"></i>
-                                </button>
+                                            <div class="add-item-row">
+                                                <input type="text" class="add-input" placeholder="Add item..."
+                                                       @bind="_newInputs[currentVm.List.Id]"
+                                                       @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
+                                                <button class="mp-btn mp-btn-primary btn-icon-only" @onclick="@(() => AddItem(currentVm))">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </button>
+                                            </div>
                             }
-                        </div>
-                    }
-                    </div>
-
-                    @* Add Item: Hidden if Viewer *@
-                    @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Editor)
-                    {
-                        <div class="add-item-row">
-                            <input type="text" class="add-input" placeholder="Add item..."
-                                    @bind="_newInputs[currentVm.List.Id]"
-                                    @onkeyup="@(e => HandleKeyUp(e, currentVm))" />
-                            <button class="mp-btn mp-btn-primary btn-icon-only" @onclick="@(() => AddItem(currentVm))">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    }
-                }
-                else
-                {
-                    @* --- SETTINGS PANEL (Expanded) --- *@
-                            <div class="settings-panel">
-                                <h4 class="settings-title">List Settings</h4>
-
-                        @* 1. Share Toggle: Only Creator/Master can see *@
-                        @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
-                        {
-                            <div class="setting-row">
-                                <div class="setting-info">
-                                    <span class="setting-label">Share List</span>
-                                    <span class="setting-desc">Allow others to view and edit</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" checked="@currentVm.List.IsShared"
-                                            @onchange="@(e => ToggleSharedStatus(currentVm, (bool)e.Value!))">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        }
-
-                        @* 2. Member Management: Only Creator/Master can see *@
-                        @if (currentVm.List.IsShared && currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
-                        {
-                            <div class="members-section">
-                                <span class="setting-label">Members</span>
-                                <div class="member-chips">
-                                @foreach (var member in (currentVm.Members))
-                                {
-                                    <div class="member-chip @(member.HasAccepted ? "accepted" : "pending")">
-                                        <span class="member-initial">@member.UserName[0]</span>
-                                        <span>@member.UserName</span>
-                                        @if (!member.HasAccepted)
-                                        {
-                                            <small>(Pending)</small>
-                                        }
-                                        <button class="remove-member-btn @(_currentUserId == member.UserId ? "disabled" : "")"
-                                                @onclick="() => RemoveMember(currentVm, member)">
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                    </div>
-                                }
-                                </div>
-                                <div class="add-member-row">
-                                    <input type="text" class="add-input" placeholder="Enter username..."
-                                            @bind="_newMemberInputs[currentVm.List.Id]" />
-                                    <button class="mp-btn mp-btn-secondary" @onclick="() => AddMember(currentVm)">
-                                        Add
-                                    </button>
-                                </div>
-                            </div>
-                        }
-
-                                <div class="settings-divider"></div>
-
-                        @* 3. Danger Zone: DELETE vs LEAVE *@
-                        @if (currentVm.IsOwner(_currentUserId))
-                        {
-                            @* OWNER: Can Delete *@
-                            <button class="delete-list-btn-full" @onclick="@(() => DeleteListAsync(currentVm))">
-                                <i class="bi bi-trash"></i> Delete this List
-                            </button>
                         }
                         else
                         {
-                            @* MEMBER: Can Leave *@
-                            <button class="delete-list-btn-full" @onclick="@(() => LeaveListAsync(currentVm))">
-                                <i class="bi bi-box-arrow-right"></i> Leave List
-                            </button>
+                            @* --- SETTINGS PANEL (Expanded) --- *@
+                                    <div class="settings-panel">
+                                        <h4 class="settings-title">List Settings</h4>
+
+                                @* 1. Share Toggle: Only Creator/Master can see *@
+                                @if (currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
+                                {
+                                                <div class="setting-row">
+                                                    <div class="setting-info">
+                                                        <span class="setting-label">Share List</span>
+                                                        <span class="setting-desc">Allow others to view and edit</span>
+                                                    </div>
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" checked="@currentVm.List.IsShared"
+                                                               @onchange="@(e => ToggleSharedStatus(currentVm, (bool)e.Value!))">
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                </div>
+                                }
+
+                                @* 2. Member Management: Only Creator/Master can see *@
+                                @if (currentVm.List.IsShared && currentVm.GetUserRole(_currentUserId) >= MemberType.Master)
+                                {
+                                                <div class="members-section">
+                                                    <span class="setting-label">Members</span>
+                                                    <div class="member-chips">
+                                            @foreach (var member in (currentVm.Members))
+                                            {
+                                                                <div class="member-chip @(member.HasAccepted ? "accepted" : "pending")">
+                                                                    <span class="member-initial">@member.UserName[0]</span>
+                                                                    <span>@member.UserName</span>
+                                                    @if (!member.HasAccepted)
+                                                    {
+                                                                            <small>(Pending)</small>
+                                                    }
+                                                                    <button class="remove-member-btn @(_currentUserId == member.UserId ? "disabled" : "")"
+                                                                            @onclick="() => RemoveMember(currentVm, member)">
+                                                                        <i class="bi bi-x"></i>
+                                                                    </button>
+                                                                </div>
+                                            }
+                                                    </div>
+                                                    <div class="add-member-row">
+                                                        <input type="text" class="add-input" placeholder="Enter username..."
+                                                               @bind="_newMemberInputs[currentVm.List.Id]" />
+                                                        <button class="mp-btn mp-btn-secondary" @onclick="() => AddMember(currentVm)">
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                }
+
+                                        <div class="settings-divider"></div>
+
+                                @* 3. Danger Zone: DELETE vs LEAVE *@
+                                @if (currentVm.IsOwner(_currentUserId))
+                                {
+                                    @* OWNER: Can Delete *@
+                                                <button class="delete-list-btn-full" @onclick="@(() => DeleteListAsync(currentVm))">
+                                                    <i class="bi bi-trash"></i> Delete this List
+                                                </button>
+                                }
+                                else
+                                {
+                                    @* MEMBER: Can Leave *@
+                                                <button class="delete-list-btn-full" @onclick="@(() => LeaveListAsync(currentVm))">
+                                                    <i class="bi bi-box-arrow-right"></i> Leave List
+                                                </button>
+                                }
+                                    </div>
                         }
+                        </div>
                     </div>
-                }
-                </div>
-            </div>
             }
         </div>
     </div>

@@ -86,16 +86,9 @@
             if (response.IsSuccessStatusCode)
             {
                 // Response is the same in login and regiser, so we can reuse the same model
-                LoginResponse? result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-                if (result == null)
-                {
-                    throw new Exception("Response returned null (In Theory)");
-                }
-
-                Console.WriteLine("Result: " + result.ToString());
-
-                await LocalStorage.SetItemAsync("authToken", result.Token);
+                await LocalStorage.SetItemAsync("authToken", result!.Token);
 
                 ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
 
@@ -112,10 +105,9 @@
                 _errorMessage = string.IsNullOrEmpty(error) ? "Registration failed." : error;
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            _errorMessage = "An error occurred while registering. Please try again later.";
-            Console.WriteLine(e.Message);
+            _errorMessage = "Unable to connect to the authentication service.";
         }
         finally
         {

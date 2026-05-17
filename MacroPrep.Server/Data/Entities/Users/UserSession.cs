@@ -18,7 +18,7 @@ namespace MacroPrep.Server.Data.Entities
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         [Required]
-        public DateTimeOffset ExpiresAt { get; set; } = DateTimeOffset.UtcNow.AddDays(7);
+        public DateTimeOffset ExpiresAt { get; set; }
 
         public bool IsRevoked { get; set; } = false;
 

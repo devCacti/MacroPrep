@@ -81,17 +81,10 @@
 
             if (response.IsSuccessStatusCode)
             {
-                LoginResponse? result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
-                if (result == null)
-                {
-                    throw new Exception("Response returned null (In Theory)");
-                }
-
-                Console.WriteLine("Result: " + result.ToString());
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
                 // 1. Save the Token (CustomHttpHandler reads this!)
-                await LocalStorage.SetItemAsync("authToken", result.Token);
+                await LocalStorage.SetItemAsync("authToken", result!.Token);
 
                 // 2. Notify the AuthStateProvider (forces UI refresh with new auth state)
                 ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
@@ -108,10 +101,10 @@
                 _errorMessage = "Invalid credentials. Please try again.";
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _errorMessage = "An error occurred while logging in. Please try again later.";
-            Console.WriteLine(e.Message);
+            _errorMessage = "Server connection failed. Please try again later.";
+            Console.WriteLine(ex.Message);
         }
         finally
         {
