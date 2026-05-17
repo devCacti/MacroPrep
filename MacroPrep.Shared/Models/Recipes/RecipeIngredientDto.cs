@@ -17,7 +17,7 @@ namespace MacroPrep.Shared.Models.Recipes
 
         // Note: I fixed the "Ammount" typo from your entity to "Amount" for cleaner frontend usage.
         [Required]
-        [Range(0.01, float.MaxValue, ErrorMessage = "Amount must be greater than zero.")]
+        [Range(0.0001, float.MaxValue, ErrorMessage = "Amount must be greater than zero.")]
         public float Amount { get; set; } = 1;
 
         // Assuming MeasuringUnit is an Enum or a class shared in your MacroPrep.Shared project
