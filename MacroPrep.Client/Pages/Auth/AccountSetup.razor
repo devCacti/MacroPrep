@@ -73,7 +73,7 @@
                 var refreshResponse = await Http.PostAsync("/api/auth/refresh", null);
                 if (refreshResponse.IsSuccessStatusCode)
                 {
-                    LoginResponse? result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>();
+                    LoginResponseDto? result = await refreshResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
 
                     if (result == null)
                     {

@@ -31,7 +31,7 @@ namespace MacroPrep.Server.Tests.Functional.Auth
         public async Task Register_ShouldReturnOk_WhenDataIsValid()
         {
             var uniqueId = Guid.NewGuid().ToString("N")[..8]; // Generate a short unique ID
-            var regDto = new RegisterRequest
+            var regDto = new RegisterRequestDto
             {
                 UserName = $"auto.test.{uniqueId}",
                 Email = $"auto.test.{uniqueId}@macroprep.local",
@@ -60,7 +60,7 @@ namespace MacroPrep.Server.Tests.Functional.Auth
             Console.WriteLine($"Loging in user: {testUserName} with email: {testEmail}");
 
             // Now we will try to login with the same credentials to check if the login endpoint works as expected
-            var loginDto = new LoginRequest
+            var loginDto = new LoginRequestDto
             {
                 UserNameOrEmail = testUserName,
                 Password = _testPassword

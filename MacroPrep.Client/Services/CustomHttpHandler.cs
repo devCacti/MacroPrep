@@ -88,7 +88,7 @@ namespace MacroPrep.Client.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                    var result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
                     if (result != null)
                     {
                         await _localStorage.SetItemAsync("authToken", result.Token);

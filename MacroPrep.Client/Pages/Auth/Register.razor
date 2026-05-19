@@ -70,7 +70,7 @@
 </div>
 
 @code {
-    private RegisterRequest _registerModel = new();
+    private RegisterRequestDto _registerModel = new();
     private string _errorMessage = "";
     private bool _isLoading = false;
 
@@ -86,7 +86,7 @@
             if (response.IsSuccessStatusCode)
             {
                 // Response is the same in login and regiser, so we can reuse the same model
-                LoginResponse? result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                LoginResponseDto? result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
 
                 if (result == null)
                 {

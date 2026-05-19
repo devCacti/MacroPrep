@@ -47,7 +47,7 @@
                     <button type="submit" class="mp-btn mp-btn-primary full-width" disabled="@_isLoading">
                         @if (_isLoading)
                         {
-                            <span>Unlocking...</span>
+                            <span>Logging In...</span>
                         }
                         else
                         {
@@ -66,7 +66,7 @@
 </div>
 
 @code {
-    private LoginRequest _loginModel = new();
+    private LoginRequestDto _loginModel = new();
     private string _errorMessage = "";
     private bool _isLoading = false;
 
@@ -81,7 +81,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                LoginResponse? result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                LoginResponseDto? result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
 
                 if (result == null)
                 {
@@ -99,12 +99,9 @@
                 // 3. Redirect to Dashboard - Can't happen without the previous step (No. 2)
                 Nav.NavigateTo("/", true);
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
-            {
+            else if (response.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed) {
                 _errorMessage = "API Unreachable. Please try again later.";
-            }
-            else
-            {
+            } else {
                 _errorMessage = "Invalid credentials. Please try again.";
             }
         }

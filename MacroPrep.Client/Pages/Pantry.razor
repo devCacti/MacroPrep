@@ -28,15 +28,8 @@
         </div>
     }
     <div class="content-container">
-        <header class="page-header">
-            <div class="header-text">
-                <h1 class="page-title">The Pantry</h1>
-                <p class="page-subtitle">Manage your shopping lists</p>
-            </div>
-            <button class="mp-btn mp-btn-primary add-btn" @onclick="CreateNewList">
-                <i class="bi bi-plus-lg"></i> New List
-            </button>
-        </header>
+        @* Page Header | Just a simple title and subtitle (Plus a button)*@
+        <PageHeader Title="The Pantry" Subtitle="Your shopping lists, all in one place!" ShowButton="true" ButtonText="New List" ButtonIconClass="bi bi-plus-lg" />
 
         @if (_pendingInvites.Any())
         {

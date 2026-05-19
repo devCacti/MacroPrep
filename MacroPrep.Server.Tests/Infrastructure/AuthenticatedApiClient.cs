@@ -28,7 +28,7 @@ namespace MacroPrep.Server.Tests.Infrastructure
         {
             Console.WriteLine($"Authenticating user: {userName} with email: {email}");
             // First, register the user
-            var regDto = new RegisterRequest
+            var regDto = new RegisterRequestDto
             {
                 UserName = userName,
                 Email = email,
@@ -47,7 +47,7 @@ namespace MacroPrep.Server.Tests.Infrastructure
             else if (regResponse.IsSuccessStatusCode)
             {
                 // Get the token from the registration response
-                var regResult = await regResponse.Content.ReadFromJsonAsync<LoginResponse>();
+                var regResult = await regResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
 
                 if (regResult == null || string.IsNullOrEmpty(regResult.Token))
                 {
@@ -78,7 +78,7 @@ namespace MacroPrep.Server.Tests.Infrastructure
             else if (regResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
                 // If the user already exists, we can try to log in instead
-                var loginDto = new LoginRequest
+                var loginDto = new LoginRequestDto
                 {
                     UserNameOrEmail = userName,
                     Password = password
@@ -92,7 +92,7 @@ namespace MacroPrep.Server.Tests.Infrastructure
                     throw new Exception($"Login failed: {loginResponse.StatusCode}");
                 }
 
-                var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+                var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
 
                 if (loginResult == null || string.IsNullOrEmpty(loginResult.Token))
                 {

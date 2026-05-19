@@ -11,7 +11,9 @@ namespace MacroPrep.Server.Endpoints
 {
     public static class AuthEndpoints
     {
-        private static bool isProduction = false;
+        private static bool _isProduction = false;
+
+        public static bool IsProduction => _isProduction;
 
         public static void MapAuthEndpoints(this WebApplication app)
         {
@@ -36,7 +38,7 @@ namespace MacroPrep.Server.Endpoints
                         Reference = new OpenApiReference
                         {
                             Type = ReferenceType.Schema,
-                            Id = nameof(RegisterRequest)
+                            Id = nameof(RegisterRequestDto)
                         }
                     };
 
@@ -63,7 +65,7 @@ namespace MacroPrep.Server.Endpoints
                         Reference = new OpenApiReference
                         {
                             Type = ReferenceType.Schema,
-                            Id = nameof(LoginRequest)
+                            Id = nameof(LoginRequestDto)
                         }
                     };
 
@@ -122,30 +124,13 @@ namespace MacroPrep.Server.Endpoints
                 });
         }
 
-        // Helper method to configure cookie policy for authentication 
-        private static void SetSessionCookie(HttpContext http, Guid sessionId, string token, DateTimeOffset expires)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = isProduction ? SameSiteMode.Strict : SameSiteMode.None,
-                Expires = expires,
-                Path = "/api/auth",
-                IsEssential = !isProduction
-            };
-
-            http.Response.Cookies.Append("MacroPrepSession", $"{sessionId}|{token}", cookieOptions);
-        }
-
-        private static async Task<IResult> Register(RegisterRequest request, AppDbContext db, ITokenService tokenService, HttpContext http)
+        private static async Task<IResult> Register(RegisterRequestDto request, AppDbContext db, ITokenService tokenService, HttpContext http)
         {
             // Input Validation
-            if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.ConfirmPassword))
+            if (request.EmptyCheck() || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.ConfirmPassword))
                 return Results.BadRequest(new { Message = "All fields are required" });
 
-            var userExists = await db.Users.AnyAsync(u => u.UserName == request.UserName || u.Email == request.Email);
-            if (userExists)
+            if (await request.ExistsCheck(db))
                 return Results.Conflict(new { Message = "Username or email already exists" });
 
             // Password Hashing
@@ -156,55 +141,45 @@ namespace MacroPrep.Server.Endpoints
                 Id = Guid.NewGuid(),
                 UserName = request.UserName,
                 Email = request.Email,
-                PasswordHash = passwordHash,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
+                PasswordHash = passwordHash
             };
 
-            db.Users.Add(newUser);
-
-            var session = new UserSession
-            {
-                Id = Guid.NewGuid(),
-                Token = Guid.NewGuid().ToString(), // Rotation Secret
-                UserId = newUser.Id,
-                User = newUser
-            };
-
-            db.UserSessions.Add(session);
+            await db.Users.AddAsync(newUser);
             await db.SaveChangesAsync();
 
-            SetSessionCookie(http, session.Id, session.Token, session.ExpiresAt);
+            UserSession? session = await newUser.CreateSessionAsync(db);
 
-            return Results.Ok(new
-            {
+            if (session == null)
+                return Results.StatusCode(StatusCodes.Status500InternalServerError);
+
+            session.SetSessionCookie(http);
+
+            return Results.Ok(new {
                 Token = tokenService.GenerateToken(newUser, session)
             });
         }
     
-        private static async Task<IResult> Login(LoginRequest request, AppDbContext db, ITokenService tokenService, HttpContext http)
+        private static async Task<IResult> Login(LoginRequestDto request, AppDbContext db, ITokenService tokenService, HttpContext http)
         {
             // Input Validation
-            if (string.IsNullOrWhiteSpace(request.UserNameOrEmail) || string.IsNullOrWhiteSpace(request.Password))
-                return Results.BadRequest(new { Message = "Username/Email and password are required" });
+            if (request.EmptyCheck())
+                return Results.BadRequest(new { Message = "Username and password are required" });
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.UserName == request.UserNameOrEmail || u.Email == request.UserNameOrEmail);
+            if (!await request.ExistsCheck(db))
+                return Results.BadRequest(new { Message = "Wrong username/email or password" });
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            var (isValid, user) = await request.ValidateCredentials(db);
+
+            if (!isValid || user == null) // Null check is redundant but added to avoid null check operators
                 return Results.Unauthorized();
 
-            var session = new UserSession
-            {
-                Id = Guid.NewGuid(),
-                Token = Guid.NewGuid().ToString(),
-                UserId = user.Id,
-                User = user
-            };
+            UserSession? session = await user.CreateSessionAsync(db);
 
-            db.UserSessions.Add(session);
-            await db.SaveChangesAsync();
+            if (session == null)
+                // This should not happen, but if it does, we should trigger a 500 error so we can investigate the issue.
+                return Results.StatusCode(StatusCodes.Status500InternalServerError);
 
-            SetSessionCookie(http, session.Id, session.Token, session.ExpiresAt);
+            session.SetSessionCookie(http);
 
             return Results.Ok(new { Token = tokenService.GenerateToken(user, session) });
         }
@@ -248,24 +223,18 @@ namespace MacroPrep.Server.Endpoints
             var sessionId = Guid.Parse(parts[0]);
             var sessionToken = parts[1];
 
-            var session = await db.UserSessions.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == sessionId);
+            UserSession? session = await db.UserSessions.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == sessionId);
 
-            if (session == null || session.User == null || session.IsRevoked || session.ExpiresAt < DateTimeOffset.UtcNow || session.Token != sessionToken)
-            {
-                if (session != null)
-                {
-                    session.IsRevoked = true; // Revoke the session if token is invalid or expired.
-                    await db.SaveChangesAsync();
-                }
+            if (!await session.CheckSession(db, sessionToken))
                 return Results.Unauthorized();
-            }
 
-            session.Token = Guid.NewGuid().ToString(); // Rotate the session token and update the db
+            // The null check operator is required even though we check the session for null, the compiler just doesn't know that
+            session!.Token = Guid.NewGuid().ToString(); // Rotate the session token and update the db
             await db.SaveChangesAsync();
 
-            SetSessionCookie(http, session.Id, session.Token, session.ExpiresAt);
+            session.SetSessionCookie(http);
 
-            return Results.Ok(new { Token = tokenService.GenerateToken(session.User, session) });
+            return Results.Ok(new { Token = tokenService.GenerateToken(session.User!, session) });
         }
 
     }

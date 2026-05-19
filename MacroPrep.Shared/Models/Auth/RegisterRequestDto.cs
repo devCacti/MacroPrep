@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MacroPrep.Shared.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MacroPrep.Shared.Models.Auth
 {
-    public class RegisterRequest
+    public class RegisterRequestDto : IAuthInterface
     {
         [Required(ErrorMessage = "Username is required")]
         [MinLength(3, ErrorMessage = "Username must be at least 3 characters long")]
