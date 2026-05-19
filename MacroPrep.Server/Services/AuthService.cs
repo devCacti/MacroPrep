@@ -1,4 +1,5 @@
-﻿using MacroPrep.Server.Data;
+﻿using System.Security.Claims;
+using MacroPrep.Server.Data;
 using MacroPrep.Server.Data.Entities;
 using MacroPrep.Server.Endpoints;
 using MacroPrep.Shared.Interfaces;
@@ -8,9 +9,9 @@ using static System.Net.WebRequestMethods;
 
 namespace MacroPrep.Server.Services
 {
-    public class AuthServices
+    public class AuthService
     {
-        public AuthServices() { }
+        public AuthService() { }
 
 
     }
@@ -149,5 +150,7 @@ namespace MacroPrep.Server.Services
             }
             return true;
         }
+
+        public static string? GetIdFromClaim(this ClaimsPrincipal userClaim) => userClaim.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 }

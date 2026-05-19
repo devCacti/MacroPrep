@@ -58,3 +58,4 @@ nunit-*.xml
 
 # Editor
 .vs/
+.vscode/

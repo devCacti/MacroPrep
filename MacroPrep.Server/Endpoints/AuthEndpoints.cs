@@ -187,12 +187,11 @@ namespace MacroPrep.Server.Endpoints
         private static async Task<IResult> CompleteSetup(AccountSetupRequest request, AppDbContext db, ClaimsPrincipal user, ITokenService tokenService)
         {
             // Extract UserID from the JWT Claim
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
+            string? id = user.GetIdFromClaim();
+            if (id == null)
                 return Results.Unauthorized();
 
-            var userGuid = Guid.Parse(userIdClaim);
-            var userEntity = await db.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
+            User? userEntity = await UserService.GetUserAsync(id, db);
 
             if (userEntity == null)
                 return Results.NotFound();
@@ -215,13 +214,9 @@ namespace MacroPrep.Server.Endpoints
 
         private static async Task<IResult> RefreshToken(AppDbContext db, ITokenService tokenService, HttpContext http)
         {
-            var cookie = http.Request.Cookies["MacroPrepSession"];
-            if (string.IsNullOrEmpty(cookie) || !cookie.Contains("|"))
+            (Guid? sessionId, string? sessionToken) = CookieService.DecodeCookie(http.Request.Cookies[CookieService.CookieName]);
+            if (sessionId == null || sessionToken == null)
                 return Results.Unauthorized();
-
-            var parts = cookie.Split('|');
-            var sessionId = Guid.Parse(parts[0]);
-            var sessionToken = parts[1];
 
             UserSession? session = await db.UserSessions.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == sessionId);
 
