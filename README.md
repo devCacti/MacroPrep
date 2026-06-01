@@ -1,0 +1,15 @@
+## Project Server Secrets Configuration Defaults:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=Where\\ServerName;Databse=DatabaseName;Trusted_Connection=Bool;TrustedServerCertificate=Bool"
+  },
+  "JWT": {
+    "Key": "A_64_Character_Long_Key_To_Be_Used_By_The_JWT_System",
+    "Issuer": "Server",
+    "Audience": "Client",
+    "ExpiryMinutes": 60
+  }
+}
+```
