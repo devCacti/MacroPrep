@@ -29,7 +29,7 @@
     }
     <div class="content-container">
         @* Page Header | Just a simple title and subtitle (Plus a button)*@
-        <PageHeader Title="The Pantry" Subtitle="Your shopping lists, all in one place!" ShowButton="true" ButtonText="New List" ButtonIconClass="bi bi-plus-lg" />
+        <PageHeader Title="The Pantry" Subtitle="Your shopping lists, all in one place!" ShowButton="true" ButtonText="New List" ButtonIconClass="bi bi-plus-lg" OnButtonClick="CreateNewList"/>
 
         @if (_pendingInvites.Any())
         {

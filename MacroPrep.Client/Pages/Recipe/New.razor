@@ -78,7 +78,7 @@
 				<div class="recipe-section section-two">
 					<div class="add-item-row">
 						<h4>Ingredients</h4>
-						<button class="mp-btn mp-btn-primary btn-icon-only">
+						<button class="mp-btn mp-btn-primary btn-icon-only" @onclick="AddIngredient" @onclick:preventDefault>
 							<i class="bi bi-plus-lg"></i>
 						</button>
 
@@ -87,7 +87,7 @@
 					</div>
 					<div class="add-item-row">
 						<h4 class="info-title">Instructions</h4>
-						<button class="mp-btn mp-btn-primary btn-icon-only">
+						<button class="mp-btn mp-btn-primary btn-icon-only" @onclick="AddStep" @onclick:preventDefault>
 							<i class="bi bi-plus-lg"></i>
 						</button>
 
@@ -116,6 +116,16 @@
 	private void Submit()
 	{
 		Console.WriteLine("Submiting Recipe Information");
+	}
+
+	private void AddIngredient()
+	{
+
+	}
+
+	private void AddStep()
+	{
+		
 	}
 
 

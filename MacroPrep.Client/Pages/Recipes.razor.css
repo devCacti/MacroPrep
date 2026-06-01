@@ -35,6 +35,22 @@
     flex-wrap: wrap;
 }
 
+.filter-group {
+    display: flex;
+    gap: 0.5rem;
+    /* Horizontal scrolling */
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    /* Prevent exceeding parent width */
+    max-width: 100%;
+    min-width: 0;
+}
+
+.filter-chip {
+    flex: 0 0 auto; /* Prevent buttons from shrinking/wrapping */
+}
+
 /* Search Input */
 .search-wrapper {
     position: relative;
