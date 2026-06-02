@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Client & Server",
+    "Projects": [
+      {
+        "Path": "MacroPrep.Client\\MacroPrep.Client.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      },
+      {
+        "Path": "MacroPrep.Server\\MacroPrep.Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      }
+    ]
+  }
+]

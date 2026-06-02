@@ -4,10 +4,17 @@
 	@if (!_isGhostRow)
 	{
 		<div class="drag-handle">⁝⁝</div>
-
 	}
 
     <div class="input-group">
+
+        @* Name Input (Expands to fill remaining space) *@
+        <input type="text"
+               class="input-name"
+               placeholder="@(_isGhostRow ? "Add ingredient..." : "Name")"
+               value="@Ingredient.Name"
+               enterkeyhint="next" />
+
         @* Quantity Input (Small) *@
         <input type="text"
                class="input-qty"
@@ -21,13 +28,6 @@
                placeholder="Unit"
                @bind="Ingredient.MeasuringUnit"
                @bind:event="oninput" />
-
-        @* Name Input (Expands to fill remaining space) *@
-        <input type="text"
-               class="input-name"
-               placeholder="@(_isGhostRow ? "Add ingredient..." : "Name")"
-               value="@Ingredient.IngredientName"
-               enterkeyhint="next" />
     </div>
 </div>
 
@@ -36,7 +36,7 @@
 	private bool _isGhostRow => Ingredient.IsEmpty();
 
 	[Parameter]
-	public RecipeIngredientDto Ingredient { get; set; } = new RecipeIngredientDto();
+	public RecipeIngredientDto Ingredient { get; set; } = new();
 
 
 }

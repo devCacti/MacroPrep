@@ -6,15 +6,8 @@
     <div class="content-container">
 
         @* Header Section *@
-        <header class="page-header">
-            <div class="header-text">
-                <h1 class="page-title">The Kitchen Counter</h1>
-                <p class="page-subtitle">Browse and manage your recipes</p>
-            </div>
-            <a class="mp-btn mp-btn-primary add-btn" href="/recipe/new">
-                <i class="bi bi-plus-lg"></i> Add Recipe
-            </a>
-        </header>
+        <PageHeader Title="The Counter" Subtitle="Browse and manage your recipes" ShowButton="true" ButtonText="New Recipe" ButtonIconClass="bi bi-plus-lg" OnButtonClick="CreateNewRecipe" />
+
 
 
         @* Toolbar: Search & Filters *@

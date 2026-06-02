@@ -4,4 +4,7 @@
     <ActiveDebugProfile>https</ActiveDebugProfile>
     <NameOfLastUsedPublishProfile>C:\Users\tiago\source\repos\MacroPrep\MacroPrep.Client\Properties\PublishProfiles\FolderProfile.pubxml</NameOfLastUsedPublishProfile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

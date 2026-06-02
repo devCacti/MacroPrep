@@ -1,6 +1,6 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
-@using MacroPrep.Client.Shared;
-@page "/recipe/new"
+@using MacroPrep.Client.Pages.Recipes.Components;
+@page "/recipes/new"
 
 
 
@@ -76,21 +76,26 @@
 				<hr />
 
 				<div class="recipe-section section-two">
+					@*Ingredients*@
 					<div class="add-item-row">
 						<h4>Ingredients</h4>
 						<button class="mp-btn mp-btn-primary btn-icon-only" @onclick="AddIngredient" @onclick:preventDefault>
 							<i class="bi bi-plus-lg"></i>
 						</button>
-
-
-
 					</div>
+					<div class="add-item-row">
+						<IngredientRow Ingredient="_newIngredient" />
+					</div>
+
+					@*Procedures*@
 					<div class="add-item-row">
 						<h4 class="info-title">Instructions</h4>
 						<button class="mp-btn mp-btn-primary btn-icon-only" @onclick="AddStep" @onclick:preventDefault>
 							<i class="bi bi-plus-lg"></i>
 						</button>
-
+					</div>
+					<div class="add-item-row">
+						<ProcedureRow Procedure="_newProcedure" />
 					</div>
 				</div>
 
@@ -102,8 +107,10 @@
 
 @code {
 	private const int _descriptionLengthLimit = 250;
-	private RecipeDto _recipe = new RecipeDto();
-	private List<RecipeIngredientDto> _ingredients = new List<RecipeIngredientDto>();
+	private RecipeDto _recipe = new();
+	private List<RecipeIngredientDto> _ingredients = [];
+	private RecipeIngredientDto _newIngredient = new();
+	private RecipeProcedureDto _newProcedure = new();
 
 	// Servings Logic
 	private int[] _predefinedServings = { 1, 2, 4, 6 };

@@ -1,0 +1,77 @@
+﻿/* --- Main Container --- */
+.item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Space between the drag handle and the inputs */
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+    /* Subtle highlight when hovering over the row */
+    .item-row:hover {
+        background-color: #f8f9fa;
+    }
+
+/* --- Ghost Row State --- */
+.ghost-row {
+    opacity: 0.5; /* Makes the "new item" row look faded */
+    transition: opacity 0.2s ease;
+}
+
+    /* Bring it to full opacity when the user interacts with it */
+    .ghost-row:hover,
+    .ghost-row:focus-within {
+        opacity: 1;
+    }
+
+/* --- Drag Handle --- */
+.drag-handle {
+    cursor: grab;
+    color: #adb5bd;
+    font-size: 1.2rem;
+    user-select: none; /* Prevents text highlighting when dragging */
+    padding: 0 4px;
+}
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+/* --- Input Layout --- */
+.input-group {
+    display: flex;
+    gap: 0.5rem; /* Space between the individual inputs */
+    flex: 1; /* Tells the group to stretch and fill the row */
+}
+
+    /* --- Shared Input Styles --- */
+    .input-group input {
+        padding: 0.375rem 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+        /* Glow effect when typing */
+        .input-group input:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+/* --- Specific Input Sizing --- */
+.input-name {
+    flex: 1; /* This is the magic property that forces the name to take up all leftover space */
+    min-width: 120px; /* Prevents it from crushing too small on mobile */
+}
+
+.input-qty {
+    width: 65px;
+    text-align: center; /* Centers the number */
+}
+
+.input-unit {
+    width: 85px;
+}

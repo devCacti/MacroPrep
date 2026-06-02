@@ -1,0 +1,35 @@
+﻿@using MacroPrep.Shared.Models.Recipes;
+
+<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
+    @if (!_isGhostRow)
+    {
+        <div class="drag-handle">⁝⁝</div>
+    }
+
+    <div class="input-group">
+
+        @* Name Input (Expands to fill remaining space) *@
+        <input type="text"
+               class="input-name"
+               placeholder="@(_isGhostRow ? "Add procedure..." : "Name")"
+               value="@Procedure.MainInstruction"
+               enterkeyhint="next" />
+
+        @* Quantity Input (Small) *@
+        <input type="text"
+               class="input-description"
+               placeholder="Description"
+               @bind="Procedure.Description"
+               @bind:event="oninput" />
+    </div>
+</div>
+
+@code {
+
+    private bool _isGhostRow => Procedure.IsEmpty();
+
+    [Parameter]
+    public RecipeProcedureDto Procedure { get; set; } = new();
+
+
+}

@@ -354,7 +354,7 @@ i.bi {
     padding: .75rem 1rem;
     border: none; /* Removes the default black border */
     border-radius: 15px; /* Matches your card radius */
-    max-width: max-content;
+    max-width: fit-content;
     font-family: var(--font-family-base);
     font-weight: var(--weight-bold);
     font-size: var(--text-base);
