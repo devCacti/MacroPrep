@@ -79,23 +79,37 @@
 					@*Ingredients*@
 					<div class="add-item-row">
 						<h4>Ingredients</h4>
-						<button class="mp-btn mp-btn-primary btn-icon-only" @onclick="AddIngredient" @onclick:preventDefault>
+						<button class="mp-btn mp-btn-primary btn-icon-only" type="button" @onclick="AddIngredient" @onclick:preventDefault>
 							<i class="bi bi-plus-lg"></i>
 						</button>
 					</div>
+					@foreach (var ing in _ingredients)
+					{
+						<div class="item-row" @key="ing">
+							<IngredientRow Ingredient="ing"></IngredientRow>
+						</div>
+					}
+					<hr />
 					<div class="add-item-row">
-						<IngredientRow Ingredient="_newIngredient" />
+						<IngredientRow Ingredient="_newIngredient" IsCreator="true" OnEnterPressed="AddIngredient"></IngredientRow>
 					</div>
 
 					@*Procedures*@
 					<div class="add-item-row">
-						<h4 class="info-title">Instructions</h4>
-						<button class="mp-btn mp-btn-primary btn-icon-only" @onclick="AddStep" @onclick:preventDefault>
+						<h4 class="info-title">Procedures</h4>
+						<button class="mp-btn mp-btn-primary btn-icon-only" type="button" @onclick="AddProcedure" @onclick:preventDefault>
 							<i class="bi bi-plus-lg"></i>
 						</button>
 					</div>
+					@foreach (var procedure in _procedures)
+					{
+						<div class="item-row" @key="procedure">
+							<ProcedureRow Procedure="procedure"></ProcedureRow>
+						</div>
+					}
+					<hr />
 					<div class="add-item-row">
-						<ProcedureRow Procedure="_newProcedure" />
+						<ProcedureRow Procedure="_newProcedure" IsCreator="true" OnEnterPressed="AddProcedure"></ProcedureRow>
 					</div>
 				</div>
 
@@ -109,6 +123,7 @@
 	private const int _descriptionLengthLimit = 250;
 	private RecipeDto _recipe = new();
 	private List<RecipeIngredientDto> _ingredients = [];
+	private List<RecipeProcedureDto> _procedures = [];
 	private RecipeIngredientDto _newIngredient = new();
 	private RecipeProcedureDto _newProcedure = new();
 
@@ -127,12 +142,18 @@
 
 	private void AddIngredient()
 	{
+		if (_newIngredient.IsEmpty()) return;
 
+		_ingredients.Add(_newIngredient);
+		_newIngredient = new();
 	}
 
-	private void AddStep()
+	private void AddProcedure()
 	{
-		
+		if (_newProcedure.IsEmpty()) return;
+
+		_procedures.Add(_newProcedure);
+		_newProcedure = new();
 	}
 
 

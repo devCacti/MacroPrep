@@ -1,7 +1,7 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
 
 <div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
-    @if (!_isGhostRow)
+    @if (!_isGhostRow && !IsCreator)
     {
         <div class="drag-handle">⁝⁝</div>
     }
@@ -12,15 +12,18 @@
         <input type="text"
                class="input-name"
                placeholder="@(_isGhostRow ? "Add procedure..." : "Name")"
-               value="@Procedure.MainInstruction"
-               enterkeyhint="next" />
+               @bind="Procedure.MainInstruction"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown"/>
 
-        @* Quantity Input (Small) *@
-        <input type="text"
-               class="input-description"
+        @* Description Input (Small) *@
+        <textarea class="input-description"
                placeholder="Description"
                @bind="Procedure.Description"
-               @bind:event="oninput" />
+               @bind:event="oninput"/>
+
+        @*TODO: Add delete button*@
+        @*TODO: Make MainInstruction appear on top of the Description*@
     </div>
 </div>
 
@@ -29,7 +32,18 @@
     private bool _isGhostRow => Procedure.IsEmpty();
 
     [Parameter]
-    public RecipeProcedureDto Procedure { get; set; } = new();
+    public required RecipeProcedureDto Procedure { get; set; }
+
+    [Parameter]
+    public bool IsCreator { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnEnterPressed { get; set; }
 
 
+    // Handlers
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await OnEnterPressed.InvokeAsync();
+    }
 }

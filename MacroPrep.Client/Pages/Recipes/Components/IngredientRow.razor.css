@@ -64,14 +64,14 @@
 /* --- Specific Input Sizing --- */
 .input-name {
     flex: 1; /* This is the magic property that forces the name to take up all leftover space */
-    min-width: 120px; /* Prevents it from crushing too small on mobile */
+    min-width: 100px; /* Prevents it from crushing too small on mobile */
 }
 
 .input-qty {
-    width: 65px;
+    width: 50px;
     text-align: center; /* Centers the number */
 }
 
 .input-unit {
-    width: 85px;
+    width: 50px;
 }

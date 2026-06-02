@@ -1,19 +1,19 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
 
 <div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
-	@if (!_isGhostRow)
+	@if (!_isGhostRow && !IsCreator)
 	{
 		<div class="drag-handle">⁝⁝</div>
 	}
 
-    <div class="input-group">
+    <div class="input-group" @onkeydown="HandleKeyDown">
 
         @* Name Input (Expands to fill remaining space) *@
         <input type="text"
                class="input-name"
                placeholder="@(_isGhostRow ? "Add ingredient..." : "Name")"
-               value="@Ingredient.Name"
-               enterkeyhint="next" />
+               @bind="Ingredient.Name"
+               @bind:event="oninput"/>
 
         @* Quantity Input (Small) *@
         <input type="text"
@@ -27,16 +27,29 @@
                class="input-unit"
                placeholder="Unit"
                @bind="Ingredient.MeasuringUnit"
-               @bind:event="oninput" />
+               @bind:event="oninput"/>
+
+        @*TODO: Add delete button*@
     </div>
 </div>
 
 @code {
 
-	private bool _isGhostRow => Ingredient.IsEmpty();
+    private bool _isGhostRow => Ingredient.IsEmpty();
 
-	[Parameter]
-	public RecipeIngredientDto Ingredient { get; set; } = new();
+    [Parameter]
+    public required RecipeIngredientDto Ingredient { get; set; }
+
+    [Parameter]
+    public bool IsCreator { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnEnterPressed { get; set; }
 
 
+    // Handlers
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await OnEnterPressed.InvokeAsync();
+    }
 }
