@@ -25,4 +25,8 @@
     <ProjectReference Include="..\MacroPrep.Shared\MacroPrep.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Pages\ShoppingLists\Components\" />
+  </ItemGroup>
+
 </Project>

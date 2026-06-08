@@ -1,0 +1,77 @@
+﻿@page "/pantry"
+@using Microsoft.AspNetCore.Components.Authorization
+@using MacroPrep.Client.Services
+@using MacroPrep.Client.Services.Offline
+@using Blazored.LocalStorage
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject ShoppingListsService OfflineService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject RealTimeSyncService SignalR
+@inject SyncService Sync
+@inject IJSRuntime JS
+<PageTitle>The Pantry</PageTitle>
+
+<div class="page-wrapper">
+
+    @if (_isOffline)
+    {
+        <div class="offline-banner">
+            <i class="bi bi-wifi-off"></i> You are currently offline. Changes will sync when you reconnect.
+        </div>
+    }
+    <div class="content-container">
+
+        <header class="page-header">
+            <div class="header-text">
+                <h1 class="page-title">The Pantry</h1>
+                <p class="page-subtitle">Manage your shopping lists</p>
+            </div>
+            <button class="mp-btn mp-btn-primary add-btn" @onclick="CreateNewList">
+                <i class="bi bi-plus-lg"></i> New List
+            </button>
+        </header>
+
+        @if (_pendingInvites.Any())
+        {
+            <div class="invites-container mp-card">
+                <h3>New List Invitations</h3>
+                @foreach (var invite in _pendingInvites)
+                {
+                    <div class="invite-row">
+                        <span>
+                            <strong>@invite.OwnerUserName</strong> invited you to <strong>@invite.ListName</strong>
+                        </span>
+                        <div class="actions">
+                            <button class="mp-btn-sm mp-btn-primary-sm" @onclick="() => AcceptInvite(invite)">
+                                Accept
+                            </button>
+                            <button class="mp-btn-sm mp-btn-outline-danger-sm" @onclick="() => DeclineInvite(invite)">
+                                Decline
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="pantry-grid">
+            @foreach (var vm in _viewModels)
+            {
+                <ShoppingListCard ViewModel="vm"
+                                  CurrentUserId="_currentUserId"
+                                  IsGlobalSyncing="Sync.IsGlobalSyncing"
+                                  OnTitleChanged="@(newTitle => UpdateListTitle(vm.List, newTitle))"
+                                  OnItemUpdated="@UpdateItem"
+                                  OnItemDeleted="@(item => DeleteItem(vm, item))"
+                                  OnItemAdded="@(itemName => AddItem(vm, itemName))"
+                                  OnSharedStatusChanged="@(isShared => ToggleSharedStatus(vm, isShared))"
+                                  OnMemberAdded="@(username => AddMember(vm, username))"
+                                  OnMemberRemoved="@(member => RemoveMember(vm, member))"
+                                  OnListDeleted="@DeleteListAsync"
+                                  OnListLeft="@LeaveListAsync" />
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,169 @@
+﻿<div class="shopping-card">
+
+    @* --- HEADER --- *@
+    <div class="card-header-section @(ViewModel.List.IsShared ? "shared-bg" : "")">
+        <div class="header-top">
+            @* Title Input: Disabled if Viewer *@
+            <input type="text" class="list-title-input"
+                   value="@ViewModel.List.Name"
+                   disabled="@(ViewModel.GetUserRole(CurrentUserId) < MemberType.Editor)"
+                   @onchange="HandleTitleChange" />
+
+            @if (ViewModel.IsSyncing || IsGlobalSyncing)
+            {
+                <span class="sync-badge">
+                    <i class="bi bi-arrow-repeat spinning"></i>
+                </span>
+            }
+            else if (IsListFullySynced)
+            {
+                <span class="synced-tick" title="All changes saved to server">
+                    <i class="bi bi-check-circle-fill"></i>
+                </span>
+            }
+
+            @* Shared Badge *@
+            @if (ViewModel.List.IsShared)
+            {
+                <span class="badge-shared" title="Shared List">
+                    <i class="bi bi-people-fill"></i>By:
+                    <span class="owner-tag"> @(ViewModel.IsOwner(CurrentUserId) ? "You" : ViewModel.List.OwnerName)</span>
+                </span>
+            }
+
+            @* Settings Toggle Button *@
+            <button class="icon-action-btn @(IsSettingsOpen ? "active" : "")"
+                    @onclick="ToggleSettings"
+                    title="List Settings">
+                <i class="bi bi-gear-fill"></i>
+            </button>
+        </div>
+
+        @* Progress Bar *@
+        <div class="progress-info">
+            <span class="progress-text">@CompletedItemsCount of @TotalItemsCount items completed</span>
+        </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: @(ProgressPercentage)%"></div>
+        </div>
+    </div>
+
+    @* --- BODY --- *@
+    <div class="card-body">
+        @if (!IsSettingsOpen)
+        {
+            @* --- ITEMS LIST --- *@
+            <div class="items-list">
+                @foreach (var item in ViewModel.Items)
+                {
+                    <label class="item-row">
+                        @* Checkbox: Disabled if Viewer *@
+                        <input type="checkbox" checked="@item.IsChecked" class="custom-checkbox"
+                               disabled="@(ViewModel.GetUserRole(CurrentUserId) == MemberType.Viewer)"
+                               @onchange="@(e => HandleItemToggled(item, (bool)(e.Value ?? false)))" />
+
+                        <div class="item-details">
+                            <span class="item-name @(item.IsChecked ? "strikethrough" : "")">@item.Name</span>
+                            @if (item.Quantity > 1)
+                            {
+                                <span class="item-qty">x@(item.Quantity)</span>
+                            }
+                        </div>
+
+                        @* Delete Item: Hidden if Viewer *@
+                        @if (ViewModel.GetUserRole(CurrentUserId) >= MemberType.Editor)
+                        {
+                            <button class="btn-delete-item" @onclick="@(() => OnItemDeleted.InvokeAsync(item))">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        }
+                    </label>
+                }
+            </div>
+
+            @* Add Item: Hidden if Viewer *@
+            @if (ViewModel.GetUserRole(CurrentUserId) >= MemberType.Editor)
+            {
+                <div class="add-item-row">
+                    <input type="text" class="add-input" placeholder="Add item..."
+                           @bind="NewItemName"
+                           @onkeyup="HandleKeyUp" />
+                    <button class="mp-btn mp-btn-primary btn-icon-only" @onclick="HandleAddItem">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+            }
+        }
+        else
+        {
+            @* --- SETTINGS PANEL (Expanded) --- *@
+            <div class="settings-panel">
+                <h4 class="settings-title">List Settings</h4>
+
+                @* 1. Share Toggle: Only Creator/Master can see *@
+                @if (ViewModel.GetUserRole(CurrentUserId) >= MemberType.Master)
+                {
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">Share List</span>
+                            <span class="setting-desc">Allow others to view and edit</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked="@ViewModel.List.IsShared"
+                                   @onchange="@(e => OnSharedStatusChanged.InvokeAsync((bool)(e.Value ?? false)))">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                }
+
+                @* 2. Member Management: Only Creator/Master can see *@
+                @if (ViewModel.List.IsShared && ViewModel.GetUserRole(CurrentUserId) >= MemberType.Master)
+                {
+                    <div class="members-section">
+                        <span class="setting-label">Members</span>
+                        <div class="member-chips">
+                            @foreach (var member in ViewModel.Members)
+                            {
+                                <div class="member-chip @(member.HasAccepted ? "accepted" : "pending")">
+                                    <span class="member-initial">@member.UserName[0]</span>
+                                    <span>@member.UserName</span>
+                                    @if (!member.HasAccepted)
+                                    {
+                                        <small>(Pending)</small>
+                                    }
+                                    <button class="remove-member-btn @(CurrentUserId == member.UserId ? "disabled" : "")"
+                                            @onclick="() => OnMemberRemoved.InvokeAsync(member)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div class="add-member-row">
+                            <input type="text" class="add-input" placeholder="Enter username..."
+                                   @bind="NewMemberName" />
+                            <button class="mp-btn mp-btn-secondary" @onclick="HandleAddMember">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <div class="settings-divider"></div>
+
+                @* 3. Danger Zone: DELETE vs LEAVE *@
+                @if (ViewModel.IsOwner(CurrentUserId))
+                {
+                    <button class="delete-list-btn-full" @onclick="() => OnListDeleted.InvokeAsync(ViewModel)">
+                        <i class="bi bi-trash"></i> Delete this List
+                    </button>
+                }
+                else
+                {
+                    <button class="delete-list-btn-full" @onclick="() => OnListLeft.InvokeAsync(ViewModel)">
+                        <i class="bi bi-box-arrow-right"></i> Leave List
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
