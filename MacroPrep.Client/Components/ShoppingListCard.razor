@@ -26,8 +26,7 @@
             @if (ViewModel.List.IsShared)
             {
                 <span class="badge-shared" title="Shared List">
-                    <i class="bi bi-people-fill"></i>By:
-                    <span class="owner-tag"> @(ViewModel.IsOwner(CurrentUserId) ? "You" : ViewModel.List.OwnerName)</span>
+                    <i class="bi bi-people-fill"></i>
                 </span>
             }
 

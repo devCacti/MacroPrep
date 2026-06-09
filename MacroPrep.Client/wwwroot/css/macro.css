@@ -43,7 +43,7 @@ body {
 .content-container {
     max-width: var(--content-max-width);
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -754,7 +754,8 @@ input:disabled {
 .synced-tick {
     color: #28a745; /* Success Green */
     font-size: 1.1rem;
-    margin-left: 8px;
+    margin-left: 6px;
+    margin-right: 6px;
     display: flex;
     align-items: center;
     animation: fadeIn 0.3s ease-in;

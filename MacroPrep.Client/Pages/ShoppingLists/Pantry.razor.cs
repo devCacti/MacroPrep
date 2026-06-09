@@ -1,7 +1,10 @@
-﻿using MacroPrep.Client.Services;
+﻿using Blazored.LocalStorage;
+using MacroPrep.Client.Services;
+using MacroPrep.Client.Services.Offline;
 using MacroPrep.Shared.Enums.ShoppingLists;
 using MacroPrep.Shared.Models.ShoppingLists;
-using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using System.Net.Http.Json;
@@ -11,6 +14,16 @@ namespace MacroPrep.Client.Pages.ShoppingLists
 {
     public partial class Pantry
     {
+        // --- Injections ---
+        [Inject] private HttpClient Http { get; set; } = default!;
+        [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
+        [Inject] private ShoppingListsService OfflineService { get; set; } = default!;
+        [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+        [Inject] private NavigationManager Nav { get; set; } = default!;
+        [Inject] private RealTimeSyncService SignalR { get; set; } = default!;
+        [Inject] private SyncService Sync { get; set; } = default!;
+        [Inject] private IJSRuntime JS { get; set; } = default!;
+
         public class ListViewModel
         {
             public ListDto List { get; set; } = new();

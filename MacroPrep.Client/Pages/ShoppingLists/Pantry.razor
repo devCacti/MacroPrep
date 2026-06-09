@@ -1,16 +1,4 @@
 ﻿@page "/pantry"
-@using Microsoft.AspNetCore.Components.Authorization
-@using MacroPrep.Client.Services
-@using MacroPrep.Client.Services.Offline
-@using Blazored.LocalStorage
-@inject HttpClient Http
-@inject ILocalStorageService LocalStorage
-@inject ShoppingListsService OfflineService
-@inject AuthenticationStateProvider AuthStateProvider
-@inject NavigationManager Nav
-@inject RealTimeSyncService SignalR
-@inject SyncService Sync
-@inject IJSRuntime JS
 <PageTitle>The Pantry</PageTitle>
 
 <div class="page-wrapper">
