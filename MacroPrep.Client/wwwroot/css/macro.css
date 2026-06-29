@@ -69,6 +69,13 @@ body {
     min-height: 100vh;
 }
 
+@media (max-width: 768px) {
+    .page-wrapper {
+        padding-left: 0;
+        padding-bottom: 80px;
+    }
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -381,6 +388,17 @@ i.bi {
     .mp-btn-primary:hover {
         background-color: #059669;
         box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    }
+
+.mp-btn-outline {
+    background-color: transparent;
+    color: black;
+    border: 2px solid black;
+}
+
+    .mp-btn-outline:hover {
+        color: gray;
+        border: 2px dashed gray;
     }
 
 /* Secondary Action: Deep Blue or Slate */

@@ -1,0 +1,212 @@
+﻿/* 1. Bulletproof Reset scoped strictly to this component */
+.recipe-modal-card,
+.recipe-modal-card *,
+.recipe-modal-card *::before,
+.recipe-modal-card *::after {
+    box-sizing: border-box;
+}
+
+/* 2. Container & Localized Variables (Fixes the invisible color issue in Blazor) */
+.recipe-modal-card {
+    /* Variables scoped here guarantee they work in Blazor CSS isolation */
+    --primary-color: #00966b;
+    --primary-hover: #007d59;
+    --text-dark: #111827;
+    --text-muted: #6b7280;
+    --text-light: #9ca3af;
+    --bg-page: #f9fafb;
+    --bg-card: #ffffff;
+    --bg-input: #f9fafb;
+    --border-color: #e5e7eb;
+    --border-light: #f3f4f6;
+    --error-color: #ef4444;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-pill: 9999px;
+    width: 100%;
+    max-width: 36rem;
+    margin: 0 auto;
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3. Header */
+.rm-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.rm-titles h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.rm-titles p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.rm-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    padding: 0.5rem;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+    .rm-close-btn:hover {
+        background-color: var(--border-light);
+        color: var(--text-dark);
+    }
+
+/* 4. Tabs Navigation */
+.filter-group {
+    display: flex;
+    gap: 0.5rem;
+    /* Horizontal scrolling */
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    /* Prevent exceeding parent width */
+    max-width: 100%;
+    min-width: 0;
+    margin: 10px;
+}
+
+.filter-chip {
+    flex: 0 0 auto; /* Prevent buttons from shrinking/wrapping */
+}
+
+/* 5. Form Body - Forcing layout constraints */
+form.rm-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+/* 6. Image Upload Placeholder */
+.rm-image-dropzone {
+    max-width: 100%;
+    height: 12rem;
+    background-color: #f8fafc;
+    border: 2px dashed var(--border-color);
+    margin: 10px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    overflow: hidden;
+}
+
+    .rm-image-dropzone span {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+.rm-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 7. Inputs & Field Layouts */
+.rm-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 100%;
+    width:stretch;
+    margin: 10px 10px 0px 10px;
+}
+
+    .rm-field-group label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+.required-mark {
+    color: var(--error-color);
+}
+
+.validation-message {
+    color: var(--error-color);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* 8. Responsive Row */
+.rm-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0rem;
+    width: 100%;
+}
+
+@media (min-width: 600px) {
+    .rm-row {
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+}
+
+/* 9. Footer Actions */
+.rm-footer {
+    padding: 10px;
+    margin-top: 15px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    width: 100%;
+}
+
+.rm-btn {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.rm-btn-secondary {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-dark);
+}
+
+    .rm-btn-secondary:hover {
+        background-color: var(--bg-input);
+    }
+
+.rm-btn-primary {
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: #ffffff;
+}
+
+    .rm-btn-primary:hover {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }

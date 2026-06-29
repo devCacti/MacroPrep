@@ -1,0 +1,140 @@
+﻿@page "/recipes/create"
+
+<div class="page-wrapper">
+    <div class="content-container">
+        <div class="recipe-modal-card">
+
+            @* Header *@
+            <div class="rm-header">
+                <div class="rm-titles">
+                    <h1>New Recipe</h1>
+                    <p>Add to KitchenSync</p>
+                </div>
+                <button type="button" class="rm-close-btn" aria-label="Close">
+                    <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            @* Tab Navigation *@
+            <div class="filter-group">
+                @foreach (RecipeTab tab in Enum.GetValues(typeof(RecipeTab)))
+                {
+                    var currentTab = tab;
+                    <button type="button"
+                            @onclick="() => SetTab(currentTab)"
+                            class="filter-chip @(ActiveTab == currentTab ? "active" : "")">
+                        @currentTab
+                    </button>
+                }
+            </div>
+
+            @* Form Content *@
+            <EditForm Model="FormModel" OnValidSubmit="HandleSubmit" class="rm-body">
+                <DataAnnotationsValidator />
+
+                @if (ActiveTab == RecipeTab.Details)
+                {
+                    @* Image Dropzone / Preview Container *@
+                    <div class="rm-image-dropzone">
+                        @if (!string.IsNullOrWhiteSpace(FormModel.PhotoUrl))
+                        {
+                            <img src="@FormModel.PhotoUrl" alt="Recipe Preview" class="rm-preview-img" />
+                        }
+                        else
+                        {
+                            <svg style="width:40px; height:40px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Add a photo URL below</span>
+                        }
+                    </div>
+
+                    @* URL Input *@
+                    <div class="rm-field-group">
+                        <label for="photoUrl">Photo URL</label>
+                        <InputText @bind-Value="FormModel.PhotoUrl" id="photoUrl" class="form-input" placeholder="https://..." />
+                    </div>
+
+                    @* Name Input *@
+                    <div class="rm-field-group">
+                        <label for="recipeName">Recipe Name <span class="required-mark">*</span></label>
+                        <InputText @bind-Value="FormModel.Name" id="recipeName" class="form-input" placeholder="e.g. Creamy Garlic Pasta" />
+                        <ValidationMessage For="() => FormModel.Name" style="color: var(--error-color); font-size: 0.75rem;" />
+                    </div>
+
+                    @* Category Select *@
+                    <div class="rm-field-group">
+                        <label for="category">Category</label>
+                        <InputSelect @bind-Value="FormModel.Category" id="category" class="form-input">
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Snack">Snack</option>
+                        </InputSelect>
+                    </div>
+
+                    @* Split Row: Cook Time & Servings *@
+                    <div class="rm-row">
+                        <div class="rm-field-group">
+                            <label for="cookTime">Cook Time (min)</label>
+                            <InputNumber @bind-Value="FormModel.CookTimeMinutes" id="cookTime" class="form-input" />
+                        </div>
+
+                        <div class="rm-field-group">
+                            <label for="servings">Servings</label>
+                            <InputNumber @bind-Value="FormModel.Servings" id="servings" class="form-input" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div style="padding: 3rem; text-align: center; color: var(--text-light);">
+                        @ActiveTab section content template.
+                    </div>
+                }
+
+                @* Footer Actions *@
+                <div class="rm-footer">
+                    <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
+                    <button type="submit" class="mp-btn mp-btn-primary">Save Recipe</button>
+                </div>
+
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RecipeTab ActiveTab { get; set; } = RecipeTab.Details;
+    private RecipeFormModel FormModel { get; set; } = new();
+
+    private void SetTab(RecipeTab tab) => ActiveTab = tab;
+
+    private void HandleSubmit()
+    {
+        // Ready for abstraction context hooks or integration pipeline dispatch execution
+    }
+
+    public enum RecipeTab
+    {
+        Details,
+        Ingredients,
+        Steps,
+        Macros
+    }
+
+    public class RecipeFormModel
+    {
+        public string PhotoUrl { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Recipe name is required")]
+        public string Name { get; set; } = string.Empty;
+
+        public string Category { get; set; } = "Dinner";
+        public int CookTimeMinutes { get; set; } = 30;
+        public int Servings { get; set; } = 4;
+    }
+}

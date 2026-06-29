@@ -11,7 +11,7 @@ namespace MacroPrep.Client.Pages.Recipes
         private void CreateNewRecipe()
         {
             Console.WriteLine("Redirecting to 'New Recipe' page...");
-            _navManager.NavigateTo("/recipes/new");
+            _navManager.NavigateTo("/recipes/create");
         }
     }
 }
