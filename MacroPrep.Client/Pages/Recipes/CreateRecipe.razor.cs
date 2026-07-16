@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MacroPrep.Shared.Models.Recipes;
+using Microsoft.AspNetCore.Components;
+using System.ComponentModel.DataAnnotations;
 
 namespace MacroPrep.Client.Pages.Recipes
 {
@@ -14,11 +16,11 @@ namespace MacroPrep.Client.Pages.Recipes
             // Ready for abstraction context hooks or integration pipeline dispatch execution
         }
 
-        private void AddIngredient() => FormModel.Ingredients.Add(new IngredientFormModel());
-        private void RemoveIngredient(IngredientFormModel item) => FormModel.Ingredients.Remove(item);
+        private void AddIngredient() => FormModel.Ingredients.Add(new RecipeIngredientDto());
+        private void RemoveIngredient(RecipeIngredientDto item) => FormModel.Ingredients.Remove(item);
 
-        private void AddStep() => FormModel.Steps.Add(new StepFormModel { Order = FormModel.Steps.Count + 1 });
-        private void RemoveStep(StepFormModel item)
+        private void AddStep() => FormModel.Steps.Add(new RecipeProcedureDto { Order = FormModel.Steps.Count + 1 });
+        private void RemoveStep(RecipeProcedureDto item)
         {
             FormModel.Steps.Remove(item);
             ReorderSteps();
@@ -45,30 +47,11 @@ namespace MacroPrep.Client.Pages.Recipes
             public int Servings { get; set; } = 4;
 
             // Macros
-            public int Calories { get; set; }
-            public int Protein { get; set; }
-            public int Carbs { get; set; }
-            public int Fat { get; set; }
+            public RecipeMacrosDto Macros { get; set; } = new ();
 
             // Collections
-            public List<IngredientFormModel> Ingredients { get; set; } = [];
-            public List<StepFormModel> Steps { get; set; } = [];
-        }
-
-        // View-specific models bridging to DTOs
-        public class IngredientFormModel
-        {
-            public Guid Id { get; set; } = Guid.NewGuid();
-            public string Name { get; set; } = string.Empty;
-            public decimal Quantity { get; set; }
-            public string Unit { get; set; } = string.Empty;
-        }
-
-        public class StepFormModel
-        {
-            public Guid Id { get; set; } = Guid.NewGuid();
-            public int Order { get; set; }
-            public string Instruction { get; set; } = string.Empty;
+            public List<RecipeIngredientDto> Ingredients { get; set; } = [];
+            public List<RecipeProcedureDto> Steps { get; set; } = [];
         }
     }
 }

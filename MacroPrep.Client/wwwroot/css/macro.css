@@ -650,6 +650,7 @@ i.bi {
     outline: none;
     transition: var(--smooth);
     color: var(--text-light);
+    flex: 1;
 }
 
     .form-input:focus {

@@ -41,8 +41,10 @@
 /* --- Input Layout --- */
 .input-group {
     display: flex;
-    gap: 0.5rem; /* Space between the individual inputs */
-    flex: 1; /* Tells the group to stretch and fill the row */
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
 }
 
     /* --- Shared Input Styles --- */
@@ -74,4 +76,8 @@
 
 .input-unit {
     width: 50px;
+}
+
+.input-group.form-input {
+    width: stretch !important;
 }

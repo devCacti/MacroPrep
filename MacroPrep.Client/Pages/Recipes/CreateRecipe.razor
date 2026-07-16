@@ -75,6 +75,7 @@
                             <option value="Lunch">Lunch</option>
                             <option value="Dinner">Dinner</option>
                             <option value="Snack">Snack</option>
+                            <option value="Other">Other</option>
                         </InputSelect>
                     </div>
 
@@ -93,10 +94,6 @@
                 }
                 else if (ActiveTab == RecipeTab.Ingredients)
                 {
-                    <div class="rm-tab-header">
-                        <h3>Ingredients</h3>
-                        <button type="button" class="mp-btn mp-btn-outline mp-btn-sm" @onclick="AddIngredient">+ Add Ingredient</button>
-                    </div>
                     <div class="rm-list-container">
                         @foreach (var ingredient in FormModel.Ingredients)
                         {
@@ -112,10 +109,6 @@
                 }
                 else if (ActiveTab == RecipeTab.Steps)
                 {
-                    <div class="rm-tab-header">
-                        <h3>Instructions</h3>
-                        <button type="button" class="mp-btn mp-btn-outline mp-btn-sm" @onclick="AddStep">+ Add Step</button>
-                    </div>
                     <div class="rm-list-container">
                         @foreach (var step in FormModel.Steps)
                         {
@@ -134,29 +127,41 @@
                     <div class="rm-row">
                         <div class="rm-field-group">
                             <label for="calories">Calories (kcal)</label>
-                            <InputNumber @bind-Value="FormModel.Calories" id="calories" class="form-input" />
+                            <InputNumber @bind-Value="FormModel.Macros.Calories" id="calories" class="form-input" />
                         </div>
                         <div class="rm-field-group">
                             <label for="protein">Protein (g)</label>
-                            <InputNumber @bind-Value="FormModel.Protein" id="protein" class="form-input" />
+                            <InputNumber @bind-Value="FormModel.Macros.Protein" id="protein" class="form-input" />
                         </div>
                     </div>
                     <div class="rm-row">
                         <div class="rm-field-group">
                             <label for="carbs">Carbs (g)</label>
-                            <InputNumber @bind-Value="FormModel.Carbs" id="carbs" class="form-input" />
+                            <InputNumber @bind-Value="FormModel.Macros.Carbs" id="carbs" class="form-input" />
                         </div>
                         <div class="rm-field-group">
                             <label for="fat">Fat (g)</label>
-                            <InputNumber @bind-Value="FormModel.Fat" id="fat" class="form-input" />
+                            <InputNumber @bind-Value="FormModel.Macros.Fat" id="fat" class="form-input" />
                         </div>
                     </div>
                 }
 
                 @* Footer Actions *@
                 <div class="rm-footer">
-                    <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
-                    <button type="submit" class="mp-btn mp-btn-primary">Save Recipe</button>
+                    @if (ActiveTab == RecipeTab.Details)
+                    {
+                        <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
+                        <button type="submit" class="mp-btn mp-btn-primary">Save Recipe</button>
+                    }
+                    else if (ActiveTab == RecipeTab.Ingredients)
+                    {
+                        <button type="button" class="mp-btn mp-btn-outline" @onclick="AddIngredient">+ Add Ingredient</button>
+                    }
+                    else if (ActiveTab == RecipeTab.Steps)
+                    {
+                        <button type="button" class="mp-btn mp-btn-outline" @onclick="AddStep">+ Add Step</button>
+
+                    }
                 </div>
 
             </EditForm>

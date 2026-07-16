@@ -12,14 +12,14 @@
         <input type="text"
                class="input-name"
                placeholder="@(_isGhostRow ? "Add procedure..." : "Name")"
-               @bind="Procedure.MainInstruction"
+               @bind="Model.MainInstruction"
                @bind:event="oninput"
                @onkeydown="HandleKeyDown"/>
 
         @* Description Input (Small) *@
         <textarea class="input-description"
                placeholder="Description"
-               @bind="Procedure.Description"
+               @bind="Model.Description"
                @bind:event="oninput"/>
 
         @*TODO: Add delete button*@
@@ -29,16 +29,19 @@
 
 @code {
 
-    private bool _isGhostRow => Procedure.IsEmpty();
+    private bool _isGhostRow => Model.IsEmpty();
 
     [Parameter]
-    public required RecipeProcedureDto Procedure { get; set; }
+    public required RecipeProcedureDto Model { get; set; }
 
     [Parameter]
     public bool IsCreator { get; set; } = false;
 
     [Parameter]
     public EventCallback OnEnterPressed { get; set; }
+    
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
 
 
     // Handlers

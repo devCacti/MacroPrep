@@ -13,6 +13,9 @@ namespace MacroPrep.Shared.Models.Recipes
 
         public string? Description { get; set; }
 
+        [Required]
+        public required int Order { get; set; }
+
         public bool IsEmpty()
         {
             return ProcedureId == Guid.Empty

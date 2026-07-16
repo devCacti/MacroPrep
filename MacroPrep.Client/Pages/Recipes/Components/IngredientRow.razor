@@ -9,25 +9,28 @@
     <div class="input-group" @onkeydown="HandleKeyDown">
 
         @* Name Input (Expands to fill remaining space) *@
-        <input type="text"
-               class="input-name"
+        <InputText
+               @bind-Value="Model.Name"
+               @bind-Value:event="oninput"
+               class="form-input"
                placeholder="@(_isGhostRow ? "Add ingredient..." : "Name")"
-               @bind="Ingredient.Name"
-               @bind:event="oninput"/>
+               />
 
         @* Quantity Input (Small) *@
-        <input type="text"
-               class="input-qty"
+        <InputNumber
+               @bind-Value="Model.Amount"
+               @bind-Value:event="oninput"
+                class="form-input"
                placeholder="Qty"
-               @bind="Ingredient.Amount"
-               @bind:event="oninput" />
+               />
 
         @* Unit Input (Small) *@
-        <input type="text"
-               class="input-unit"
+        <InputText
+               @bind-Value="Model.MeasuringUnit"
+               @bind-Value:event="oninput"
+                class="form-input"
                placeholder="Unit"
-               @bind="Ingredient.MeasuringUnit"
-               @bind:event="oninput"/>
+               />
 
         @*TODO: Add delete button*@
     </div>
@@ -35,16 +38,19 @@
 
 @code {
 
-    private bool _isGhostRow => Ingredient.IsEmpty();
+    private bool _isGhostRow => Model.IsEmpty();
 
     [Parameter]
-    public required RecipeIngredientDto Ingredient { get; set; }
+    public required RecipeIngredientDto Model { get; set; }
 
     [Parameter]
     public bool IsCreator { get; set; } = false;
 
     [Parameter]
     public EventCallback OnEnterPressed { get; set; }
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
 
 
     // Handlers
