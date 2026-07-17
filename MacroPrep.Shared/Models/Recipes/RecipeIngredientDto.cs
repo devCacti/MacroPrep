@@ -20,6 +20,9 @@ namespace MacroPrep.Shared.Models.Recipes
 
         public string? MeasuringUnit { get; set; }
 
+        [Required]
+        public int Order { get; set; }
+
         // public List<string>? Tags { get; set; }
 
         /// <summary>
@@ -28,8 +31,7 @@ namespace MacroPrep.Shared.Models.Recipes
         /// <returns>Whether the current Object has default information or not.</returns>
         public bool IsEmpty()
         {
-            return IngredientId == Guid.Empty
-                && string.IsNullOrEmpty(Name);
+            return string.IsNullOrEmpty(Name);
         }
     }
 }

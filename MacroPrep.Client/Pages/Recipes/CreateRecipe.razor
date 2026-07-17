@@ -99,7 +99,9 @@
                         {
                             <IngredientRow @key="ingredient.Id" 
                                            Model="ingredient" 
-                                           OnRemove="() => RemoveIngredient(ingredient)" />
+                                           OnRemove="() => RemoveIngredient(ingredient)"
+                                           OnDragStart="HandleDragStart"
+                                           OnDrop="HandleDrop" />
                         }
                         @if (!FormModel.Ingredients.Any())
                         {
@@ -148,10 +150,10 @@
 
                 @* Footer Actions *@
                 <div class="rm-footer">
-                    @if (ActiveTab == RecipeTab.Details)
+                    @if (ActiveTab == RecipeTab.Details || ActiveTab == RecipeTab.Macros)
                     {
                         <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
-                        <button type="submit" class="mp-btn mp-btn-primary">Save Recipe</button>
+                        <button type="submit" class="mp-btn mp-btn-primary" @onclick="HandleSubmit">Save Recipe</button>
                     }
                     else if (ActiveTab == RecipeTab.Ingredients)
                     {
@@ -160,7 +162,6 @@
                     else if (ActiveTab == RecipeTab.Steps)
                     {
                         <button type="button" class="mp-btn mp-btn-outline" @onclick="AddStep">+ Add Step</button>
-
                     }
                 </div>
 

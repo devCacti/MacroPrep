@@ -1,17 +1,19 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
 
-<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
-	@if (!_isGhostRow && !IsCreator)
-	{
-		<div class="drag-handle">⁝⁝</div>
-	}
+<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")"
+draggable="@(_isGhostRow ? "false" : "true")"
+ondragover="event.preventDefault();"
+@ondragstart="HandleDragStart"
+@ondrop="HandleDrop">
 
-    <div class="input-group" @onkeydown="HandleKeyDown">
+	<div class="drag-handle @(_isGhostRow ? "barely visible" : "visible")">⁝⁝</div>
+
+    <div class="input-group">
 
         @* Name Input (Expands to fill remaining space) *@
         <InputText
                @bind-Value="Model.Name"
-               @bind-Value:event="oninput"
+               @onkeydown="HandleKeyDown"
                class="form-input"
                placeholder="@(_isGhostRow ? "Add ingredient..." : "Name")"
                />
@@ -19,7 +21,7 @@
         @* Quantity Input (Small) *@
         <InputNumber
                @bind-Value="Model.Amount"
-               @bind-Value:event="oninput"
+               @onkeydown="HandleKeyDown"
                 class="form-input"
                placeholder="Qty"
                />
@@ -27,13 +29,19 @@
         @* Unit Input (Small) *@
         <InputText
                @bind-Value="Model.MeasuringUnit"
-               @bind-Value:event="oninput"
+               @onkeydown="HandleKeyDown"
                 class="form-input"
                placeholder="Unit"
                />
 
         @*TODO: Add delete button*@
     </div>
+
+    <button type="button" class="action-btn delete-btn" aria-label="Remove ingredient" @onclick="OnRemove">
+        <svg style="width:20px; height:20px; scale:1.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+    </button>
 </div>
 
 @code {
@@ -52,10 +60,19 @@
     [Parameter]
     public EventCallback OnRemove { get; set; }
 
+    [Parameter]
+    public EventCallback<RecipeIngredientDto> OnDragStart { get; set; }
+
+    [Parameter]
+    public EventCallback<RecipeIngredientDto> OnDrop { get; set; }
 
     // Handlers
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") await OnEnterPressed.InvokeAsync();
     }
+
+    // Drag Event Handlers
+    private async Task HandleDragStart(DragEventArgs eventArgs) => await OnDragStart.InvokeAsync(Model);
+    private async Task HandleDrop (DragEventArgs eventArgs) => await OnDrop.InvokeAsync(Model);
 }
