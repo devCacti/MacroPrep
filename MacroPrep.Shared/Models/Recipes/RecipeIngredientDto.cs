@@ -21,7 +21,7 @@ namespace MacroPrep.Shared.Models.Recipes
         public string? MeasuringUnit { get; set; }
 
         [Required]
-        public int Order { get; set; }
+        public required int Order { get; set; }
 
         // public List<string>? Tags { get; set; }
 

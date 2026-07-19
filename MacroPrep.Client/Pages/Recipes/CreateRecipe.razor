@@ -117,6 +117,11 @@
                             <ProcedureRow @key="step.Id" 
                                           Model="step" 
                                           OnRemove="() => RemoveStep(step)" />
+
+                            if (step != FormModel.Steps.Last())
+                            {
+                                <hr />
+                            }
                         }
                         @if (!FormModel.Steps.Any())
                         {

@@ -70,6 +70,22 @@
     private string _errorMessage = "";
     private bool _isLoading = false;
 
+    // Make the user go to the home page if Authenticated
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+
+        Console.WriteLine(authState.User.Identity?.IsAuthenticated);
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
     private async Task HandleLogin()
     {
         _isLoading = true;

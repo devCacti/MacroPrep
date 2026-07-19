@@ -56,17 +56,37 @@ namespace MacroPrep.Client.Pages.Recipes
 
         private void AddIngredient()
         {
-            // No point in adding an ingredient if the 
-            FormModel.Ingredients.RemoveAll(i => i.IsEmpty());
-
-            FormModel.Ingredients.Add(new RecipeIngredientDto());
+            // Makes it seem that the system is preventing the user from creating more, but its always removing the empty ones
+            // All local so no issues with the server
+            FormModel.Ingredients.RemoveAllEmpty();
+            FormModel.Ingredients.Add(new RecipeIngredientDto { Order = FormModel.Steps.Count + 1});
         }
 
-        private void RemoveIngredient(RecipeIngredientDto item) => FormModel.Ingredients.Remove(item);
+        private void RemoveIngredient(RecipeIngredientDto item)
+        {
+            // Removes the ingredient, then reorders
+            FormModel.Ingredients.Remove(item);
+            ReorderIngredients();
+        }
 
-        private void AddStep() => FormModel.Steps.Add(new RecipeProcedureDto { Order = FormModel.Steps.Count + 1 });
+        private void ReorderIngredients()
+        {
+            for (int i = 0; i < FormModel.Ingredients.Count; i++)
+            {
+                FormModel.Ingredients[i].Order = i + 1;
+            }
+        }
+
+        private void AddStep()
+        {
+            // Same process as the add ingredient method
+            FormModel.Steps.RemoveAllEmpty();
+            FormModel.Steps.Add(new RecipeProcedureDto { Order = FormModel.Steps.Count + 1 });
+        }
+
         private void RemoveStep(RecipeProcedureDto item)
         {
+            // Removes the step then reorders the steps
             FormModel.Steps.Remove(item);
             ReorderSteps();
         }

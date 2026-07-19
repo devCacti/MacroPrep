@@ -10,9 +10,12 @@ namespace MacroPrep.Shared.Models.Recipes
     {
         public static int RemoveAllEmpty(this List<RecipeIngredientDto> ings)
         {
-            int howManyCleaned = ings.RemoveAll(i => i.IsEmpty());
+            return ings.RemoveAll(i => i.IsEmpty());
+        }
 
-            return howManyCleaned;
+        public static int RemoveAllEmpty(this List<RecipeProcedureDto> procs)
+        {
+            return procs.RemoveAll(p => p.IsEmpty());
         }
     }
 }

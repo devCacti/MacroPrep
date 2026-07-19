@@ -25,19 +25,6 @@
         opacity: 1;
     }
 
-/* --- Drag Handle --- */
-.drag-handle {
-    cursor: grab;
-    color: #adb5bd;
-    font-size: 1.2rem;
-    user-select: none; /* Prevents text highlighting when dragging */
-    padding: 0 4px;
-}
-
-    .drag-handle:active {
-        cursor: grabbing;
-    }
-
 /* --- Input Layout --- */
 .input-group {
     display: grid;

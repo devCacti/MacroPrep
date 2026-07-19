@@ -9,17 +9,16 @@ namespace MacroPrep.Shared.Models.Recipes
         public Guid ProcedureId { get; set; }
 
         [Required]
-        public string MainInstruction { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
 
-        public string? Description { get; set; }
+        public string? Details { get; set; }
 
         [Required]
         public int Order { get; set; }
 
         public bool IsEmpty()
         {
-            return ProcedureId == Guid.Empty
-                && string.IsNullOrEmpty(MainInstruction);
+            return string.IsNullOrEmpty(Title);
         }
     }
 }

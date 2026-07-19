@@ -1,8 +1,15 @@
-﻿@inject NavigationManager Nav
+﻿@using Blazored.LocalStorage
+@using MacroPrep.Client.Services;
+
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
 
 @code {
-    protected override void OnInitialized()
+    protected override async void OnInitialized()
     {
+        await LocalStorage.RemoveItemAsync("authToken");
+        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
         Nav.NavigateTo("/auth/login", true);
     }
 }

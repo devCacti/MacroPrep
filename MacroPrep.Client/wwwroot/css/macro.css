@@ -751,7 +751,7 @@ input:disabled {
     border: none;
     cursor: pointer;
     color: #94a3b8; /* Slate-400 */
-    border-radius: 4px;
+    border-radius: 15px;
     transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
     flex-shrink: 0; /* Prevent icon from squishing */
 }
@@ -832,4 +832,23 @@ input:disabled {
 
 .empty-state {
     margin: 10px;
+}
+
+/* --- Drag Handle --- */
+.drag-handle {
+    cursor: grab;
+    color: #adb5bd;
+    scale: 1.25;
+    font-size: 1.2rem;
+    user-select: none; /* Prevents text highlighting when dragging */
+    padding: 0 4px;
+}
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+.disabled {
+    pointer-events: none !important;
+    opacity: .5;
 }
