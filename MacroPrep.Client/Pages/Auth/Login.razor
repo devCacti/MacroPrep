@@ -33,8 +33,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Username or Email</label>
-                    <InputText @bind-Value="_loginModel.UserNameOrEmail" class="form-input" placeholder="chef@macroprep.com" />
-                    <ValidationMessage For="@(() => _loginModel.UserNameOrEmail)" />
+                    <InputText @bind-Value="_loginModel.UserName" class="form-input" placeholder="chef@macroprep.com" />
+                    <ValidationMessage For="@(() => _loginModel.UserName)" />
                 </div>
 
                 <div class="form-group">
@@ -69,22 +69,6 @@
     private LoginRequestDto _loginModel = new();
     private string _errorMessage = "";
     private bool _isLoading = false;
-
-    // Make the user go to the home page if Authenticated
-    [CascadingParameter]
-    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthStateTask;
-
-        Console.WriteLine(authState.User.Identity?.IsAuthenticated);
-
-        if (authState.User.Identity?.IsAuthenticated == true)
-        {
-            Nav.NavigateTo("/");
-        }
-    }
 
     private async Task HandleLogin()
     {

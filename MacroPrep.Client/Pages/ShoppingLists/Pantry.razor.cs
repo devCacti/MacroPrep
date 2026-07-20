@@ -4,7 +4,6 @@ using MacroPrep.Client.Services.Offline;
 using MacroPrep.Shared.Enums.ShoppingLists;
 using MacroPrep.Shared.Models.ShoppingLists;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using System.Net.Http.Json;

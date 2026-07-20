@@ -2,14 +2,14 @@
 @using MacroPrep.Client.Services;
 
 @inject NavigationManager Nav
-@inject AuthenticationStateProvider AuthStateProvider
-@inject ILocalStorageService LocalStorage
 
 @code {
-    protected override async void OnInitialized()
+    protected override void OnInitialized()
     {
-        await LocalStorage.RemoveItemAsync("authToken");
-        ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
-        Nav.NavigateTo("/auth/login", true);
+        // Prevent redirecting if we are already on the login page
+        if (!Nav.Uri.Contains("/auth/login") && !Nav.Uri.Contains("/auth/register"))
+        {
+            Nav.NavigateTo("/auth/login", true);
+        }
     }
 }
