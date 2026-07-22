@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MacroPrep.Shared.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,14 +9,9 @@ namespace MacroPrep.Shared.Models.Recipes
 {
     public static class RecipeExtensions
     {
-        public static int RemoveAllEmpty(this List<RecipeIngredientDto> ings)
+        public static int RemoveAllEmpty<T>(this List<T> items) where T : IFormItem
         {
-            return ings.RemoveAll(i => i.IsEmpty());
-        }
-
-        public static int RemoveAllEmpty(this List<RecipeProcedureDto> procs)
-        {
-            return procs.RemoveAll(p => p.IsEmpty());
+            return items.RemoveAll(item => item.IsEmpty());
         }
     }
 }

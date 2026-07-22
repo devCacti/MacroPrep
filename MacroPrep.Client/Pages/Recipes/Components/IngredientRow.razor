@@ -1,12 +1,8 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
 
-<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")"
-draggable="@(_isGhostRow ? "false" : "true")"
-ondragover="event.preventDefault();"
-@ondragstart="HandleDragStart"
-@ondrop="HandleDrop">
+<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")" data-sortable-item>
 
-	<div class="drag-handle @(_isGhostRow ? "barely visible" : "visible")">⁝⁝</div>
+    <div class="drag-handle @(_isGhostRow ? "barely visible" : "visible")">⁝⁝</div>
 
     <div class="input-group">
 

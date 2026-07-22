@@ -1,5 +1,7 @@
-﻿using MacroPrep.Shared.Models.Recipes;
+﻿using MacroPrep.Shared.Interfaces;
+using MacroPrep.Shared.Models.Recipes;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using System.ComponentModel.DataAnnotations;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
@@ -8,95 +10,112 @@ namespace MacroPrep.Client.Pages.Recipes
 {
     public partial class CreateRecipe
     {
-        private RecipeTab ActiveTab { get; set; } = RecipeTab.Details;
+        private RecipeTab _activeTab { get; set; } = RecipeTab.Details;
         private RecipeFormModel FormModel { get; set; } = new();
-        private RecipeIngredientDto? _draggedIngredient;
 
-        private void SetTab(RecipeTab tab) => ActiveTab = tab;
+        private ElementReference _ingredientsContainer;
+        private bool _initializeIngredients = false;
 
+        private DotNetObjectReference<CreateRecipe>? _dotNetRef;
+
+        // Method to change the active tab
+        private void SetTab(RecipeTab tab)
+        {
+            _activeTab = tab;
+
+            StateHasChanged();
+
+            if (tab == RecipeTab.Ingredients)
+                _initializeIngredients = true;
+        }
+
+        // Will submit the entirety of the recipe to the server
+        // Unlike previous projects, everything goes at once, not in parts
         private void HandleSubmit()
         {
             // Ready for abstraction context hooks or integration pipeline dispatch execution
         }
 
-        private void HandleDragStart(RecipeIngredientDto ingredient)
+        private void AddItem<T>(List<T> collection) where T : IFormItem, new()
         {
-            _draggedIngredient = ingredient;
+            collection.RemoveAllEmpty();
+            collection.Add(new T { Order = collection.Count + 1 });
         }
 
-        private void HandleDrop(RecipeIngredientDto targetItem)
+        private void RemoveItem<T>(List<T> collection, T item) where T : IFormItem
         {
-            // If the dragged ingredient is null or the same as the target item, do nothing (return)
-            if (_draggedIngredient == null || _draggedIngredient == targetItem) return;
+            collection.Remove(item);
+            ReorderCollection(collection);
+        }
 
-            // Correct the list order
-            int draggedIndex = FormModel.Ingredients.IndexOf(_draggedIngredient);
-            int targetIndex = FormModel.Ingredients.IndexOf(targetItem);
-
-            if (draggedIndex < 0 || targetIndex < 0) return;
-
-            if (FormModel.Ingredients[targetIndex].IsEmpty())
-                targetIndex--;
-
-            if (draggedIndex == targetIndex) return;
-
-            // Perform a Position swap (only of the dragged item) 
-            FormModel.Ingredients.RemoveAt(draggedIndex); 
-            FormModel.Ingredients.Insert(targetIndex, _draggedIngredient);
-
-            // Reorder the ingredients to ensure the Order property is consistent with their position in the list
-            for (int i = 0; i < FormModel.Ingredients.Count; i++)
+        private void ReorderCollection<T>(List<T> collection) where T : IFormItem
+        {
+            for (int i = 0; i < collection.Count; i++)
             {
-                FormModel.Ingredients[i].Order = i + 1;
-            }
-
-            // Reset the dragged ingredient after the drop operation
-            _draggedIngredient = null;
-        }
-
-        private void AddIngredient()
-        {
-            // Makes it seem that the system is preventing the user from creating more, but its always removing the empty ones
-            // All local so no issues with the server
-            FormModel.Ingredients.RemoveAllEmpty();
-            FormModel.Ingredients.Add(new RecipeIngredientDto { Order = FormModel.Steps.Count + 1});
-        }
-
-        private void RemoveIngredient(RecipeIngredientDto item)
-        {
-            // Removes the ingredient, then reorders
-            FormModel.Ingredients.Remove(item);
-            ReorderIngredients();
-        }
-
-        private void ReorderIngredients()
-        {
-            for (int i = 0; i < FormModel.Ingredients.Count; i++)
-            {
-                FormModel.Ingredients[i].Order = i + 1;
+                collection[i].Order = i + 1;
             }
         }
 
-        private void AddStep()
+        private void MoveItem<T>(List<T> collection, int oldIndex, int newIndex) where T : IFormItem
         {
-            // Same process as the add ingredient method
-            FormModel.Steps.RemoveAllEmpty();
-            FormModel.Steps.Add(new RecipeProcedureDto { Order = FormModel.Steps.Count + 1 });
+            // If it's dropped at the same index do nothing
+            if (oldIndex == newIndex)
+                return;
+
+            Console.WriteLine("Before:");
+            foreach (var i in FormModel.Ingredients)
+                Console.WriteLine(i.Name);
+
+            Console.WriteLine($"Move {oldIndex} -> {newIndex}");
+
+            var item = collection[oldIndex];
+
+            // Remove the item from the old index and insert it at the new index
+            collection.RemoveAt(oldIndex);
+            collection.Insert(newIndex, item);
+
+            Console.WriteLine("After:");
+            foreach (var i in FormModel.Ingredients)
+                Console.WriteLine(i.Name);
+
+            // Cause list reordering and update the UI
+            ReorderCollection(collection);
         }
 
-        private void RemoveStep(RecipeProcedureDto item)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            // Removes the step then reorders the steps
-            FormModel.Steps.Remove(item);
-            ReorderSteps();
-        }
+            if (firstRender)
+                _dotNetRef = DotNetObjectReference.Create(this);
 
-        private void ReorderSteps()
-        {
-            for (int i = 0; i < FormModel.Steps.Count; i++)
+            if (_initializeIngredients)
             {
-                FormModel.Steps[i].Order = i + 1;
+                _initializeIngredients = false;
+
+                await JS.InvokeVoidAsync(
+                    "sortableInterop.initialize",
+                    _ingredientsContainer,
+                    _dotNetRef,
+                    nameof(IngredientsReordered));
             }
+        }
+
+        // These functions can't be generalized because they are called from JS
+        [JSInvokable]
+        public async Task IngredientsReordered(int oldIndex, int newIndex)
+        {
+            MoveItem(FormModel.Ingredients, oldIndex, newIndex);
+
+            await Task.Yield();
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        [JSInvokable]
+        public Task StepsReordered(int oldIndex, int newIndex)
+        {
+            MoveItem(FormModel.Steps, oldIndex, newIndex);
+
+            return Task.CompletedTask;
         }
 
         public enum RecipeTab { Details, Ingredients, Steps, Macros }

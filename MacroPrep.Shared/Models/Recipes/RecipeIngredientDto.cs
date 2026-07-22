@@ -1,16 +1,17 @@
-﻿using System;
+﻿using MacroPrep.Shared.Interfaces;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace MacroPrep.Shared.Models.Recipes
 {
-    public class RecipeIngredientDto
+    public class RecipeIngredientDto : IFormItem
     {
         // The Server ID
         public Guid? Id { get; set; }
 
         // The local ID
-        [Required]
-        public Guid IngredientId { get; set; }
+        [Required, Key]
+        public Guid IngredientId { get; set; } = Guid.NewGuid();
 
         public string Name { get; set; } = string.Empty;
 
@@ -21,7 +22,7 @@ namespace MacroPrep.Shared.Models.Recipes
         public string? MeasuringUnit { get; set; }
 
         [Required]
-        public required int Order { get; set; }
+        public int Order { get; set; }
 
         // public List<string>? Tags { get; set; }
 

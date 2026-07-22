@@ -1,5 +1,7 @@
 ﻿@page "/recipes/create"
 
+@inject IJSRuntime JS
+
 @using MacroPrep.Client.Pages.Recipes.Components
 
 <div class="page-wrapper">
@@ -26,7 +28,7 @@
                     var currentTab = tab;
                     <button type="button"
                             @onclick="() => SetTab(currentTab)"
-                            class="filter-chip @(ActiveTab == currentTab ? "active" : "")">
+                            class="filter-chip @(_activeTab == currentTab ? "active" : "")">
                         @currentTab
                     </button>
                 }
@@ -36,7 +38,7 @@
             <EditForm Model="FormModel" OnValidSubmit="HandleSubmit" class="rm-body">
                 <DataAnnotationsValidator />
 
-                @if (ActiveTab == RecipeTab.Details)
+                @if (_activeTab == RecipeTab.Details)
                 {
                     @* Image Dropzone / Preview Container *@
                     <div class="rm-image-dropzone">
@@ -92,16 +94,14 @@
                         </div>
                     </div>
                 }
-                else if (ActiveTab == RecipeTab.Ingredients)
+                else if (_activeTab == RecipeTab.Ingredients)
                 {
-                    <div class="rm-list-container">
+                    <div class="rm-list-container" @ref="_ingredientsContainer">
                         @foreach (var ingredient in FormModel.Ingredients)
                         {
-                            <IngredientRow @key="ingredient.Id" 
+                            <IngredientRow @key="ingredient.IngredientId" 
                                            Model="ingredient" 
-                                           OnRemove="() => RemoveIngredient(ingredient)"
-                                           OnDragStart="HandleDragStart"
-                                           OnDrop="HandleDrop" />
+                                           OnRemove="() => RemoveItem(FormModel.Ingredients, ingredient)"/>
                         }
                         @if (!FormModel.Ingredients.Any())
                         {
@@ -109,14 +109,14 @@
                         }
                     </div>
                 }
-                else if (ActiveTab == RecipeTab.Steps)
+                else if (_activeTab == RecipeTab.Steps)
                 {
                     <div class="rm-list-container">
                         @foreach (var step in FormModel.Steps)
                         {
                             <ProcedureRow @key="step.Id" 
                                           Model="step" 
-                                          OnRemove="() => RemoveStep(step)" />
+                                          OnRemove="() => RemoveItem(FormModel.Steps, step)" />
 
                             if (step != FormModel.Steps.Last())
                             {
@@ -129,7 +129,7 @@
                         }
                     </div>
                 }
-                else if (ActiveTab == RecipeTab.Macros)
+                else if (_activeTab == RecipeTab.Macros)
                 {
                     <div class="rm-row">
                         <div class="rm-field-group">
@@ -155,18 +155,18 @@
 
                 @* Footer Actions *@
                 <div class="rm-footer">
-                    @if (ActiveTab == RecipeTab.Details || ActiveTab == RecipeTab.Macros)
+                    @if (_activeTab == RecipeTab.Details || _activeTab == RecipeTab.Macros)
                     {
                         <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
                         <button type="submit" class="mp-btn mp-btn-primary" @onclick="HandleSubmit">Save Recipe</button>
                     }
-                    else if (ActiveTab == RecipeTab.Ingredients)
+                    else if (_activeTab == RecipeTab.Ingredients)
                     {
-                        <button type="button" class="mp-btn mp-btn-outline" @onclick="AddIngredient">+ Add Ingredient</button>
+                        <button type="button" class="mp-btn mp-btn-outline" @onclick="() => AddItem(FormModel.Ingredients)">+ Add Ingredient</button>
                     }
-                    else if (ActiveTab == RecipeTab.Steps)
+                    else if (_activeTab == RecipeTab.Steps)
                     {
-                        <button type="button" class="mp-btn mp-btn-outline" @onclick="AddStep">+ Add Step</button>
+                        <button type="button" class="mp-btn mp-btn-outline" @onclick="() => AddItem(FormModel.Steps)">+ Add Step</button>
                     }
                 </div>
 

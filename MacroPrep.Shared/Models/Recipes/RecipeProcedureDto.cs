@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MacroPrep.Shared.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace MacroPrep.Shared.Models.Recipes
 {
-    public class RecipeProcedureDto
+    public class RecipeProcedureDto : IFormItem
     {
         public Guid? Id { get; set; }
 

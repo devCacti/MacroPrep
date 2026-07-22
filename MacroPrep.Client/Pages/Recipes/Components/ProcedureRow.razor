@@ -1,6 +1,6 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
 
-<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
+<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")" data-sortable-item>
     <div class="row procedure-layout">
         <div class="top-row">
             <div class="procedure-number">@(_isGhostRow ? "N" : Model.Order)</div>
