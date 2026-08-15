@@ -4,9 +4,11 @@ using MacroPrep.Client.Services.Offline;
 using MacroPrep.Shared.Enums.ShoppingLists;
 using MacroPrep.Shared.Models.ShoppingLists;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using System.Net.Http.Json;
+using System.Security.Claims;
 
 namespace MacroPrep.Client.Pages.ShoppingLists
 {
@@ -19,6 +21,7 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private RealTimeSyncService SignalR { get; set; } = default!;
         [Inject] private SyncService Sync { get; set; } = default!;
+        [Inject] private CustomAuthStateProvider AuthState { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
 
         public class ListViewModel
@@ -58,6 +61,14 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         protected override async Task OnInitializedAsync()
         {
             var token = await LocalStorage.GetItemAsync<string>("authToken");
+
+            var authState = await AuthState.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (Guid.TryParse(userIdClaim, out var parsedId))
+            {
+                _currentUserId = parsedId;
+            }
 
             if (!string.IsNullOrEmpty(token))
             {
