@@ -1,4 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization;
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
@@ -13,7 +15,7 @@
             <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
                 <h3>404 - Not Found</h3>
-                <p role="alert">Sorry, the page you are trying to access doesn't seem to exist.</p>
+                <p role="alert">Nothing to see here ;)</p>
             </LayoutView>
         </NotFound>
     </Router>

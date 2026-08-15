@@ -1,5 +1,6 @@
 ﻿using MacroPrep.Server.Data.Entities;
 using MacroPrep.Server.Services;
+using System.Security.Claims;
 
 namespace MacroPrep.Server.Endpoints
 {
@@ -20,6 +21,7 @@ namespace MacroPrep.Server.Endpoints
 
             group.MapGet("/test-token", TestToken)
                 .Produces(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .Produces(StatusCodes.Status500InternalServerError)
                 .WithName("TestToken")
                 .WithOpenApi();
@@ -27,31 +29,16 @@ namespace MacroPrep.Server.Endpoints
 
         public static IResult TestConnection() => Results.Ok("Connection to the server is healthy!");
 
-        public static IResult TestToken(ITokenService tokenService)
+        public static IResult TestToken(ITokenService tokenService, ClaimsPrincipal claims)
         {
             try
             {
-                // 1. Create a Fake User
-                var fakeUser = new User
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = "TestUser",
-                    Email = "test@test.com",
-                    CreatedAt = DateTimeOffset.UtcNow // Valid date
-                };
-
-                var fakeSession = new UserSession
-                {
-                    Id = Guid.NewGuid(),
-                    Token = "fake-token",
-                    ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(15) // Not valid for long, but enough for testing
-                };
-
-                // 2. Try to Generate Token
-                var token = tokenService.GenerateToken(fakeUser, fakeSession);
+                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Results.Unauthorized();
 
                 // 3. If we get here, Token Service is HEALTHY
-                return Results.Ok(new { Message = "Token Service Works!", Token = token });
+                return Results.Ok(new { Message = "Token Service Alive and Well (and you are authenticated! ;)" });
             }
             catch (Exception ex)
             {

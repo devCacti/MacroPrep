@@ -4,11 +4,9 @@ using MacroPrep.Client.Services.Offline;
 using MacroPrep.Shared.Enums.ShoppingLists;
 using MacroPrep.Shared.Models.ShoppingLists;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using System.Net.Http.Json;
-using System.Security.Claims;
 
 namespace MacroPrep.Client.Pages.ShoppingLists
 {
@@ -18,7 +16,6 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         [Inject] private HttpClient Http { get; set; } = default!;
         [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
         [Inject] private ShoppingListsService OfflineService { get; set; } = default!;
-        [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private RealTimeSyncService SignalR { get; set; } = default!;
         [Inject] private SyncService Sync { get; set; } = default!;
@@ -60,25 +57,6 @@ namespace MacroPrep.Client.Pages.ShoppingLists
 
         protected override async Task OnInitializedAsync()
         {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-
-            if (user.Identity?.IsAuthenticated == true)
-            {
-                var idClaim = user.FindFirst("sub")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (Guid.TryParse(idClaim, out var parsedId))
-                    _currentUserId = parsedId;
-            }
-
-            if (_currentUserId == Guid.Empty)
-            {
-                // Force logout because there is something very wrong with the authentication state if we can't get a valid user ID
-                await ForceLogout();
-                return;
-            }
-
             var token = await LocalStorage.GetItemAsync<string>("authToken");
 
             if (!string.IsNullOrEmpty(token))
@@ -747,16 +725,6 @@ namespace MacroPrep.Client.Pages.ShoppingLists
                 {
                     Console.WriteLine($"Failed to fetch /api/shopping-lists/my-lists with exception: {ex}");
                 }
-        }
-
-        // Method to accept Enter Key for adding items
-
-        private async Task ForceLogout()
-        {
-            await LocalStorage.RemoveItemAsync("authToken");
-            ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
-
-            Nav.NavigateTo("/login");
         }
 
         public void Dispose()

@@ -1,8 +1,15 @@
-﻿@inject NavigationManager Nav
+﻿@using Blazored.LocalStorage
+@using MacroPrep.Client.Services;
+
+@inject NavigationManager Nav
 
 @code {
     protected override void OnInitialized()
     {
-        Nav.NavigateTo("/auth/login", true);
+        // Prevent redirecting if we are already on the login page
+        if (!Nav.Uri.Contains("/auth/login") && !Nav.Uri.Contains("/auth/register"))
+        {
+            Nav.NavigateTo("/auth/login", true);
+        }
     }
 }

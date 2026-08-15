@@ -1,5 +1,9 @@
 ﻿@page "/recipes/create"
 
+@inject IJSRuntime JS
+
+@using MacroPrep.Client.Pages.Recipes.Components
+
 <div class="page-wrapper">
     <div class="content-container">
         <div class="recipe-modal-card">
@@ -24,7 +28,7 @@
                     var currentTab = tab;
                     <button type="button"
                             @onclick="() => SetTab(currentTab)"
-                            class="filter-chip @(ActiveTab == currentTab ? "active" : "")">
+                            class="filter-chip @(_activeTab == currentTab ? "active" : "")">
                         @currentTab
                     </button>
                 }
@@ -34,7 +38,7 @@
             <EditForm Model="FormModel" OnValidSubmit="HandleSubmit" class="rm-body">
                 <DataAnnotationsValidator />
 
-                @if (ActiveTab == RecipeTab.Details)
+                @if (_activeTab == RecipeTab.Details)
                 {
                     @* Image Dropzone / Preview Container *@
                     <div class="rm-image-dropzone">
@@ -73,6 +77,7 @@
                             <option value="Lunch">Lunch</option>
                             <option value="Dinner">Dinner</option>
                             <option value="Snack">Snack</option>
+                            <option value="Other">Other</option>
                         </InputSelect>
                     </div>
 
@@ -89,52 +94,83 @@
                         </div>
                     </div>
                 }
-                else
+                else if (_activeTab == RecipeTab.Ingredients)
                 {
-                    <div style="padding: 3rem; text-align: center; color: var(--text-light);">
-                        @ActiveTab section content template.
+                    <div class="rm-list-container" @ref="_ingredientsContainer">
+                        @foreach (var ingredient in FormModel.Ingredients)
+                        {
+                            <IngredientRow @key="ingredient" 
+                                           Model="ingredient" 
+                                           OnRemove="() => RemoveItem(FormModel.Ingredients, ingredient)"/>
+                        }
+                        @if (!FormModel.Ingredients.Any())
+                        {
+                            <p class="empty-state">No ingredients added yet.</p>
+                        }
+                    </div>
+                }
+                else if (_activeTab == RecipeTab.Steps)
+                {
+                    <div class="rm-list-container" @ref="_stepsContainer">
+                        @foreach (var step in FormModel.Steps.OrderBy(s => s.Order))
+                        {
+                            <ProcedureRow @key="step" 
+                                          Model="step" 
+                                          OnRemove="() => RemoveItem(FormModel.Steps, step)" />
+
+                            if (step != FormModel.Steps.Last())
+                            {
+                                <hr />
+                            }
+                        }
+                        @if (!FormModel.Steps.Any())
+                        {
+                            <p class="empty-state">No steps added yet.</p>
+                        }
+                    </div>
+                }
+                else if (_activeTab == RecipeTab.Macros)
+                {
+                    <div class="rm-row">
+                        <div class="rm-field-group">
+                            <label for="calories">Calories (kcal)</label>
+                            <InputNumber @bind-Value="FormModel.Macros.Calories" id="calories" class="form-input" />
+                        </div>
+                        <div class="rm-field-group">
+                            <label for="protein">Protein (g)</label>
+                            <InputNumber @bind-Value="FormModel.Macros.Protein" id="protein" class="form-input" />
+                        </div>
+                    </div>
+                    <div class="rm-row">
+                        <div class="rm-field-group">
+                            <label for="carbs">Carbs (g)</label>
+                            <InputNumber @bind-Value="FormModel.Macros.Carbs" id="carbs" class="form-input" />
+                        </div>
+                        <div class="rm-field-group">
+                            <label for="fat">Fat (g)</label>
+                            <InputNumber @bind-Value="FormModel.Macros.Fat" id="fat" class="form-input" />
+                        </div>
                     </div>
                 }
 
                 @* Footer Actions *@
                 <div class="rm-footer">
-                    <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
-                    <button type="submit" class="mp-btn mp-btn-primary">Save Recipe</button>
+                    @if (_activeTab == RecipeTab.Details || _activeTab == RecipeTab.Macros)
+                    {
+                        <button type="button" class="mp-btn mp-btn-outline">Cancel</button>
+                        <button type="submit" class="mp-btn mp-btn-primary" @onclick="HandleSubmit">Save Recipe</button>
+                    }
+                    else if (_activeTab == RecipeTab.Ingredients)
+                    {
+                        <button type="button" class="mp-btn mp-btn-outline" @onclick="() => AddItem(FormModel.Ingredients)">+ Add Ingredient</button>
+                    }
+                    else if (_activeTab == RecipeTab.Steps)
+                    {
+                        <button type="button" class="mp-btn mp-btn-outline" @onclick="() => AddItem(FormModel.Steps)">+ Add Step</button>
+                    }
                 </div>
 
             </EditForm>
         </div>
     </div>
 </div>
-
-@code {
-    private RecipeTab ActiveTab { get; set; } = RecipeTab.Details;
-    private RecipeFormModel FormModel { get; set; } = new();
-
-    private void SetTab(RecipeTab tab) => ActiveTab = tab;
-
-    private void HandleSubmit()
-    {
-        // Ready for abstraction context hooks or integration pipeline dispatch execution
-    }
-
-    public enum RecipeTab
-    {
-        Details,
-        Ingredients,
-        Steps,
-        Macros
-    }
-
-    public class RecipeFormModel
-    {
-        public string PhotoUrl { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Recipe name is required")]
-        public string Name { get; set; } = string.Empty;
-
-        public string Category { get; set; } = "Dinner";
-        public int CookTimeMinutes { get; set; } = 30;
-        public int Servings { get; set; } = 4;
-    }
-}

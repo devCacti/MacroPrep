@@ -1,22 +1,26 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MacroPrep.Shared.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace MacroPrep.Shared.Models.Recipes
 {
-    public class RecipeProcedureDto
+    public class RecipeProcedureDto : IFormItem
     {
         public Guid? Id { get; set; }
 
-        public Guid ProcedureId { get; set; }
+        [Required, Key]
+        public Guid ProcedureId { get; set; } = Guid.NewGuid();
 
         [Required]
-        public string MainInstruction { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
 
-        public string? Description { get; set; }
+        public string? Details { get; set; }
+
+        [Required]
+        public int Order { get; set; }
 
         public bool IsEmpty()
         {
-            return ProcedureId == Guid.Empty
-                && string.IsNullOrEmpty(MainInstruction);
+            return string.IsNullOrEmpty(Title);
         }
     }
 }
