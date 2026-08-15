@@ -311,7 +311,7 @@ namespace MacroPrep.Client.Pages.ShoppingLists
 
                 // Now local lists has all the online lists and the ones that were already there, however, now we loop through them, the ones
                 // marked as synced that weren't found on the server get permanently deleted, 
-                _viewModels.Clear();
+                var newViewModels = new List<ListViewModel>();
 
                 foreach (var list in localLists)
                 {
@@ -335,7 +335,7 @@ namespace MacroPrep.Client.Pages.ShoppingLists
                                 await AutoUpdateListInfo(serverList, list);
 
                                 // Add list to the view model
-                                _viewModels.Add(new ListViewModel
+                                newViewModels.Add(new ListViewModel
                                 {
                                     List = serverList,
                                     Items = await OfflineService.GetItemsAsync(serverList.Id),
@@ -351,7 +351,7 @@ namespace MacroPrep.Client.Pages.ShoppingLists
 
                         // If the previous conditions were not met, it means the list either doesn't exist in the server or is invalid
                         // If any of those are met, we check our list, if it is synced (Which means the local db thinks it matches the server, the list is meant to be deleted everywhere)
-                        if (list.IsSynced)
+                        else if (list.IsSynced)
                         {
                             // Deletes all data related to the list, items and members.
                             await OfflineService.DeleteListAndRelatedDataAsync(list.Id);
@@ -365,6 +365,11 @@ namespace MacroPrep.Client.Pages.ShoppingLists
                         Console.WriteLine(ex);
                     }
                 }
+
+                _viewModels.Clear();
+                _viewModels.AddRange(newViewModels);
+                await InvokeAsync(StateHasChanged);
+
 
                 Sync.RequestSync();
 
