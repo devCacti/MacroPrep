@@ -16,6 +16,9 @@ namespace MacroPrep.Client.Pages.Recipes
         private ElementReference _ingredientsContainer;
         private bool _initializeIngredients = false;
 
+        private ElementReference _stepsContainer;
+        private bool _initializeSteps = false;
+
         private DotNetObjectReference<CreateRecipe>? _dotNetRef;
 
         // Method to change the active tab
@@ -27,6 +30,9 @@ namespace MacroPrep.Client.Pages.Recipes
 
             if (tab == RecipeTab.Ingredients)
                 _initializeIngredients = true;
+
+            else if (tab == RecipeTab.Steps)
+                _initializeSteps = true;
         }
 
         // Will submit the entirety of the recipe to the server
@@ -42,12 +48,14 @@ namespace MacroPrep.Client.Pages.Recipes
             collection.Add(new T { Order = collection.Count + 1 });
         }
 
+        // Removes an item from a list
         private void RemoveItem<T>(List<T> collection, T item) where T : IFormItem
         {
             collection.Remove(item);
             ReorderCollection(collection);
         }
 
+        // Resets the order numbers based on the index of the items
         private void ReorderCollection<T>(List<T> collection) where T : IFormItem
         {
             for (int i = 0; i < collection.Count; i++)
@@ -62,24 +70,15 @@ namespace MacroPrep.Client.Pages.Recipes
             if (oldIndex == newIndex)
                 return;
 
-            Console.WriteLine("Before:");
-            foreach (var i in FormModel.Ingredients)
-                Console.WriteLine(i.Name);
-
-            Console.WriteLine($"Move {oldIndex} -> {newIndex}");
-
             var item = collection[oldIndex];
 
             // Remove the item from the old index and insert it at the new index
             collection.RemoveAt(oldIndex);
             collection.Insert(newIndex, item);
 
-            Console.WriteLine("After:");
-            foreach (var i in FormModel.Ingredients)
-                Console.WriteLine(i.Name);
-
             // Cause list reordering and update the UI
             ReorderCollection(collection);
+            StateHasChanged();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -97,6 +96,17 @@ namespace MacroPrep.Client.Pages.Recipes
                     _dotNetRef,
                     nameof(IngredientsReordered));
             }
+
+            if (_initializeSteps)
+            {
+                _initializeSteps = false;
+
+                await JS.InvokeVoidAsync(
+                    "sortableInterop.initialize",
+                    _stepsContainer,
+                    _dotNetRef,
+                    nameof(StepsReordered));
+            }
         }
 
         // These functions can't be generalized because they are called from JS
@@ -111,11 +121,13 @@ namespace MacroPrep.Client.Pages.Recipes
         }
 
         [JSInvokable]
-        public Task StepsReordered(int oldIndex, int newIndex)
+        public async Task StepsReordered(int oldIndex, int newIndex)
         {
             MoveItem(FormModel.Steps, oldIndex, newIndex);
 
-            return Task.CompletedTask;
+            await Task.Yield();
+
+            await InvokeAsync(StateHasChanged);
         }
 
         public enum RecipeTab { Details, Ingredients, Steps, Macros }

@@ -7,7 +7,8 @@ namespace MacroPrep.Shared.Models.Recipes
     {
         public Guid? Id { get; set; }
 
-        public Guid ProcedureId { get; set; }
+        [Required, Key]
+        public Guid ProcedureId { get; set; } = Guid.NewGuid();
 
         [Required]
         public string Title { get; set; } = string.Empty;

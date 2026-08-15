@@ -99,7 +99,7 @@
                     <div class="rm-list-container" @ref="_ingredientsContainer">
                         @foreach (var ingredient in FormModel.Ingredients)
                         {
-                            <IngredientRow @key="ingredient.IngredientId" 
+                            <IngredientRow @key="ingredient" 
                                            Model="ingredient" 
                                            OnRemove="() => RemoveItem(FormModel.Ingredients, ingredient)"/>
                         }
@@ -111,10 +111,10 @@
                 }
                 else if (_activeTab == RecipeTab.Steps)
                 {
-                    <div class="rm-list-container">
-                        @foreach (var step in FormModel.Steps)
+                    <div class="rm-list-container" @ref="_stepsContainer">
+                        @foreach (var step in FormModel.Steps.OrderBy(s => s.Order))
                         {
-                            <ProcedureRow @key="step.Id" 
+                            <ProcedureRow @key="step" 
                                           Model="step" 
                                           OnRemove="() => RemoveItem(FormModel.Steps, step)" />
 
