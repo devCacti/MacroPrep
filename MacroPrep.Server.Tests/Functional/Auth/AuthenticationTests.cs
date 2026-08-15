@@ -62,7 +62,7 @@ namespace MacroPrep.Server.Tests.Functional.Auth
             // Now we will try to login with the same credentials to check if the login endpoint works as expected
             var loginDto = new LoginRequestDto
             {
-                UserNameOrEmail = testUserName,
+                UserName = testUserName,
                 Password = _testPassword
             };
 

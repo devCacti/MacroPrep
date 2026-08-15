@@ -80,7 +80,7 @@ namespace MacroPrep.Server.Tests.Infrastructure
                 // If the user already exists, we can try to log in instead
                 var loginDto = new LoginRequestDto
                 {
-                    UserNameOrEmail = userName,
+                    UserName = userName,
                     Password = password
                 };
 

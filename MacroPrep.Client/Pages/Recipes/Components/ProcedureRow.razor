@@ -1,26 +1,48 @@
 ﻿@using MacroPrep.Shared.Models.Recipes;
 
-<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")">
-    @if (!_isGhostRow && !IsCreator)
-    {
-        <div class="drag-handle">⁝⁝</div>
-    }
+<div class="item-row @(_isGhostRow ? "ghost-row" : "active-row")" data-sortable-item>
+    <div class="row procedure-layout">
+        <div class="top-row">
+            <div class="procedure-number">@(_isGhostRow ? "N" : Model.Order)</div>
+            <InputText
+                @bind-Value="Model.Title"
+                type="text" class="form-input" placeholder="Procedure Title" />
+        </div>
 
-    <div class="input-group">
+        <div class="row bottom-row">
+            <div class="left-col">
+                <div class="drag-handle @(_isGhostRow ? "barely visible" : "visible")">⁝⁝</div>
 
-        @* Name Input (Expands to fill remaining space) *@
-        <input type="text"
-               class="input-name"
-               placeholder="@(_isGhostRow ? "Add procedure..." : "Name")"
-               @bind="Procedure.MainInstruction"
-               @bind:event="oninput"
-               @onkeydown="HandleKeyDown"/>
+                <button type="button" class="action-btn delete-btn" aria-label="Remove ingredient" @onclick="OnRemove">
+                    <svg style="width:20px; height:20px; scale:1.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </div>
 
-        @* Description Input (Small) *@
-        <textarea class="input-description"
-               placeholder="Description"
-               @bind="Procedure.Description"
-               @bind:event="oninput"/>
+            <InputTextArea 
+                @bind-Value="Model.Details"
+                class="fixed-textarea form-input" style="resize: none;" placeholder="Procedure Details">
+            </InputTextArea>
+
+            <div class="right-col">
+                <input type="text" class="form-input" placeholder="Time"/>
+                <button class="mp-btn mp-btn-outline disabled">Settings</button>
+            </div>
+        </div>
+
+        @* Name Input (Expands to fill remaining space)
+        <InputText
+               @bind-Value="Model.Title"
+               @onkeydown="HandleKeyDown"
+               class="form-input"
+               placeholder="@(_isGhostRow ? "Add procedure..." : "Name")" />
+
+        @* Description Input (Small)
+        <InputTextArea 
+                @bind-Value="Model.Description"
+                class="form-input"
+                placeholder="Description" />
 
         @*TODO: Add delete button*@
         @*TODO: Make MainInstruction appear on top of the Description*@
@@ -29,16 +51,19 @@
 
 @code {
 
-    private bool _isGhostRow => Procedure.IsEmpty();
+    private bool _isGhostRow => Model.IsEmpty();
 
     [Parameter]
-    public required RecipeProcedureDto Procedure { get; set; }
+    public required RecipeProcedureDto Model { get; set; }
 
     [Parameter]
     public bool IsCreator { get; set; } = false;
 
     [Parameter]
     public EventCallback OnEnterPressed { get; set; }
+    
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
 
 
     // Handlers

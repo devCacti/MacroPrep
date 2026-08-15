@@ -6,12 +6,12 @@ namespace MacroPrep.Client.Pages.Recipes
     public partial class Index
     {
         [Inject]
-        private NavigationManager _navManager { get; set; } = default!;
+        private NavigationManager NavManager { get; set; } = default!;
 
         private void CreateNewRecipe()
         {
             Console.WriteLine("Redirecting to 'New Recipe' page...");
-            _navManager.NavigateTo("/recipes/create");
+            NavManager.NavigateTo("/recipes/create");
         }
     }
 }

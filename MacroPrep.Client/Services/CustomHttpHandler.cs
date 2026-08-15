@@ -67,13 +67,13 @@ namespace MacroPrep.Client.Services
                 }
 
                 // Redirect to login if the response is not 200 OK or if an exception occurs
-                await ForceLogout();
+                await ForceLogoutAsync();
             }
 
             return response;
         }
 
-        private async Task<bool> RefreshTokenAsync()
+        public async Task<bool> RefreshTokenAsync()
         {
             try
             {
@@ -103,7 +103,7 @@ namespace MacroPrep.Client.Services
             }
         }
 
-        private async Task ForceLogout()
+        private async Task ForceLogoutAsync()
         {
             await _localStorage.RemoveItemAsync("authToken");
             _navigationManager.NavigateTo("/auth/login");

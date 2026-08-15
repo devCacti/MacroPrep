@@ -25,28 +25,18 @@
         opacity: 1;
     }
 
-/* --- Drag Handle --- */
-.drag-handle {
-    cursor: grab;
-    color: #adb5bd;
-    font-size: 1.2rem;
-    user-select: none; /* Prevents text highlighting when dragging */
-    padding: 0 4px;
-}
-
-    .drag-handle:active {
-        cursor: grabbing;
-    }
-
 /* --- Input Layout --- */
 .input-group {
-    display: flex;
-    gap: 0.5rem; /* Space between the individual inputs */
-    flex: 1; /* Tells the group to stretch and fill the row */
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
 }
 
     /* --- Shared Input Styles --- */
     .input-group input {
+        width: 100%; /* Force inputs to fill their grid tracks */
         padding: 0.375rem 0.5rem;
         border: 1px solid #ced4da;
         border-radius: 4px;
@@ -60,18 +50,3 @@
             border-color: #86b7fe;
             box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
         }
-
-/* --- Specific Input Sizing --- */
-.input-name {
-    flex: 1; /* This is the magic property that forces the name to take up all leftover space */
-    min-width: 100px; /* Prevents it from crushing too small on mobile */
-}
-
-.input-qty {
-    width: 50px;
-    text-align: center; /* Centers the number */
-}
-
-.input-unit {
-    width: 50px;
-}
