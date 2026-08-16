@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MacroPrep.Server.Data.Entities;
+using MacroPrep.Server.Data.Entities.SemanticVersioning;
 
 namespace MacroPrep.Server.Data
 {
@@ -21,10 +22,12 @@ namespace MacroPrep.Server.Data
         public DbSet<Procedure> Procedures { get; set; }
         public DbSet<Instrument> Instruments { get; set; }
         public DbSet<RecipeImage> RecipeImages { get; set; }
-
         /// END OF RECIPES SECTION
         
         public DbSet<MeasuringUnit> MeasuringUnits { get; set; }
         public DbSet<Tag> Tags { get; set; }
+
+        // SYSTEM RELATED ENTITIES
+        public DbSet<SemanticVersion> SemanticVersions { get; set; }
     }
 }

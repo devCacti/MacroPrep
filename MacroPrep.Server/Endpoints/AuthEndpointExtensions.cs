@@ -9,7 +9,7 @@ using Microsoft.OpenApi.Models;
 
 namespace MacroPrep.Server.Endpoints
 {
-    public static class AuthEndpoints
+    public static class AuthEndpointExtensions
     {
         private static bool _isProduction = false;
 

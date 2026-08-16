@@ -158,9 +158,10 @@ else
     app.MapHub<ShoppingHub>("/hubs/shopping-hub");
 }
 
-app.MapAuthEndpoints();             // API AUTH GROUP
-app.MapUserEndpoints();             // API USER GROUP
-app.MapShoppingListsEndpoints();    // API SHOPPING LISTS GROUP
-app.MapTestEndpoints();             // API TESTING GROUP
+app.MapAuthEndpoints();                 // API AUTH GROUP
+app.MapUserEndpoints();                 // API USER GROUP
+app.MapShoppingListsEndpoints();        // API SHOPPING LISTS GROUP
+app.MapTestEndpoints();                 // API TESTING GROUP
+app.MapSemanticVersioningEndpoints();   // API SEMANTIC VERSIONING GROUP
 
 app.Run();

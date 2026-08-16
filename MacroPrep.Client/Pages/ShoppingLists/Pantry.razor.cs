@@ -18,7 +18,6 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         [Inject] private HttpClient Http { get; set; } = default!;
         [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
         [Inject] private ShoppingListsService OfflineService { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private RealTimeSyncService SignalR { get; set; } = default!;
         [Inject] private SyncService Sync { get; set; } = default!;
         [Inject] private CustomAuthStateProvider AuthState { get; set; } = default!;
@@ -48,13 +47,11 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         private List<ListInviteDto> _pendingInvites = [];
 
         private readonly List<ListViewModel> _viewModels = [];
-        private List<ListDto> ShoppingLists { get; set; } = [];
 
         private bool _isOffline = false;
         private bool _hasConnection = true;
 
         private DotNetObjectReference<Pantry>? _objRef;
-        private IJSObjectReference? _jsModule;
 
         private System.Threading.Timer? _retryTimer;
 
@@ -115,9 +112,6 @@ namespace MacroPrep.Client.Pages.ShoppingLists
                 {
                     // Checks Internet Connection
                     _objRef = DotNetObjectReference.Create(this);
-
-                    _jsModule = await JS.InvokeAsync<IJSObjectReference>("import",
-                        $"./js/connectivity.js?v={DateTime.Now.Ticks}");
 
                     isOnline = await JS.InvokeAsync<bool>("ConnectionManager.register", _objRef);
                 }
@@ -225,12 +219,6 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         private async void HandleSyncStatusChanged()
         {
             await InvokeAsync(StateHasChanged);
-        }
-
-        // Check list full sync status
-        private bool IsListFullySynced(ListViewModel vm)
-        {
-            return !vm.IsSyncing && !Sync.IsGlobalSyncing && vm.List.IsSynced;
         }
 
         #region JS Invokable Methods

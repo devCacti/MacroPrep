@@ -11,7 +11,7 @@ using System.Security.Claims;
 
 namespace MacroPrep.Server.Endpoints
 {
-    public static class ShoppingListsEndpoints
+    public static class ShoppingListsEndpointExtensions
     {
         public static void MapShoppingListsEndpoints(this WebApplication app)
         {

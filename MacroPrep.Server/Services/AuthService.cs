@@ -128,10 +128,10 @@ namespace MacroPrep.Server.Services
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = AuthEndpoints.IsProduction ? SameSiteMode.Strict : SameSiteMode.None,
+                SameSite = AuthEndpointExtensions.IsProduction ? SameSiteMode.Strict : SameSiteMode.None,
                 Expires = session.ExpiresAt,
                 Path = "/api/auth",
-                IsEssential = !AuthEndpoints.IsProduction
+                IsEssential = !AuthEndpointExtensions.IsProduction
             };
 
             httpContext.Response.Cookies.Append("MacroPrepSession", $"{session.Id}|{session.Token}", cookieOptions);
