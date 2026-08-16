@@ -31,6 +31,7 @@ namespace MacroPrep.Server.Endpoints
             group.MapGet("/server", GetServerVersion)
                 .RequireAuthorization()
                 .Produces<SemanticVersionDto>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("GetServerVersion")
                 .WithOpenApi();
 
@@ -39,6 +40,9 @@ namespace MacroPrep.Server.Endpoints
                 .RequireAuthorization()
                 .Accepts<CreateSemanticVersionRequest>("application/json")
                 .Produces<SemanticVersion>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status403Forbidden)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("CreateVersion")
                 .WithOpenApi();
 
@@ -46,12 +50,18 @@ namespace MacroPrep.Server.Endpoints
                 .RequireAuthorization()
                 .Accepts<UpdateSemanticVersionRequest>("application/json")
                 .Produces<SemanticVersion>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status403Forbidden)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("UpdateVersion")
                 .WithOpenApi();
 
             group.MapDelete("/{versionId:guid}", DeleteVersion)
                 .RequireAuthorization()
                 .Produces(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status403Forbidden)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("DeleteVersion")
                 .WithOpenApi();
         }
