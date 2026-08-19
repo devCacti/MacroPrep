@@ -1,0 +1,173 @@
+﻿@page "/admin/version-control"
+
+@using MacroPrep.Shared.Enums.Account
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(AccountType.Admin))]
+
+<PageTitle>The Vault - Version Control</PageTitle>
+
+<div class="page-wrapper">
+    <div class="content-container">
+
+        @* Header *@
+        <header class="page-header">
+            <div class="header-text">
+                <h1 class="page-title">Version Control</h1>
+                <p class="page-subtitle">Manage system releases, version history, and client updates</p>
+            </div>
+        </header>
+
+        @* --- ACTIVE RELEASE CARD --- *@
+        <section class="version-card">
+            <div class="version-left">
+                @if (_isLoading)
+                {
+                    <div class="version-icon-circle ph-avatar"></div>
+                    <div class="profile-details">
+                        <div class="breathing-placeholder ph-text-lg"></div>
+                        <div class="breathing-placeholder ph-text-sm"></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="version-icon-circle">
+                        <i class="bi bi-rocket-takeoff"></i>
+                    </div>
+                    <div class="profile-details">
+                        <h2 class="user-name">v@(ActiveVersion?.GetSemanticVersion() ?? "Unknown")</h2>
+                        <span class="user-email">Commit Hash: @(ActiveVersion?.Hash ?? "N/A")</span>
+                        <div class="badges">
+                            <span class="badge badge-admin">Live Build</span>
+                            @if (ActiveVersion?.ForceRefresh == true)
+                            {
+                                <span class="badge badge-premium">Force Refresh</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <button class="btn-outline-purple" @onclick="CreateNewVersion" disabled="@_isLoading">
+                <i class="bi bi-plus-lg"></i> Draft New Version
+            </button>
+        </section>
+
+        <div class="settings-stack">
+
+            @* --- VERSION EDITOR --- *@
+            @if (_editingVersion != null)
+            {
+                <div class="settings-card" style="border-left: 4px solid #a855f7;">
+                    <div class="card-header">
+                        <i class="bi bi-pencil-square section-icon"></i>
+                        <h3 class="section-title">@(_isNewVersion ? "Draft New Version" : "Edit Version Details")</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="setting-row">
+                            <div class="setting-info" style="flex: 1; max-width: 250px;">
+                                <span class="setting-label">Semantic Version</span>
+                                <span class="setting-desc">Major . Minor . Patch</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" class="form-control" style="width: 70px;" @bind="_editingVersion.Major" min="0" />
+                                <span>.</span>
+                                <input type="number" class="form-control" style="width: 70px;" @bind="_editingVersion.Minor" min="0" />
+                                <span>.</span>
+                                <input type="number" class="form-control" style="width: 70px;" @bind="_editingVersion.Patch" min="0" />
+                            </div>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <span class="setting-label">Commit Hash</span>
+                                <span class="setting-desc">The short hash from source control</span>
+                            </div>
+                            <input type="text" class="form-control" style="width: 200px;" @bind="_editingVersion.Hash" placeholder="e.g. a1b2c3d" />
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <span class="setting-label">Force Client Refresh</span>
+                                <span class="setting-desc">Require connected clients to reload for this specific version</span>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" @bind="_editingVersion.ForceRefresh">
+                            </div>
+                        </div>
+
+                        <div class="setting-row" style="background-color: #f8fafc; justify-content: flex-end; gap: 1rem;">
+                            <button class="mp-btn-outline-danger" @onclick="CancelEdit">Cancel</button>
+                            <button class="btn-outline-purple" style="background-color: #a855f7; color: white;" @onclick="SaveChanges">
+                                <i class="bi bi-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* --- VERSION HISTORY TABLE --- *@
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="bi bi-clock-history section-icon"></i>
+                    <h3 class="section-title">Version History</h3>
+                </div>
+                <div class="card-content" style="overflow-x: auto;">
+                    <table class="table" style="margin: 0; width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead style="background-color: #f1f5f9; font-size: 0.85rem; color: #475569;">
+                            <tr>
+                                <th style="padding: 1rem 1.5rem;">Version</th>
+                                <th style="padding: 1rem 1.5rem;">Hash</th>
+                                <th style="padding: 1rem 1.5rem;">Force Refresh</th>
+                                <th style="padding: 1rem 1.5rem;">Status</th>
+                                <th style="padding: 1rem 1.5rem; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_versions != null && _versions.Any())
+                            {
+                                @foreach (var version in _versions.OrderByDescending(v => v.Major).ThenByDescending(v => v.Minor).ThenByDescending(v => v.Patch))
+                                {
+                                    <tr style="border-top: 1px solid #f1f5f9;">
+                                        <td style="padding: 1rem 1.5rem; font-weight: 500;">v@(version.GetSemanticVersion())</td>
+                                        <td style="padding: 1rem 1.5rem; font-family: monospace; color: #64748b;">@version.Hash</td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            @if (version.ForceRefresh)
+                                            {
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-dash-circle text-muted"></i>
+                                            }
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            @if (version.IsActive)
+                                            {
+                                                <span class="badge badge-admin">Active</span>
+                                            }
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem; text-align: right;">
+                                            @if (!version.IsActive)
+                                            {
+                                                <button class="action-link" style="margin-right: 10px;" @onclick="() => SetActiveVersion(version)">Set Active</button>
+                                            }
+                                            <button class="action-link" @onclick="() => EditVersion(version)">Edit</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else if (!_isLoading)
+                            {
+                                <tr>
+                                    <td colspan="5" style="padding: 2rem; text-align: center; color: #94a3b8;">No versions found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

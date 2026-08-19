@@ -25,8 +25,9 @@ namespace MacroPrep.Server.Services
             var claims = new[] {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Subject Claim (User ID)
                 new Claim(ClaimTypes.Name, user.UserName), // Unique Name Claim (Username)
+                new Claim(ClaimTypes.Role, user.Type.ToString()), // Role Claim (User Type)
                 new Claim("sid", session.Id.ToString()), // Session ID Claim
-                new Claim("setup_completed", user.HasCompletedSetup.ToString().ToLower())
+                new Claim("setup_completed", user.HasCompletedSetup.ToString().ToLower()), // Custom Claim (Setup Completed)
             };
 
             var tokenExpiration = DateTime.UtcNow.AddMinutes(15);
