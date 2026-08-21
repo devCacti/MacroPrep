@@ -1,9 +1,13 @@
 ﻿@page "/admin/version-control"
 
 @using MacroPrep.Shared.Enums.Account
-@using Microsoft.AspNetCore.Components.Authorization
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager Nav
+
+@* 
+We do not need to do any manual auth checks because of this line 
+The only thing we need is for the Custom HTTP handler to do its thing
+*@
 @attribute [Authorize(Roles = nameof(AccountType.Admin))]
 
 <PageTitle>The Vault - Version Control</PageTitle>
@@ -36,7 +40,7 @@
                         <i class="bi bi-rocket-takeoff"></i>
                     </div>
                     <div class="profile-details">
-                        <h2 class="user-name">v@(ActiveVersion?.GetSemanticVersion() ?? "Unknown")</h2>
+                        <h2 class="user-name">v@(ActiveVersion?.Version ?? " Undefined")</h2>
                         <span class="user-email">Commit Hash: @(ActiveVersion?.Hash ?? "N/A")</span>
                         <div class="badges">
                             <span class="badge badge-admin">Live Build</span>
@@ -129,7 +133,7 @@
                                 @foreach (var version in _versions.OrderByDescending(v => v.Major).ThenByDescending(v => v.Minor).ThenByDescending(v => v.Patch))
                                 {
                                     <tr style="border-top: 1px solid #f1f5f9;">
-                                        <td style="padding: 1rem 1.5rem; font-weight: 500;">v@(version.GetSemanticVersion())</td>
+                                        <td style="padding: 1rem 1.5rem; font-weight: 500;">v@(version.Version)</td>
                                         <td style="padding: 1rem 1.5rem; font-family: monospace; color: #64748b;">@version.Hash</td>
                                         <td style="padding: 1rem 1.5rem;">
                                             @if (version.ForceRefresh)
@@ -142,16 +146,13 @@
                                             }
                                         </td>
                                         <td style="padding: 1rem 1.5rem;">
-                                            @if (version.IsActive)
+                                            @if (version.ActiveVersion)
                                             {
                                                 <span class="badge badge-admin">Active</span>
                                             }
                                         </td>
                                         <td style="padding: 1rem 1.5rem; text-align: right;">
-                                            @if (!version.IsActive)
-                                            {
-                                                <button class="action-link" style="margin-right: 10px;" @onclick="() => SetActiveVersion(version)">Set Active</button>
-                                            }
+                                            <button class="action-link @(version.ActiveVersion ? "disabled" : "")" style="margin-right: 10px;" @onclick="() => SetActiveVersion(version.VersionID)">Set Active</button>
                                             <button class="action-link" @onclick="() => EditVersion(version)">Edit</button>
                                         </td>
                                     </tr>

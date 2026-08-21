@@ -43,6 +43,7 @@ builder.Services.AddHttpClient("API", client =>
 builder.Services.AddScoped<ShoppingListsService>();
 builder.Services.AddScoped<RealTimeSyncService>();
 builder.Services.AddScoped<SyncService>();
+builder.Services.AddScoped<VersionService>();
 
 // Register a default HttpClient that uses the "API" configuration, so it can be injected directly into components and services
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));

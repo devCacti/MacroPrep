@@ -18,7 +18,8 @@ namespace MacroPrep.Server.Data.Entities.SemanticVersioning
         // Hash of the version, GitHub Commit HASH
         public string? Hash { get; set; } = null;
 
-        public bool VersionIsValid { get; set; } = true;
+        public bool ActiveVersion { get; set; } = true;
+        public bool ForceRefresh { get; set; } = false;
 
         public SystemComponent Component { get; set; } = SystemComponent.Client;
 

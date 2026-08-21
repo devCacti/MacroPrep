@@ -4,7 +4,9 @@ using MacroPrep.Server.Data.Entities.SemanticVersioning;
 using MacroPrep.Shared.Enums;
 using MacroPrep.Shared.Enums.Account;
 using MacroPrep.Shared.Models.SemanticVersioning;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using System.Security.Claims;
 
 namespace MacroPrep.Server.Endpoints
@@ -22,9 +24,17 @@ namespace MacroPrep.Server.Endpoints
 
             // Client Versioning Endpoints
             // Get Client is the only endpoint that does not require auth
+            // Gives the current active client version (Or null if not set)
             group.MapGet("/client", GetClientVersion)
                 .Produces<SemanticVersionDto>(StatusCodes.Status200OK)
                 .WithName("GetClientVersion")
+                .WithOpenApi();
+
+            group.MapGet("/", GetAllVersions)
+                .RequireAuthorization()
+                .Produces<List<SemanticVersionDto>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .WithName("GetAllVersions")
                 .WithOpenApi();
 
             // Server Versioning Endpoints
@@ -38,7 +48,7 @@ namespace MacroPrep.Server.Endpoints
             // Operation Endpoints for Versioning
             group.MapPost("/", CreateVersion)
                 .RequireAuthorization()
-                .Accepts<CreateSemanticVersionRequest>("application/json")
+                .Accepts<SemanticVersionDto>("application/json")
                 .Produces<SemanticVersion>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status403Forbidden)
@@ -48,12 +58,21 @@ namespace MacroPrep.Server.Endpoints
 
             group.MapPut("/{versionId:guid}", UpdateVersion)
                 .RequireAuthorization()
-                .Accepts<UpdateSemanticVersionRequest>("application/json")
+                .Accepts<SemanticVersionDto>("application/json")
                 .Produces<SemanticVersion>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status403Forbidden)
                 .Produces(StatusCodes.Status401Unauthorized)
                 .WithName("UpdateVersion")
+                .WithOpenApi();
+
+            group.MapPatch("/set-active", SetVersionActive)
+                .RequireAuthorization()
+                .Produces<SemanticVersion>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status403Forbidden)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .WithName("SetVersionActive")
                 .WithOpenApi();
 
             group.MapDelete("/{versionId:guid}", DeleteVersion)
@@ -66,40 +85,99 @@ namespace MacroPrep.Server.Endpoints
                 .WithOpenApi();
         }
 
-        // GET: /api/version/client
-        private static IResult GetClientVersion(AppDbContext db)
+        // GET: /api/version/client (Accepts version number)
+        private static async Task<IResult> GetClientVersion(AppDbContext db, [FromQuery] Guid? versionId = null)
         {
-            var version = db.SemanticVersions
-                .Where(v => v.Component == SystemComponent.Client)
+            // version variable is nullable, this endpoint can return null if none is set to active
+            SemanticVersion? currentVersion = await db.SemanticVersions
+                .Where(v => v.Component == SystemComponent.Client && v.ActiveVersion)
                 .OrderByDescending(v => v.CreatedAt)
-                .Select(v => new SemanticVersionDto
-                {
-                    VersionID = v.VersionID,
-                    Major = v.Major,
-                    Minor = v.Minor,
-                    Patch = v.Patch,
-                    Hash = v.Hash,
-                    Component = v.Component
-                })
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
-            return Results.Ok(version);
+            // Get a boolean indicating (if the request provided a version ID) wether the client will need to update to the current version or not
+            // This will happen if along the way the client has fallen behind a version that requires a forced refresh
+            // If in between the clients version and the current version there is a version with ForceRefresh set to true, then the client will need to update
+            // The server will also provide a number with how many versions the client is behind
+            if (versionId.HasValue && currentVersion != null)
+            {
+                var clientVersion = await db.SemanticVersions.FirstOrDefaultAsync(v => v.VersionID == versionId.Value);
+
+                if (clientVersion == null)
+                    return Results.BadRequest("Invalid version ID provided.");
+
+                // Check if the client is behind and if any version in between has ForceRefresh set to true
+                var versionsInBetween = await db.SemanticVersions
+                    .Where(v => v.Component == SystemComponent.Client &&
+                                v.CreatedAt > clientVersion.CreatedAt &&
+                                v.CreatedAt <= currentVersion.CreatedAt)
+                    .OrderBy(v => v.CreatedAt)
+                    .ToListAsync();
+
+                bool needsUpdate = versionsInBetween.Any(v => v.ForceRefresh);
+
+                // "You are w versions behind, and you need to update to the latest version."
+                int total = versionsInBetween.Count;
+
+                if (needsUpdate)
+                {
+                    return Results.Ok(new
+                    {
+                        CurrentVersion = currentVersion,
+                        VersionsBehind = total,
+                        NeedsUpdate = true
+                    });
+                }
+            }
+
+            return Results.Ok(currentVersion);
+        }
+
+        // GET: /api/version
+        // This endpoint is for Admins only to get all versions in the database
+        private static async Task<IResult> GetAllVersions(
+            AppDbContext db, ClaimsPrincipal claims, 
+            [FromQuery] int itemsPerPage    = 10,
+            [FromQuery] int pageNumber      = 1
+            ){
+            // Get User ID and Validate
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Guid.Parse(userIdClaim ?? throw new InvalidOperationException("User ID claim is missing."));
+
+            var versions = await db.SemanticVersions
+                    .OrderByDescending(v => v.CreatedAt)
+                    .Skip((pageNumber - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
+                    .Select(v => new SemanticVersionDto
+                    {
+                        VersionID = v.VersionID,
+                        Major = v.Major,
+                        Minor = v.Minor,
+                        Patch = v.Patch,
+                        Hash = v.Hash,
+                        Component = v.Component,
+                        ActiveVersion = v.ActiveVersion,
+                        ForceRefresh = v.ForceRefresh
+                    })
+                    .ToListAsync();
+
+            int totalCount = await db.SemanticVersions.CountAsync();
+
+            // Response with pagination info
+            var response = new SemanticVersionsPagesDto
+            {
+                VersionCount = totalCount,
+                PageCount = (int)Math.Ceiling((double)totalCount / itemsPerPage),
+                Versions = versions
+            };
+            return Results.Ok(response);
         }
 
         // POST: /api/version
-        private static async Task<IResult> CreateVersion(CreateSemanticVersionRequest semVer, AppDbContext db, ClaimsPrincipal claims)
+        private static async Task<IResult> CreateVersion(SemanticVersionDto semVer, AppDbContext db, ClaimsPrincipal claims)
         {
             // Get User ID and Validate
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Results.BadRequest("Invalid or missing User ID in token.");
-
-            // Require Admin Previleges 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null || user.Type != AccountType.Admin)
-                return Results.Forbid();
+            var userId = Guid.Parse(userIdClaim ?? throw new InvalidOperationException("User ID claim is missing."));
 
             var version = new SemanticVersion
             {
@@ -108,30 +186,29 @@ namespace MacroPrep.Server.Endpoints
                 Patch = semVer.Patch,
                 Hash = semVer.Hash,
                 Component = semVer.Component,
+                ActiveVersion = semVer.ActiveVersion,
+                ForceRefresh = semVer.ForceRefresh,
                 CreatedByUserID = userId,
                 UpdatedByUserID = userId
             };
 
-            db.SemanticVersions.Add(version);
+            // Set all to not active before adding the new item
+            if (semVer.ActiveVersion)
+                await db.SemanticVersions.ExecuteUpdateAsync(v => v.SetProperty(e => e.ActiveVersion, false));
+
+            // Add and save
+            await db.SemanticVersions.AddAsync(version);
             await db.SaveChangesAsync();
 
-            return Results.Ok(version);
+            return Results.Created($"api/version/{version.VersionID}", version);
         }
 
         // PUT: /api/version
-        private static async Task<IResult> UpdateVersion(Guid versionId, UpdateSemanticVersionRequest semVer, AppDbContext db, ClaimsPrincipal claims)
+        private static async Task<IResult> UpdateVersion(Guid versionId, SemanticVersionDto semVer, AppDbContext db, ClaimsPrincipal claims)
         {
             // Get User ID and Validate
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Results.BadRequest("Invalid or missing User ID in token.");
-
-            // Require Admin Previleges 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null || user.Type != AccountType.Admin)
-                return Results.Forbid();
+            var userId = Guid.Parse(userIdClaim ?? throw new InvalidOperationException("User ID claim is missing."));
 
             // Find the version to update
             var version = await db.SemanticVersions.FirstOrDefaultAsync(v => v.VersionID == versionId);
@@ -139,18 +216,40 @@ namespace MacroPrep.Server.Endpoints
             if (version == null)
                 return Results.NotFound("Version not found.");
 
-            // Update it
-            version.Major = semVer.Major ?? version.Major;
-            version.Minor = semVer.Minor ?? version.Minor;
-            version.Patch = semVer.Patch ?? version.Patch;
-            version.Hash = semVer.Hash ?? version.Hash;
+            // Update values, this directly updates the values on the database, all that is left is to save changes
+            version.Major = semVer.Major;
+            version.Minor = semVer.Minor;
+            version.Patch = semVer.Patch;
+            version.Hash = semVer.Hash;
             version.UpdatedByUserID = userId;
             version.UpdatedAt = DateTime.UtcNow;
-            version.VersionIsValid = semVer.SetValid ?? version.VersionIsValid;
-
+            version.ActiveVersion = semVer.ActiveVersion;
+            version.ForceRefresh = semVer.ForceRefresh;
             await db.SaveChangesAsync();
 
             return Results.Ok(version);
+        }
+
+        // PATCH: /api/version/set-active?verionId={id}
+        private static async Task<IResult> SetVersionActive([FromQuery] Guid versionId, AppDbContext db, ClaimsPrincipal claims)
+        {
+            // Get User ID and Validate
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Guid.Parse(userIdClaim ?? throw new InvalidOperationException("User ID claim is missing."));
+
+            // Find the version to update
+            var version = await db.SemanticVersions.FirstOrDefaultAsync(v => v.VersionID == versionId);
+
+            if (version == null)
+                return Results.NotFound("Version not found.");
+
+            await db.SemanticVersions.ExecuteUpdateAsync(v => v.SetProperty(e => e.ActiveVersion, false));
+
+            version.ActiveVersion = true;
+            await db.SaveChangesAsync();
+
+            // If it succeeds, the client already knows what changed, no need to tell it
+            return Results.NoContent();
         }
 
         // DELETE: /api/version
@@ -158,15 +257,7 @@ namespace MacroPrep.Server.Endpoints
         {
             // Get User ID and Validate
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Results.BadRequest("Invalid or missing User ID in token.");
-
-            // Require Admin Previleges 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null || user.Type != AccountType.Admin)
-                return Results.Forbid();
+            var userId = Guid.Parse(userIdClaim ?? throw new InvalidOperationException("User ID claim is missing."));
 
             // Find the version to delete
             var version = await db.SemanticVersions.FirstOrDefaultAsync(v => v.VersionID == versionId);
@@ -177,16 +268,16 @@ namespace MacroPrep.Server.Endpoints
             db.SemanticVersions.Remove(version);
             await db.SaveChangesAsync();
 
-            return Results.Ok();
+            // NoContent is returned because the version has been deleted and there is no content to return
+            return Results.NoContent();
         }
 
+        // Even though not admin, this will require auth, will fail if the user is not valid
         // GET: /api/version/server
         private static async Task<IResult> GetServerVersion(AppDbContext db, ClaimsPrincipal claims)
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Results.BadRequest("Invalid or missing User ID in token.");
+            Guid.Parse(userIdClaim ?? throw new InvalidOperationException("User ID claim is missing."));
 
             var version = await db.SemanticVersions
                 .Where(v => v.Component == SystemComponent.Server)
