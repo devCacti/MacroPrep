@@ -11,21 +11,6 @@ namespace MacroPrep.Server.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Details",
-                table: "Recipes",
-                newName: "Description");
-
-            migrationBuilder.RenameColumn(
-                name: "Details",
-                table: "ListItems",
-                newName: "Description");
-
-            migrationBuilder.RenameColumn(
-                name: "Details",
-                table: "Instruments",
-                newName: "Description");
-
             migrationBuilder.CreateTable(
                 name: "SemanticVersions",
                 columns: table => new
