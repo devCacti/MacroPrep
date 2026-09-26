@@ -88,16 +88,25 @@ namespace MacroPrep.Server.Endpoints
         // GET: /api/version/client (Accepts version number)
         private static async Task<IResult> GetClientVersion(AppDbContext db, [FromQuery] Guid? versionId = null)
         {
-            // version variable is nullable, this endpoint can return null if none is set to active
+            // Fetch the raw entity to keep access to CreatedAt for logic comparisons
             SemanticVersion? currentVersion = await db.SemanticVersions
                 .Where(v => v.Component == SystemComponent.Client && v.ActiveVersion)
                 .OrderByDescending(v => v.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            // Get a boolean indicating (if the request provided a version ID) wether the client will need to update to the current version or not
-            // This will happen if along the way the client has fallen behind a version that requires a forced refresh
-            // If in between the clients version and the current version there is a version with ForceRefresh set to true, then the client will need to update
-            // The server will also provide a number with how many versions the client is behind
+            // Map to DTO to prevent exposing the User entity and database audit fields
+            SemanticVersionDto? currentVersionDto = currentVersion == null ? null : new SemanticVersionDto
+            {
+                VersionID = currentVersion.VersionID,
+                Major = currentVersion.Major,
+                Minor = currentVersion.Minor,
+                Patch = currentVersion.Patch,
+                Hash = currentVersion.Hash,
+                Component = currentVersion.Component,
+                ActiveVersion = currentVersion.ActiveVersion,
+                ForceRefresh = currentVersion.ForceRefresh
+            };
+
             if (versionId.HasValue && currentVersion != null)
             {
                 var clientVersion = await db.SemanticVersions.FirstOrDefaultAsync(v => v.VersionID == versionId.Value);
@@ -105,7 +114,6 @@ namespace MacroPrep.Server.Endpoints
                 if (clientVersion == null)
                     return Results.BadRequest("Invalid version ID provided.");
 
-                // Check if the client is behind and if any version in between has ForceRefresh set to true
                 var versionsInBetween = await db.SemanticVersions
                     .Where(v => v.Component == SystemComponent.Client &&
                                 v.CreatedAt > clientVersion.CreatedAt &&
@@ -114,22 +122,25 @@ namespace MacroPrep.Server.Endpoints
                     .ToListAsync();
 
                 bool needsUpdate = versionsInBetween.Any(v => v.ForceRefresh);
-
-                // "You are w versions behind, and you need to update to the latest version."
                 int total = versionsInBetween.Count;
 
                 if (needsUpdate)
                 {
-                    return Results.Ok(new
+                    return Results.Ok(new VersionCheckResponseDto
                     {
-                        CurrentVersion = currentVersion,
+                        CurrentVersion = currentVersionDto,
                         VersionsBehind = total,
                         NeedsUpdate = true
                     });
                 }
             }
 
-            return Results.Ok(currentVersion);
+            return Results.Ok(new VersionCheckResponseDto
+            {
+                CurrentVersion = currentVersionDto,
+                VersionsBehind = 0,
+                NeedsUpdate = false
+            });
         }
 
         // GET: /api/version

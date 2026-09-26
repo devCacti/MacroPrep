@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject IConfiguration Configuration
 
 <PageTitle>MacroPrep Dashboard</PageTitle>
 
@@ -9,6 +10,7 @@
         <header class="dashboard-header">
             <h1 class="macroprep-title" style="color: black;">Welcome to MacroPrep</h1>
             <p class="subtitle">Your personal recipe and meal planning hub</p>
+            <p class="description">@currentVersion</p>
         </header>
 
         @* Stats Row *@
@@ -108,3 +110,14 @@
 
     </div>
 </div>
+
+@code {
+    private string currentVersion = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Reads "ClientVersion" from wwwroot/appsettings.json
+        // Fallback to "Unknown" if it's missing or hasn't been set yet
+        currentVersion = Configuration["ClientVersion"] ?? "Unknown";
+    }
+}

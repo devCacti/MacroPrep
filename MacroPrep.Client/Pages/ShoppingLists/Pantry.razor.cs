@@ -476,6 +476,9 @@ namespace MacroPrep.Client.Pages.ShoppingLists
         {
             vm.List.IsShared = isShared;
             vm.List.IsSynced = false;
+
+            vm.List.Members.Clear();
+
             await OfflineService.SaveListAsync(vm.List);
             Sync.RequestSync();
         }

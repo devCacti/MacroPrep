@@ -12,7 +12,7 @@ namespace MacroPrep.Client.Pages.Admin
         private List<SemanticVersionDto> _versions = [];
 
         // Services
-        [Inject] private VersionService VersionService { get; set; } = default!;
+        [Inject] private VersionManagementService VersionService { get; set; } = default!;
 
         // Editor State
         private SemanticVersionDto? _editingVersion;

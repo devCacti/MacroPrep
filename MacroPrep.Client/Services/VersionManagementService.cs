@@ -3,11 +3,11 @@ using System.Net.Http.Json;
 
 namespace MacroPrep.Client.Services
 {
-    public class VersionService
+    public class VersionManagementService
     {
         private readonly HttpClient Http;
 
-        public VersionService(HttpClient http)
+        public VersionManagementService(HttpClient http)
         {
             Http = http;
         }
@@ -21,7 +21,8 @@ namespace MacroPrep.Client.Services
                 var response = await Http.GetAsync("api/version/client");
                 if (response.IsSuccessStatusCode)
                 {
-                    version = await response.Content.ReadFromJsonAsync<SemanticVersionDto>();
+                    var versionCheckResponse = await response.Content.ReadFromJsonAsync<VersionCheckResponseDto>();
+                    version = versionCheckResponse?.CurrentVersion;
                 }
             }
             catch (Exception ex)
