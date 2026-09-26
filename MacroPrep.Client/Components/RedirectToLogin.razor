@@ -2,14 +2,27 @@
 @using MacroPrep.Client.Services;
 
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Prevent redirecting if we are already on the login page
-        if (!Nav.Uri.Contains("/auth/login") && !Nav.Uri.Contains("/auth/register"))
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
         {
-            Nav.NavigateTo("/auth/login", true);
+            // Prevent redirecting if we are already on the login page
+            if (!Nav.Uri.Contains("/auth/login") && !Nav.Uri.Contains("/auth/register"))
+            {
+                Nav.NavigateTo("/auth/login");
+            }
+        } else {
+            // If the user is authenticated and they are on the login or register page, the user will be redirected to the home page
+            if (Nav.Uri.Contains("/auth/login") || Nav.Uri.Contains("/auth/register"))
+            {
+                Nav.NavigateTo("/");
+            }
         }
     }
 }

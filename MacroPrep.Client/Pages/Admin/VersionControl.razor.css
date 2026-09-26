@@ -1,0 +1,308 @@
+﻿/* 1. Layout */
+.page-wrapper {
+    padding-left: var(--nav-width);
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f8fafc;
+}
+
+/* 2. Profile Card (Unique to this page) */
+.profile-card {
+    background-color: #f3e8ff; /* Light purple background */
+    border: 1px solid #e9d5ff;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(147, 51, 234, 0.05);
+}
+
+.profile-left {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.avatar-circle {
+    width: 64px;
+    height: 64px;
+    background-color: #a855f7; /* Vibrant Purple */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: var(--weight-bold);
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-name {
+    font-size: 1.125rem;
+    font-weight: var(--weight-bold);
+    color: #1e293b;
+    margin: 0;
+}
+
+.user-email {
+    font-size: var(--text-sm);
+    color: #64748b;
+}
+
+/* 1. Base Badge Structure (Shared) */
+.badge {
+    font-size: 0.7rem;
+    font-weight: var(--weight-bold);
+    border-radius: 12px;
+    width: fit-content;
+    padding: 0.3rem 0.6rem;
+    margin-top: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
+}
+
+/* 2. The "Status Quo" Free Badge */
+.badge-free {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-size: 0.7rem;
+    font-weight: var(--weight-bold);
+    width: fit-content;
+}
+
+/* 3. The "Luxury" Premium Badge */
+.badge-premium {
+    background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(147, 51, 234, 0.35);
+    font-size: 0.7rem;
+    font-weight: var(--weight-bold);
+    padding: 0.3rem 0.8rem;
+    width: fit-content;
+    animation: gentle-pulse-premium 3s infinite ease-in-out;
+}
+
+/* 4. The "Radioactive" Admin Badge */
+.badge-admin {
+    /* High contrast Neon Green */
+    background-color: #dcfce7; /* Very light green bg */
+    color: #15803d; /* Dark green text */
+    border: 1px solid #86efac; /* Green border */
+    /* The Glow: Sharp and technical */
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 4px rgba(74, 222, 128, 0.2);
+    margin-left: 0.5rem;
+    /* Inherit base */
+    font-size: 0.7rem;
+    font-weight: var(--weight-bolder);
+    width: fit-content;
+    margin-top: 0.25rem;
+    padding: 0.3rem 1rem;
+    animation: gentle-pulse-admin 3s infinite ease-in-out;
+}
+
+/* 5. Animation Keyframes */
+@keyframes gentle-pulse-premium {
+    0% {
+        box-shadow: 0 0px 15px rgba(147, 51, 234, 0.35);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0px 25px rgba(147, 51, 234, 0.5); /* Glow expands */
+        transform: scale(1.02); /* Tiny size bump */
+    }
+
+    100% {
+        box-shadow: 0 0px 15px rgba(147, 51, 234, 0.35);
+        transform: scale(1);
+    }
+}
+
+@keyframes gentle-pulse-admin {
+    0% {
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 4px rgba(74, 222, 128, 0.2);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0 12px rgba(74, 222, 128, 0.6), inset 0 0 6px rgba(74, 222, 128, 0.3); /* Glow intensifies */
+        transform: scale(1.02);
+    }
+
+    100% {
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 4px rgba(74, 222, 128, 0.2);
+        transform: scale(1);
+    }
+}
+
+
+
+.badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* 3. Settings Cards */
+.settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.settings-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--base-shadow);
+    border: 1px solid rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section-icon {
+    font-size: 1.1rem;
+    color: #475569;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: var(--weight-bold);
+    margin: 0;
+    color: #1e293b;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 4. Rows & Actions */
+.setting-row {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+    .setting-row:last-child {
+        border-bottom: none;
+    }
+
+.setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.setting-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: #334155;
+}
+
+.setting-desc {
+    font-size: 0.75rem; /* Smaller caption text */
+    color: #94a3b8;
+}
+
+/* 6. Mobile Optimization */
+@media (max-width: 640px) {
+    .page-wrapper {
+        padding-left: 0;
+        padding-bottom: 80px;
+    }
+
+    .profile-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-outline-purple {
+        width: 100%;
+    }
+}
+
+/* 1. Version Hero Card (Adapted from Profile Card) */
+.version-card {
+    /* Using a subtle blue/slate tone to differentiate from the profile's purple */
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: var(--radius-lg, 12px);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(14, 165, 233, 0.05);
+}
+
+.version-left {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+/* 2. Version Icon (Replaces Avatar) */
+.version-icon-circle {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); /* Ocean Blue Gradient */
+    color: white;
+    border-radius: 20%; /* Squircle instead of perfect circle for a "system" feel */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+}
+
+/* 3. Form Switches (For the toggle toggles in Deployment Settings) */
+.form-switch {
+    display: flex;
+    align-items: center;
+}
+
+.form-check-input {
+    width: 2.5em !important;
+    height: 1.25em !important;
+    cursor: pointer;
+}
+
+    .form-check-input:checked {
+        background-color: #a855f7; /* Matching your brand purple */
+        border-color: #a855f7;
+    }
+
+/* 4. Mobile Adjustments specific to Version card */
+@media (max-width: 640px) {
+    .version-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+        .version-card .btn-outline-purple {
+            width: 100%;
+            justify-content: center;
+        }
+}

@@ -12,14 +12,14 @@ namespace MacroPrep.Client.Services
     {
         private readonly ILocalStorageService _localStorage;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly NavigationManager _navigationManager;
+        private readonly NavigationManager Nav;
         private bool _isRefreshingToken = false; // Flag to prevent multiple simultaneous token refreshes
 
         public CustomHttpHandler(ILocalStorageService localStorage, IHttpClientFactory httpClientFactory, NavigationManager navigationManager)
         {
             _localStorage = localStorage;
             _httpClientFactory = httpClientFactory;
-            _navigationManager = navigationManager;
+            Nav = navigationManager;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -69,6 +69,11 @@ namespace MacroPrep.Client.Services
                 // Redirect to login if the response is not 200 OK or if an exception occurs
                 await ForceLogoutAsync();
             }
+            
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                Nav.NavigateTo("/", true);
+            }
 
             return response;
         }
@@ -106,7 +111,7 @@ namespace MacroPrep.Client.Services
         private async Task ForceLogoutAsync()
         {
             await _localStorage.RemoveItemAsync("authToken");
-            _navigationManager.NavigateTo("/auth/login");
+            Nav.NavigateTo("/auth/login");
         }
 
         private async Task<HttpRequestMessage> CloneRequest(HttpRequestMessage request)

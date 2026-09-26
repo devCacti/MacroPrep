@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@using MacroPrep.Client.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Nav
+@inject AppUpdateService UpdateService;
 
 @* Component that will handle redirection logic*@
 <AccessControl />
@@ -44,3 +46,24 @@
         </NotAuthorized>
     </AuthorizeView>
 </div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Trigger 1: Check on first render
+        await UpdateService.ExecuteUpdateCheckAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        // Trigger 2: Check every time the user clicks a link to another page
+        // We use 'async void' here because it's an event handler, but we catch exceptions inside the service.
+        await UpdateService.ExecuteUpdateCheckAsync();
+    }
+
+    public void Dispose()
+    {
+        // Prevent memory leaks by unsubscribing when the layout is disposed
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

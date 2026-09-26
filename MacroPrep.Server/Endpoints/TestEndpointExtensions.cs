@@ -4,7 +4,7 @@ using System.Security.Claims;
 
 namespace MacroPrep.Server.Endpoints
 {
-    public static class TestEndpoints
+    public static class TestEndpointExtensions
     {
         public static void MapTestEndpoints(this WebApplication app)
         {

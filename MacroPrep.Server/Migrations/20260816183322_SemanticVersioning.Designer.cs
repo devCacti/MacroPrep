@@ -4,6 +4,7 @@ using MacroPrep.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MacroPrep.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260816183322_SemanticVersioning")]
+    partial class SemanticVersioning
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -368,9 +371,6 @@ namespace MacroPrep.Server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("ActiveVersion")
-                        .HasColumnType("bit");
-
                     b.Property<int>("Component")
                         .HasColumnType("int");
 
@@ -379,9 +379,6 @@ namespace MacroPrep.Server.Migrations
 
                     b.Property<Guid?>("CreatedByUserID")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("ForceRefresh")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Hash")
                         .HasColumnType("nvarchar(max)");
@@ -400,6 +397,9 @@ namespace MacroPrep.Server.Migrations
 
                     b.Property<Guid?>("UpdatedByUserID")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("VersionIsValid")
+                        .HasColumnType("bit");
 
                     b.HasKey("VersionID");
 

@@ -11,7 +11,7 @@ using System.Security.Claims;
 
 namespace MacroPrep.Server.Endpoints
 {
-    public static class ShoppingListsEndpoints
+    public static class ShoppingListsEndpointExtensions
     {
         public static void MapShoppingListsEndpoints(this WebApplication app)
         {
@@ -192,10 +192,8 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
-
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+                
                 var listExists = await db.ShoppingLists.AnyAsync(l => l.Id == list.Id);
                 if (listExists)
                     return Results.Conflict(new { Message = "A list with the same ID already exists" });
@@ -204,7 +202,7 @@ namespace MacroPrep.Server.Endpoints
                 {
                     Id = list.Id,
                     Name = list.Name,
-                    OwnerId = Guid.Parse(userIdClaim),
+                    OwnerId = Guid.TryParse(userId, out var ownerId) ? ownerId : throw new InvalidOperationException("Invalid user ID in claims"),
                     IsShared = list.IsShared,
                     CreatedAt = list.CreatedAt,
                     UpdatedAt = DateTimeOffset.UtcNow
@@ -225,9 +223,7 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 var list = await db.ShoppingLists
                     .Include(l => l.Members)
@@ -235,7 +231,7 @@ namespace MacroPrep.Server.Endpoints
 
                 if (list == null) return Results.NotFound();
 
-                var currentUserId = Guid.Parse(userIdClaim);
+                var currentUserId = Guid.TryParse(userId, out var ownerId) ? ownerId : throw new InvalidOperationException("Invalid user ID in claims");
                 var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
 
                 // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
@@ -292,9 +288,7 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 var list = await db.ShoppingLists
                     .Include(l => l.Members)
@@ -302,7 +296,7 @@ namespace MacroPrep.Server.Endpoints
 
                 if (list == null) return Results.NotFound();
 
-                var currentUserId = Guid.Parse(userIdClaim);
+                var currentUserId = Guid.TryParse(userId, out var ownerId) ? ownerId : throw new InvalidOperationException("Invalid user ID in claims");
                 var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
 
                 // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
@@ -316,6 +310,14 @@ namespace MacroPrep.Server.Endpoints
 
                 list.Name = updatedList.Name;
                 list.IsShared = updatedList.IsShared;
+
+                if (!list.IsShared)
+                {
+                    // Remove all members if the list is no longer shared
+                    var membersToRemove = db.ListMembers.Where(m => m.ListId == listId);
+                    db.ListMembers.RemoveRange(membersToRemove);
+                }
+
                 list.UpdatedAt = updatedList.UpdatedAt;
 
                 await db.SaveChangesAsync();
@@ -334,15 +336,14 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 var list = await db.ShoppingLists.FirstOrDefaultAsync(l => l.Id == listId);
                 if (list == null)
                     return Results.NotFound();
 
-                if (list.OwnerId != Guid.Parse(userIdClaim))
+                var ownerId = Guid.TryParse(userId, out var parsedOwnerId) ? parsedOwnerId : throw new InvalidOperationException("Invalid user ID in claims");
+                if (list.OwnerId != ownerId)
                     return Results.Forbid();
 
                 // Delete all items and members associated with the list
@@ -367,9 +368,7 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 var list = await db.ShoppingLists
                     .Include(l => l.Members)
@@ -377,7 +376,7 @@ namespace MacroPrep.Server.Endpoints
 
                 if (list == null) return Results.NotFound();
 
-                var currentUserId = Guid.Parse(userIdClaim);
+                var currentUserId = Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
                 var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
 
                 // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
@@ -424,17 +423,14 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
-
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
                 var list = await db.ShoppingLists
                 .Include(l => l.Members)
                     .FirstOrDefaultAsync(l => l.Id == listId);
 
                 if (list == null) return Results.NotFound();
 
-                var currentUserId = Guid.Parse(userIdClaim);
+                var currentUserId = Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
                 var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
 
                 // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
@@ -470,17 +466,15 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
-
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+                
                 var list = await db.ShoppingLists
                     .Include(l => l.Members)
                     .FirstOrDefaultAsync(l => l.Id == listId);
 
                 if (list == null) return Results.NotFound();
 
-                var currentUserId = Guid.Parse(userIdClaim);
+                var currentUserId = Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
                 var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
 
                 // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
@@ -518,9 +512,7 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 var list = await db.ShoppingLists
                     .Include(l => l.Members)
@@ -528,7 +520,7 @@ namespace MacroPrep.Server.Endpoints
 
                 if (list == null) return Results.NotFound();
 
-                var currentUserId = Guid.Parse(userIdClaim);
+                var currentUserId = Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
                 var member = list.Members.FirstOrDefault(m => m.UserId == currentUserId);
 
                 // The logic: If you aren't the owner, you MUST be an accepted member with Editor role.
@@ -565,11 +557,11 @@ namespace MacroPrep.Server.Endpoints
         {
             try
             {
-                var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Results.Unauthorized();
+                var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                var isListOwner = await db.ShoppingLists.AnyAsync(l => l.Id == listId && l.OwnerId == Guid.Parse(userIdClaim));
+                var currentUserId = Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
+
+                var isListOwner = await db.ShoppingLists.AnyAsync(l => l.Id == listId && l.OwnerId == currentUserId);
                 if (!isListOwner)
                     return Results.Forbid();
 
@@ -612,11 +604,11 @@ namespace MacroPrep.Server.Endpoints
 
         public static async Task<IResult> AcceptInvite(Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext)
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Results.Unauthorized();
+            var userIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim));
+            Guid guidUserId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
+
+            var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == guidUserId);
             if (member == null)
                 return Results.NotFound(new { Message = "Invite not found" });
 
@@ -640,11 +632,11 @@ namespace MacroPrep.Server.Endpoints
         
         public static async Task<IResult> DeclineInvite(Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext)
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Results.Unauthorized();
+            var userIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim));
+            Guid guidUserId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
+
+            var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == guidUserId);
             if (member == null)
                 return Results.NotFound(new { Message = "Invite not found" });
 
@@ -668,11 +660,10 @@ namespace MacroPrep.Server.Endpoints
 
         public static async Task<IResult> LeaveList(Guid listId, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext)
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Results.Unauthorized();
+            var userIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid guidUserId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
 
-            var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == Guid.Parse(userIdClaim));
+            var member = await db.ListMembers.FirstOrDefaultAsync(m => m.ListId == listId && m.UserId == guidUserId);
             if (member == null)
                 return Results.NotFound(new { Message = "Membership not found" });
 
@@ -689,11 +680,10 @@ namespace MacroPrep.Server.Endpoints
 
         public static async Task<IResult> RemoveUserFromList(Guid listId, string userName, AppDbContext db, ClaimsPrincipal claims, IHubContext<ShoppingHub, IShoppingHubClient> hubContext)
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Results.Unauthorized();
+            var userIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid guidUserId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
 
-            var isListOwner = await db.ShoppingLists.AnyAsync(l => l.Id == listId && l.OwnerId == Guid.Parse(userIdClaim));
+            var isListOwner = await db.ShoppingLists.AnyAsync(l => l.Id == listId && l.OwnerId == guidUserId);
             if (!isListOwner)
                 return Results.Forbid();
 
@@ -714,12 +704,11 @@ namespace MacroPrep.Server.Endpoints
 
         public static async Task<IResult> GetLists(ClaimsPrincipal claims, AppDbContext db)
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Results.Unauthorized();
+            var userIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid guidUserId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
 
             var lists = await db.ShoppingLists
-                .Where(l => l.OwnerId == Guid.Parse(userIdClaim) || l.Members.Any(m => m.UserId == Guid.Parse(userIdClaim) && m.HasAccepted) && l.IsShared)
+                .Where(l => l.OwnerId == guidUserId || l.Members.Any(m => m.UserId == guidUserId && m.HasAccepted) && l.IsShared)
                 .Select(l => new ListDto
                 {
                     Id = l.Id,
@@ -757,12 +746,11 @@ namespace MacroPrep.Server.Endpoints
 
         public static async Task<IResult> GetInvites(ClaimsPrincipal claims, AppDbContext db)
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Results.Unauthorized();
+            var userIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid guidUserId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : throw new InvalidOperationException("Invalid user ID in claims");
 
             var invites = await db.ListMembers
-                .Where(m => m.UserId == Guid.Parse(userIdClaim) && !m.HasAccepted && db.ShoppingLists.Any(l => l.Id == m.ListId && l.IsShared))
+                .Where(m => m.UserId == guidUserId && !m.HasAccepted && db.ShoppingLists.Any(l => l.Id == m.ListId && l.IsShared))
                 .Select(m => new ListInviteDto
                 {
                     ListId = m.ListId,

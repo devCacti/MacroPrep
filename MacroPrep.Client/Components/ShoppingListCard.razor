@@ -6,7 +6,7 @@
             @* Title Input: Disabled if Viewer *@
             <input type="text" class="list-title-input"
                    value="@ViewModel.List.Name"
-                   disabled="@(ViewModel.GetUserRole(CurrentUserId) < MemberType.Editor)"
+                   disabled="@(ViewModel.GetUserRole(CurrentUserId) < MemberType.Master)"
                    @onchange="HandleTitleChange" />
 
             @if (ViewModel.IsSyncing || IsGlobalSyncing)
