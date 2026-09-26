@@ -32,16 +32,19 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add a CORS policy (Will only be used in development mode)
-builder.Services.AddCors(options =>
+if (builder.Environment.IsDevelopment())
 {
-    options.AddPolicy("SignalRPolicy", policy =>
+    builder.Services.AddCors(options =>
     {
-        policy.WithOrigins("https://localhost:7050", "http://localhost:7273")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        options.AddPolicy("SignalRPolicy", policy =>
+        {
+            policy.WithOrigins("https://localhost:7050", "http://localhost:7273")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
     });
-});
+}
 
 // Add the Database context for the "DefaultConnection" application variable
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -155,9 +158,10 @@ else
     app.MapHub<ShoppingHub>("/hubs/shopping-hub");
 }
 
-app.MapAuthEndpoints();             // API AUTH GROUP
-app.MapUserEndpoints();             // API USER GROUP
-app.MapShoppingListsEndpoints();    // API SHOPPING LISTS GROUP
-app.MapTestEndpoints();             // API TESTING GROUP
+app.MapAuthEndpoints();                 // API AUTH GROUP
+app.MapUserEndpoints();                 // API USER GROUP
+app.MapShoppingListsEndpoints();        // API SHOPPING LISTS GROUP
+app.MapTestEndpoints();                 // API TESTING GROUP
+app.MapSemanticVersioningEndpoints();   // API SEMANTIC VERSIONING GROUP
 
 app.Run();

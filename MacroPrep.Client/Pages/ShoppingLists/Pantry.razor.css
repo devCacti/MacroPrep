@@ -1,0 +1,129 @@
+﻿:root {
+    /* Base font for all text */
+    --font-family-base: 'Montserrat', system-ui, -apple-system, sans-serif;
+    /* Font weights */
+    --weight-light: 300;
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-bold: 700;
+    --weight-bolder: 1000;
+    /* Modern Fluid Typography Scale */
+    --text-xs: 0.75rem; /* Captions */
+    --text-sm: 0.875rem; /* Sidebar links / Secondary info */
+    --text-base: 1rem; /* Body text */
+    --text-xl: 1.25rem; /* Recipe Card Titles */
+    --text-2xl: 1.5rem; /* Page Titles */
+    --text-3xl: 2rem; /* Brand Title */
+    /* Text Color */
+    --text-light: black;
+    --text-dark: white;
+    /* Elevations and shapes */
+    --base-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --radius-lg: 1rem;
+    /* Transitions */
+    --smooth: all 0.25s ease-in-out;
+    --content-max-width: 1200px;
+    --gutter: 2rem;
+}
+
+/* 3. Grid Layout */
+.pantry-grid {
+    display: block;
+    /* This tells the browser to create as many columns as will fit, with a minimum width of 350px */
+    column-width: 350px;
+    column-gap: 1.5rem;
+}
+
+.header-top {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.list-title {
+    font-family: var(--font-family-base);
+    font-size: 1.125rem;
+    font-weight: var(--weight-bold);
+    margin: 0;
+    color: var(--text-light);
+}
+
+.badge-shared {
+    font-size: 0.75rem;
+    color: #3b82f6;
+    background: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid #dbeafe;
+    font-weight: var(--weight-medium);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* 8. Mobile Optimization */
+@media (max-width: 640px) {
+    .page-wrapper {
+        padding-left: 0;
+        padding-bottom: 80px;
+    }
+
+    .content-container {
+        padding: 1.5rem;
+    }
+
+    .pantry-grid {
+        grid-template-columns: 1fr; /* Stack cards on mobile */
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Container styling */
+.invites-container {
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+    .invites-container h3 {
+        font-size: var(--text-base);
+        color: #1e293b;
+        margin-bottom: 1rem;
+        font-weight: var(--weight-bold);
+    }
+
+/* Individual Invite Row */
+.invite-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8fafc; /* Subtle slate tint */
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+}
+
+    .invite-row span {
+        font-size: var(--text-sm);
+        color: #475569;
+    }
+
+    .invite-row .actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+

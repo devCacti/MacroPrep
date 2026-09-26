@@ -43,11 +43,13 @@ builder.Services.AddHttpClient("API", client =>
 builder.Services.AddScoped<ShoppingListsService>();
 builder.Services.AddScoped<RealTimeSyncService>();
 builder.Services.AddScoped<SyncService>();
+builder.Services.AddScoped<VersionManagementService>();
+builder.Services.AddScoped<AppUpdateService>();
 
 // Register a default HttpClient that uses the "API" configuration, so it can be injected directly into components and services
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
 
 // Register the custom AuthenticationStateProvider
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-
+builder.Services.AddScoped(sp => (CustomAuthStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
 await builder.Build().RunAsync();

@@ -33,8 +33,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Username or Email</label>
-                    <InputText @bind-Value="_loginModel.UserNameOrEmail" class="form-input" placeholder="chef@macroprep.com" />
-                    <ValidationMessage For="@(() => _loginModel.UserNameOrEmail)" />
+                    <InputText @bind-Value="_loginModel.UserName" class="form-input" placeholder="chef@macroprep.com" />
+                    <ValidationMessage For="@(() => _loginModel.UserName)" />
                 </div>
 
                 <div class="form-group">
@@ -47,7 +47,7 @@
                     <button type="submit" class="mp-btn mp-btn-primary full-width" disabled="@_isLoading">
                         @if (_isLoading)
                         {
-                            <span>Unlocking...</span>
+                            <span>Logging In...</span>
                         }
                         else
                         {
@@ -66,7 +66,7 @@
 </div>
 
 @code {
-    private LoginRequest _loginModel = new();
+    private LoginRequestDto _loginModel = new();
     private string _errorMessage = "";
     private bool _isLoading = false;
 
@@ -81,10 +81,17 @@
 
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                LoginResponseDto? result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
+
+                if (result == null)
+                {
+                    throw new Exception("Response returned null (In Theory)");
+                }
+
+                Console.WriteLine("Result: " + result.ToString());
 
                 // 1. Save the Token (CustomHttpHandler reads this!)
-                await LocalStorage.SetItemAsync("authToken", result!.Token);
+                await LocalStorage.SetItemAsync("authToken", result.Token);
 
                 // 2. Notify the AuthStateProvider (forces UI refresh with new auth state)
                 ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
@@ -92,19 +99,16 @@
                 // 3. Redirect to Dashboard - Can't happen without the previous step (No. 2)
                 Nav.NavigateTo("/", true);
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
-            {
+            else if (response.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed) {
                 _errorMessage = "API Unreachable. Please try again later.";
-            }
-            else
-            {
+            } else {
                 _errorMessage = "Invalid credentials. Please try again.";
             }
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _errorMessage = "Server connection failed. Please try again later.";
-            Console.WriteLine(ex.Message);
+            _errorMessage = "An error occurred while logging in. Please try again later.";
+            Console.WriteLine(e.Message);
         }
         finally
         {

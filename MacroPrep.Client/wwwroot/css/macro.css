@@ -43,7 +43,7 @@ body {
 .content-container {
     max-width: var(--content-max-width);
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -67,6 +67,13 @@ body {
 .page-wrapper {
     width: 100%;
     min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    .page-wrapper {
+        padding-left: 0;
+        padding-bottom: 80px;
+    }
 }
 
 .page-header {
@@ -317,6 +324,22 @@ i.bi {
     text-decoration: none;
 }
 
+.add-input {
+    flex-grow: 1;
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    font-size: var(--text-sm);
+    outline: none;
+    transition: var(--smooth);
+}
+
+    .add-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+
 .add-btn {
     gap: 0.5rem;
     max-width: max-content;
@@ -327,13 +350,18 @@ i.bi {
     flex: none; /* Prevent stretching */
 }
 
+.add-item-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
 /* Base "MacroPrep" Button Style */
 .mp-btn {
     flex: 1; /* Ensures both buttons stay equal width */
     padding: .75rem 1rem;
     border: none; /* Removes the default black border */
     border-radius: 15px; /* Matches your card radius */
-    max-width: max-content;
+    max-width: fit-content;
     font-family: var(--font-family-base);
     font-weight: var(--weight-bold);
     font-size: var(--text-base);
@@ -360,6 +388,17 @@ i.bi {
     .mp-btn-primary:hover {
         background-color: #059669;
         box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    }
+
+.mp-btn-outline {
+    background-color: transparent;
+    color: black;
+    border: 2px solid black;
+}
+
+    .mp-btn-outline:hover {
+        color: gray;
+        border: 2px dashed gray;
     }
 
 /* Secondary Action: Deep Blue or Slate */
@@ -611,6 +650,7 @@ i.bi {
     outline: none;
     transition: var(--smooth);
     color: var(--text-light);
+    flex: 1;
 }
 
     .form-input:focus {
@@ -702,6 +742,25 @@ input:disabled {
     }
 
 
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8; /* Slate-400 */
+    border-radius: 15px;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+    flex-shrink: 0; /* Prevent icon from squishing */
+}
+
+.delete-btn:hover {
+    color: #dc2626; /* Red-600 */
+    background-color: #fef2f2; /* Red-50 */
+}
+
 .spinning {
     animation: spin 1s linear infinite;
     display: inline-block;
@@ -733,7 +792,8 @@ input:disabled {
 .synced-tick {
     color: #28a745; /* Success Green */
     font-size: 1.1rem;
-    margin-left: 8px;
+    margin-left: 6px;
+    margin-right: 6px;
     display: flex;
     align-items: center;
     animation: fadeIn 0.3s ease-in;
@@ -755,4 +815,40 @@ input:disabled {
 .spinning {
     animation: spin 1s linear infinite;
     display: inline-block;
+}
+
+.visible {
+    visibility: visible;
+}
+
+.not.visible {
+    visibility: hidden !important;
+}
+
+.barely.visible {
+    opacity: 50%;
+    pointer-events: none;
+}
+
+.empty-state {
+    margin: 10px;
+}
+
+/* --- Drag Handle --- */
+.drag-handle {
+    cursor: grab;
+    color: #adb5bd;
+    scale: 1.25;
+    font-size: 1.2rem;
+    user-select: none; /* Prevents text highlighting when dragging */
+    padding: 0 4px;
+}
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+.disabled {
+    pointer-events: none !important;
+    opacity: .5;
 }

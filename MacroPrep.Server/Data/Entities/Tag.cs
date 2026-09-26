@@ -13,6 +13,7 @@ namespace MacroPrep.Server.Data.Entities
 
         public TagType Type { get; set; } = TagType.None;
 
+        public virtual ICollection<RecipeIngredient>? RecipeIngredients { get; set; }
         public virtual ICollection<Recipe>? Recipes { get; set; }
         public virtual ICollection<Ingredient>? Ingredients { get; set; }
         public virtual ICollection<User>? Users { get; set; }

@@ -7,7 +7,7 @@ namespace MacroPrep.Server.Data.Entities
     public class User
     {
         [Key]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         public string UserName { get; set; } = string.Empty;
@@ -18,9 +18,6 @@ namespace MacroPrep.Server.Data.Entities
         // Password fields for secure storage
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
-
-        [Required]
-        public string PasswordSalt { get; set; } = string.Empty;
 
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
@@ -42,19 +39,5 @@ namespace MacroPrep.Server.Data.Entities
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
-
-        public User()
-        {
-            Id = Guid.NewGuid();
-        }
-
-        public User(string userName, string email, string passwordHash, string passwordSalt)
-        {
-            Id = Guid.NewGuid();
-            UserName = userName;
-            Email = email;
-            PasswordHash = passwordHash;
-            PasswordSalt = passwordSalt;
-        }
     }
 }

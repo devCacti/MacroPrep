@@ -83,46 +83,6 @@ namespace MacroPrep.Client.Services
 
                 Console.WriteLine($"Syncing {pendingLists.Count} lists, {pendingItems.Count} items, {pendingMembers.Count} members...");
 
-                foreach (var list in pendingLists)
-                {
-                    try
-                    {
-                        HttpResponseMessage response;
-
-                        if (list.IsDeleted)
-                        {
-                            response = await _http.DeleteAsync($"api/shopping-lists/{list.Id}");
-                        }
-                        else
-                        {
-                            list.UpdatedAt = DateTimeOffset.Now;
-                            response = await _http.PutAsJsonAsync($"api/shopping-lists/{list.Id}", list);
-
-                            if (response.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                // If PUT failed because it didn't exist, try creating it
-                                response = await _http.PostAsJsonAsync("api/shopping-lists", list);
-                            }
-                        }
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            await _offlineService.MarkAsSyncedAsync(list.Id);
-                        }
-
-                        if ((response.StatusCode == System.Net.HttpStatusCode.NotFound || response.IsSuccessStatusCode) && list.IsDeleted)
-                        {
-                            await _offlineService.DeleteListAndRelatedDataAsync(list.Id);
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex);
-                    }
-
-                }
-
                 foreach (var item in pendingItems)
                 {
                     _inFlightItems.Add(item.Id);
@@ -202,6 +162,46 @@ namespace MacroPrep.Client.Services
                                 await _offlineService.MarkAsSyncedAsync(member.Id);
                             }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+
+                }
+
+                foreach (var list in pendingLists)
+                {
+                    try
+                    {
+                        HttpResponseMessage response;
+
+                        if (list.IsDeleted)
+                        {
+                            response = await _http.DeleteAsync($"api/shopping-lists/{list.Id}");
+                        }
+                        else
+                        {
+                            list.UpdatedAt = DateTimeOffset.Now;
+                            response = await _http.PutAsJsonAsync($"api/shopping-lists/{list.Id}", list);
+
+                            if (response.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                // If PUT failed because it didn't exist, try creating it
+                                response = await _http.PostAsJsonAsync("api/shopping-lists", list);
+                            }
+                        }
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            await _offlineService.MarkAsSyncedAsync(list.Id);
+                        }
+
+                        if ((response.StatusCode == HttpStatusCode.NotFound || response.IsSuccessStatusCode) && list.IsDeleted)
+                        {
+                            await _offlineService.DeleteListAndRelatedDataAsync(list.Id);
+                        }
+
                     }
                     catch (Exception ex)
                     {

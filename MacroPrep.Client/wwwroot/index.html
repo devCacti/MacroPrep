@@ -33,9 +33,18 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+    <script src="js/sortableInterop.js"></script>
+
     <script src="_framework/blazor.webassembly.js"></script>
+
+
+    <!-- Custom Connectivity Script and Registration-->
     <script src="js/connectivity.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script>
+        navigator.serviceWorker.register('service-worker.js');
+    </script>
 </body>
 
 </html>

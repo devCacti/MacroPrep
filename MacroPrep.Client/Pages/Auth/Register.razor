@@ -70,9 +70,26 @@
 </div>
 
 @code {
-    private RegisterRequest _registerModel = new();
+    private RegisterRequestDto _registerModel = new();
     private string _errorMessage = "";
     private bool _isLoading = false;
+
+    // Make the user go to the home page if Authenticated
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+
+        Console.WriteLine(authState.User.Identity?.IsAuthenticated);
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Nav.NavigateTo("/");
+        }
+
+    }
 
     private async Task HandleRegister()
     {
@@ -86,9 +103,16 @@
             if (response.IsSuccessStatusCode)
             {
                 // Response is the same in login and regiser, so we can reuse the same model
-                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                LoginResponseDto? result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
 
-                await LocalStorage.SetItemAsync("authToken", result!.Token);
+                if (result == null)
+                {
+                    throw new Exception("Response returned null (In Theory)");
+                }
+
+                Console.WriteLine("Result: " + result.ToString());
+
+                await LocalStorage.SetItemAsync("authToken", result.Token);
 
                 ((CustomAuthStateProvider)AuthStateProvider).NotifyUserLogin(result.Token);
 
@@ -105,9 +129,10 @@
                 _errorMessage = string.IsNullOrEmpty(error) ? "Registration failed." : error;
             }
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            _errorMessage = "Unable to connect to the authentication service.";
+            _errorMessage = "An error occurred while registering. Please try again later.";
+            Console.WriteLine(e.Message);
         }
         finally
         {

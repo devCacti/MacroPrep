@@ -1,0 +1,40 @@
+﻿<header class="page-header">
+    <div class="header-text">
+        <h1 class="page-title">@Title</h1>
+
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <p class="page-subtitle">@Subtitle</p>
+        }
+    </div>
+
+    @if (ShowButton)
+    {
+        <button class="mp-btn mp-btn-primary add-btn" @onclick="OnButtonClick">
+            <i class="@ButtonIconClass"></i> @ButtonText
+        </button>
+    }
+</header>
+
+@code {
+    // EditorRequired throws a warning if you forget to pass a Title
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    // Allows you to hide the button on pages that don't need one
+    [Parameter]
+    public bool ShowButton { get; set; } = true;
+
+    [Parameter]
+    public string ButtonText { get; set; } = "New List";
+
+    [Parameter]
+    public string ButtonIconClass { get; set; } = "bi bi-plus-lg";
+
+    // This allows the parent page to define what happens when the button is clicked
+    [Parameter]
+    public EventCallback OnButtonClick { get; set; }
+}
